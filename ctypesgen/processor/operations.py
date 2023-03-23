@@ -256,24 +256,22 @@ def find_source_libraries(data, opts):
     """find_source_libraries() determines which library contains each function
     and variable."""
 
-    all_symbols = data.functions + data.variables
-
-    for symbol in all_symbols:
-        symbol.source_library = None
-
+    assert len(opts.libraries) == 1
+    library_name = opts.libraries[0]
+    
     libraryloader.add_library_search_dirs(opts.compile_libdirs)
-
-    for library_name in opts.libraries:
-        try:
-            library = libraryloader.load_library(library_name)
-        except ImportError:
-            warning_message(
-                'Could not load library "%s". Okay, I\'ll '
-                "try to load it at runtime instead. " % (library_name),
-                cls="missing-library",
-            )
-            continue
-        for symbol in all_symbols:
-            if symbol.source_library is None:
-                if hasattr(library, symbol.c_name()):
-                    symbol.source_library = library_name
+    try:
+        library = libraryloader.load_library(library_name)
+    except ImportError:
+        warning_message(
+            f"Could not load library '{library_name}'. Okay, I'll try to load it at runtime instead.",
+            cls="missing-library",
+        )
+        library = None
+    
+    for symbol in (data.functions + data.variables):
+        if library and not hasattr(library, symbol.c_name()):
+            warning_message(f"Binary '{library_name}' does not contain symbol '{symbol.c_name()}'.")
+            symbol.source_library = None
+        else:
+            symbol.source_library = library_name
