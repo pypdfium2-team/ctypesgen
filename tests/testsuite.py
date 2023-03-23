@@ -119,10 +119,7 @@ class StdlibTest(unittest.TestCase):
         cleanup()
 
     def test_getenv_returns_string(self):
-        """Issue 8 - Regression for crash with 64 bit and bad strings on 32 bit.
-        See http://code.google.com/p/ctypesgen/issues/detail?id=8
-        Test that we get a valid (non-NULL, non-empty) string back
-        """
+        """ Test string return """
         module = StdlibTest.module
 
         if sys.platform == "win32":
@@ -142,21 +139,22 @@ class StdlibTest(unittest.TestCase):
             os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
             expect_result = "WORLD"
 
-        result = str(module.getenv(env_var_name))
+        result_ptr = module.getenv(env_var_name.encode("utf-8"))
+        result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
         self.assertEqual(expect_result, result)
 
     def test_getenv_returns_null(self):
         """Related to issue 8. Test getenv of unset variable."""
         module = StdlibTest.module
         env_var_name = "NOT SET"
-        expect_result = None
         try:
             # ensure variable is not set, ignoring not set errors
             del os.environ[env_var_name]
         except KeyError:
             pass
-        result = module.getenv(env_var_name)
-        self.assertEqual(expect_result, result)
+        result_ptr = module.getenv(env_var_name.encode("utf-8"))
+        result = ctypes.cast(result_ptr, ctypes.c_char_p).value
+        self.assertEqual(result, None)
 
 
 # This test is currently not working on MS Windows. The reason is the call of
@@ -508,7 +506,7 @@ class SimpleMacrosTest(unittest.TestCase):
             json("subcall_macro_minus"),
             {
                 "args": ["x", "y"],
-                "body": "(minus_macro (x, y))",
+                "body": "minus_macro(x, y)",
                 "name": "subcall_macro_minus",
                 "type": "macro_function",
             },
@@ -528,7 +526,7 @@ class SimpleMacrosTest(unittest.TestCase):
             json("subcall_macro_minus_plus"),
             {
                 "args": ["x", "y", "z"],
-                "body": "((minus_macro (x, y)) + z)",
+                "body": "(minus_macro(x, y) + z)",
                 "name": "subcall_macro_minus_plus",
                 "type": "macro_function",
             },
