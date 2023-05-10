@@ -17,6 +17,8 @@ DEFAULTHEADER_PATH = join(THIS_DIR, "defaultheader.py")
 LIBRARYLOADER_PATH = join(CTYPESGEN_DIR, "libraryloader.py")
 
 
+# TODO(geisserml) think out a proper concept for line breaks
+
 class WrapperPrinter:
     def __init__(self, outpath, options, data):
         status_message("Writing to %s." % (outpath or "stdout"))
@@ -78,18 +80,21 @@ class WrapperPrinter:
         self.file.write("\n")
 
     def srcinfo(self, src, inline=False):
-        if (src is not None) and not self.options.no_srcinfo:
-            filename, lineno = src
-            pad = "  " if inline else ""
-            if filename in ("<built-in>", "<command line>"):
-                self.file.write(pad + "# %s" % filename)
-            else:
-                if self.options.strip_build_path and filename.startswith(
-                    self.options.strip_build_path
-                ):
-                    filename = filename[len(self.options.strip_build_path) :]
-                self.file.write(pad + "# %s: %s" % (filename, lineno))
-        self.file.write("\n")
+        
+        if self.options.no_srcinfo or src is None:
+            return
+        
+        filename, lineno = src
+        pad = "  " if inline else "\n"
+        if filename in ("<built-in>", "<command line>"):
+            self.file.write(pad + "# %s" % filename)
+        else:
+            if self.options.strip_build_path and filename.startswith(self.options.strip_build_path):
+                filename = filename[len(self.options.strip_build_path):]
+            self.file.write(pad + "# %s: %s" % (filename, lineno))
+        
+        if not inline:
+            self.file.write("\n")
 
     def template_subs(self):
         # TODO(geisserml) address BUG(160)
@@ -230,7 +235,7 @@ class WrapperPrinter:
     def print_struct(self, struct):
         self.srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
-        self.file.write("class %s_%s(%s):\n" "    pass\n" % (struct.variety, struct.tag, base))
+        self.file.write("class %s_%s(%s):\n" "    pass" % (struct.variety, struct.tag, base))
 
     def print_struct_members(self, struct):
         if struct.opaque:
@@ -285,7 +290,7 @@ class WrapperPrinter:
                 )
             else:
                 self.file.write("    ('%s', %s),\n" % (name, ctype.py_string()))
-        self.file.write("]\n")
+        self.file.write("]")
 
     def print_enum(self, enum):
         self.file.write("enum_%s = c_int" % enum.tag)
@@ -303,8 +308,6 @@ class WrapperPrinter:
 
         CC = "stdcall" if function.attrib.get("stdcall", False) else "cdecl"
 
-        # If we know what library the function lives in, look there.
-        # Otherwise, check all the libraries.
         if function.source_library:
             self.file.write(
                 'if _libs["{L}"].has("{CN}", "{CC}"):\n'
@@ -313,14 +316,17 @@ class WrapperPrinter:
                 )
             )
         else:
-            self.file.write(
-                "for _lib in _libs.values():\n"
-                '    if not _lib.has("{CN}", "{CC}"):\n'
-                "        continue\n"
-                '    {PN} = _lib.get("{CN}", "{CC}")\n'.format(
-                    CN=function.c_name(), PN=function.py_name(), CC=CC
-                )
-            )
+            assert False
+        # NOTE multi-lib support disabled upstream in the processing pipeline, hence commented out
+        # else:
+        #     self.file.write(
+        #         "for _lib in _libs.values():\n"
+        #         '    if not _lib.has("{CN}", "{CC}"):\n'
+        #         "        continue\n"
+        #         '    {PN} = _lib.get("{CN}", "{CC}")\n'.format(
+        #             CN=function.c_name(), PN=function.py_name(), CC=CC
+        #         )
+        #     )
 
         # Argument types
         self.file.write(
@@ -330,15 +336,16 @@ class WrapperPrinter:
 
         # Return value
         self.file.write(
-            "    %s.restype = %s\n" % (function.py_name(), function.restype.py_string())
+            "    %s.restype = %s" % (function.py_name(), function.restype.py_string())
         )
         if function.errcheck:
             self.file.write(
-                "    %s.errcheck = %s\n" % (function.py_name(), function.errcheck.py_string())
+                "\n    %s.errcheck = %s" % (function.py_name(), function.errcheck.py_string())
             )
 
-        if not function.source_library:
-            self.file.write("    break\n")
+        # NOTE multi-lib support disabled upstream in the processing pipeline, hence commented out
+        # if not function.source_library:
+        #     self.file.write("    break\n")
 
     def print_variadic_function(self, function):
         CC = "stdcall" if function.attrib.get("stdcall", False) else "cdecl"
@@ -421,14 +428,14 @@ class WrapperPrinter:
             "try:\n"
             "    {MN} = {ME}\n"
             "except:\n"
-            "    pass\n".format(MN=macro.name, ME=macro.expr.py_string(True))
+            "    pass".format(MN=macro.name, ME=macro.expr.py_string(True))
         )
 
     def print_func_macro(self, macro):
         self.srcinfo(macro.src)
         self.file.write(
             "def {MN}({MP}):\n"
-            "    return {ME}\n".format(
+            "    return {ME}".format(
                 MN=macro.name, MP=", ".join(macro.params), ME=macro.expr.py_string(True)
             )
         )
