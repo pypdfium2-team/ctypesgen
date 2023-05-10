@@ -78,7 +78,7 @@ class WrapperPrinter:
         self.file.write("\n")
 
     def srcinfo(self, src, inline=False):
-        if src is not None:
+        if (src is not None) and not self.options.no_srcinfo:
             filename, lineno = src
             pad = "  " if inline else ""
             if filename in ("<built-in>", "<command line>"):

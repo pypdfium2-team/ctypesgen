@@ -286,6 +286,11 @@ def main(givenargs=None):
         "Multiple instances of this option will be combined into a single "
         "expression doing something like '(expr1|expr2|expr3)'.",
     )
+    parser.add_argument(
+        "--no-srcinfo",
+        action = "store_true",
+        help = "Skip comments stating where members are defined (header, line)."
+    )
 
     # Error options
     parser.add_argument(
