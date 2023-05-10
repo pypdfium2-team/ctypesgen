@@ -82,6 +82,8 @@ class WrapperPrinter:
     def srcinfo(self, src, inline=False):
         
         if self.options.no_srcinfo or src is None:
+            if not inline:
+                self.file.write("\n")
             return
         
         filename, lineno = src
