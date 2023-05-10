@@ -310,25 +310,23 @@ class WrapperPrinter:
 
         CC = "stdcall" if function.attrib.get("stdcall", False) else "cdecl"
 
-        if function.source_library:
+        if function.source_library or len(self.options.libraries) == 1:
+            lib = function.source_library if function.source_library else self.options.libraries[0]
             self.file.write(
                 'if _libs["{L}"].has("{CN}", "{CC}"):\n'
                 '    {PN} = _libs["{L}"].get("{CN}", "{CC}")\n'.format(
-                    L=function.source_library, CN=function.c_name(), PN=function.py_name(), CC=CC
+                    L=lib, CN=function.c_name(), PN=function.py_name(), CC=CC
                 )
             )
         else:
-            assert False
-        # NOTE multi-lib support disabled upstream in the processing pipeline, hence commented out
-        # else:
-        #     self.file.write(
-        #         "for _lib in _libs.values():\n"
-        #         '    if not _lib.has("{CN}", "{CC}"):\n'
-        #         "        continue\n"
-        #         '    {PN} = _lib.get("{CN}", "{CC}")\n'.format(
-        #             CN=function.c_name(), PN=function.py_name(), CC=CC
-        #         )
-        #     )
+            self.file.write(
+                "for _lib in _libs.values():\n"
+                '    if not _lib.has("{CN}", "{CC}"):\n'
+                "        continue\n"
+                '    {PN} = _lib.get("{CN}", "{CC}")\n'.format(
+                    CN=function.c_name(), PN=function.py_name(), CC=CC
+                )
+            )
 
         # Argument types
         self.file.write(
@@ -345,9 +343,8 @@ class WrapperPrinter:
                 "\n    %s.errcheck = %s" % (function.py_name(), function.errcheck.py_string())
             )
 
-        # NOTE multi-lib support disabled upstream in the processing pipeline, hence commented out
-        # if not function.source_library:
-        #     self.file.write("    break\n")
+        if not function.source_library:
+            self.file.write("\n    break")
 
     def print_variadic_function(self, function):
         CC = "stdcall" if function.attrib.get("stdcall", False) else "cdecl"

@@ -42,7 +42,7 @@ default_values = {
     "strip_prefixes": [],
     "embed_preamble": True,
     "no_scrinfo": False,
-    # "no_load_library": False,
+    "no_load_library": False,
 }
 
 
