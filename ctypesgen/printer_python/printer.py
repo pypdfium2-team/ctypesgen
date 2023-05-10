@@ -419,16 +419,11 @@ class WrapperPrinter:
             self.print_simple_macro(macro)
 
     def print_simple_macro(self, macro):
-        # The macro translator makes heroic efforts but it occasionally fails.
-        # We want to contain the failures as much as possible.
-        # Hence the try statement.
-        # TODO(geisserml) Avoid try/except wrapper for simple constant definitions
-        self.srcinfo(macro.src)
+        # NOTE(geisserml) previously, macros had a try/except wrapper - we removed it
+        # broken macros should be skipped explicitly and the respective issue may be reported
+        self.srcinfo(macro.src, inline=True)
         self.file.write(
-            "try:\n"
-            "    {MN} = {ME}\n"
-            "except:\n"
-            "    pass".format(MN=macro.name, ME=macro.expr.py_string(True))
+            "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
         )
 
     def print_func_macro(self, macro):
