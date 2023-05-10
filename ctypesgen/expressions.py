@@ -301,6 +301,7 @@ class TypeCastExpressionNode(ExpressionNode):
                 # This is a very simple type cast:  cast everything to (void)
                 # At least one macro from mingw does this
                 return "None"
+            # TODO(geisserml) think how to get rid of unnecessary brackets in `frm`
             return "{to}({frm}).value".format(
                 to=self.ctype.py_string(),
                 frm=self.base.py_string(False),
