@@ -14,7 +14,7 @@ from ctypesgen.descriptions import (
     StructDescription,
     TypedefDescription,
 )
-from ctypesgen.messages import warning_message
+from ctypesgen.messages import warning_message, status_message
 
 
 # Processor functions
@@ -252,6 +252,8 @@ def fix_conflicting_names(data, opts):
 def find_source_libraries(data, opts):
     """find_source_libraries() determines which library contains each function
     and variable."""
+
+    # TODO(geisserml) revisit
 
     assert len(opts.libraries) == 1
     library_name = opts.libraries[0]

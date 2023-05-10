@@ -243,6 +243,12 @@ def main(givenargs=None):
         default=False,
         help="Do not support extra C types built in to Python",
     )
+    # parser.add_argument(
+    #     "--no-load-library",
+    #     action="store_true",
+    #     default=False,
+    #     help="Do not try to load library during the processing"
+    # )
 
     # Printer options
     parser.add_argument(
