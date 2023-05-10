@@ -74,5 +74,6 @@ except ImportError:
 
 __version__ = version.VERSION.partition("-")[-1]
 VERSION = __version__
+PYPDFIUM2_SPECIFIC = True
 
 printer = printer_python  # Default the printer to generating Python
