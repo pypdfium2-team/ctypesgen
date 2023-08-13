@@ -41,7 +41,7 @@ default_values = {
     "debug_level": 0,
     "strip_prefixes": [],
     "embed_preamble": True,
-    "no_scrinfo": False,
+    "no_srcinfo": False,
     "no_load_library": False,
 }
 
