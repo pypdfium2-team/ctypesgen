@@ -22,20 +22,6 @@ def _get_ptrdiff_t():
 c_ptrdiff_t = _get_ptrdiff_t()
 
 
-# As of ctypes 1.0, ctypes does not support custom error-checking
-# functions on callbacks, nor does it support custom datatypes on
-# callbacks, so we must ensure that all callbacks return
-# primitive datatypes.
-#
-# Non-primitive return values wrapped with UNCHECKED won't be
-# typechecked, and will be converted to ctypes.c_void_p.
-def UNCHECKED(type):
-    if hasattr(type, "_type_") and isinstance(type._type_, str) and type._type_ != "P":
-        return type
-    else:
-        return ctypes.c_void_p
-
-
 # ctypes doesn't have direct support for variadic functions, so we have to write
 # our own wrapper class
 class _variadic_function(object):

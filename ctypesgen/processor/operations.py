@@ -136,7 +136,6 @@ def fix_conflicting_names(data, opts):
             "CFUNCTYPE",
             "POINTER",
             "Structure",
-            "UNCHECKED",
             "Union",
             "_variadic_function",
             "addressof",

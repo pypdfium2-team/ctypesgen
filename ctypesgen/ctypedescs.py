@@ -287,7 +287,7 @@ class CtypesFunction(CtypesType):
         super(CtypesFunction, self).visit(visitor)
 
     def py_string(self, ignore_can_be_ctype=None):
-        return "CFUNCTYPE(UNCHECKED(%s), %s)" % (
+        return "CFUNCTYPE(%s, %s)" % (
             self.restype.py_string(),
             ", ".join([a.py_string() for a in self.argtypes]),
         )
