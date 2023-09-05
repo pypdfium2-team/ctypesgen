@@ -159,8 +159,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         # When we find an opaque struct, we make a StructDescription for it
         # and record it in self.already_seen_opaque_structs. If we later
         # find a transparent struct with the same tag, we fill in the
-        # opaque struct with the information from the transparent struct and
-        # move the opaque struct to the end of the struct list.
+        # opaque struct with the information from the transparent struct
 
         name = "%s %s" % (ctypestruct.variety, ctypestruct.tag)
 
@@ -189,15 +188,14 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 ctype.visit(self)
 
             if name in self.already_seen_opaque_structs:
-                # Fill in older version
+                # Fill in the members
+                # StructDescription objects are mutable, so the existing output_order
+                # entry reflects this change.
                 struct = self.already_seen_opaque_structs[name]
                 struct.opaque = False
                 struct.members = ctypestruct.members
                 struct.ctype = ctypestruct
                 struct.src = ctypestruct.src
-
-                self.output_order.append(("struct-body", struct))
-
                 del self.already_seen_opaque_structs[name]
 
             else:
@@ -213,7 +211,6 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 self.structs.append(struct)
                 self.all.append(struct)
                 self.output_order.append(("struct", struct))
-                self.output_order.append(("struct-body", struct))
 
             self.already_seen_structs.add(name)
 

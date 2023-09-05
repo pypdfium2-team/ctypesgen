@@ -48,7 +48,6 @@ class WrapperPrinter:
             "function": self.print_function,
             "macro": self.print_macro,
             "struct": self.print_struct,
-            "struct-body": self.print_struct_members,
             "typedef": self.print_typedef,
             "variable": self.print_variable,
             "enum": self.print_enum,
@@ -237,10 +236,11 @@ class WrapperPrinter:
     def print_struct(self, struct):
         self.srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
-        self.file.write("class %s_%s(%s):\n" "    pass" % (struct.variety, struct.tag, base))
+        self.file.write("class %s_%s (%s):\n" % (struct.variety, struct.tag, base))
+        tab = " " * 4
 
-    def print_struct_members(self, struct):
         if struct.opaque:
+            self.file.write(tab + "pass")
             return
 
         # is this supposed to be packed?
@@ -251,7 +251,7 @@ class WrapperPrinter:
             if isinstance(aligned, ExpressionNode):
                 # TODO: for non-constant expression nodes, this will fail:
                 aligned = aligned.evaluate(None)
-            self.file.write("{}_{}._pack_ = {}\n".format(struct.variety, struct.tag, aligned))
+            self.file.write(tab + "_pack_ = {}\n".format(aligned))
 
         # handle unnamed fields.
         unnamed_fields = []
@@ -272,26 +272,28 @@ class WrapperPrinter:
                     unnamed_fields.append(name)
                 struct.members[mi] = mem
 
-        self.file.write("%s_%s.__slots__ = [\n" % (struct.variety, struct.tag))
-        for name, ctype in struct.members:
-            self.file.write("    '%s',\n" % name)
-        self.file.write("]\n")
-
         if len(unnamed_fields) > 0:
-            self.file.write("%s_%s._anonymous_ = [\n" % (struct.variety, struct.tag))
+            self.file.write(tab + "_anonymous_ = [\n")
             for name in unnamed_fields:
-                self.file.write("    '%s',\n" % name)
-            self.file.write("]\n")
+                self.file.write(tab*2 + "'{}',\n".format(name))
+            self.file.write(tab + "]\n")
+        
+        self.file.write(tab + "__slots__ = [\n")
+        for name, ctype in struct.members:
+            self.file.write(tab*2 + "'{}',\n".format(name))
+        self.file.write(tab + "]\n")
 
+        # fields may contain references to the struct itself, so they must be defined below,
+        # causing some unavoidable redundancy with __slots__
         self.file.write("%s_%s._fields_ = [\n" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
                 self.file.write(
-                    "    ('%s', %s, %s),\n"
+                    tab + "('%s', %s, %s),\n"
                     % (name, ctype.py_string(), ctype.bitfield.py_string(False))
                 )
             else:
-                self.file.write("    ('%s', %s),\n" % (name, ctype.py_string()))
+                self.file.write(tab + "('%s', %s),\n" % (name, ctype.py_string()))
         self.file.write("]")
 
     def print_enum(self, enum):
