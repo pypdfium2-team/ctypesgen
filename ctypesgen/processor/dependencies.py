@@ -66,8 +66,6 @@ def find_dependencies(data, opts):
         if kind == "constant":
             roots = [desc.value]
         elif kind == "struct":
-            roots = []
-        elif kind == "struct-body":
             roots = [desc.ctype]
         elif kind == "enum":
             roots = []
