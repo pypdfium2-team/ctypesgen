@@ -278,13 +278,14 @@ class WrapperPrinter:
                 self.file.write(tab*2 + "'{}',\n".format(name))
             self.file.write(tab + "]\n")
         
+        # slots must be defined *in the class body* to prevent setting nonexistent fields
         self.file.write(tab + "__slots__ = [\n")
         for name, ctype in struct.members:
             self.file.write(tab*2 + "'{}',\n".format(name))
         self.file.write(tab + "]\n")
 
         # fields may contain references to the struct itself, so they must be defined below,
-        # causing some unavoidable redundancy with __slots__
+        # causing some unavoidable redundancy with slots
         self.file.write("%s_%s._fields_ = [\n" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
