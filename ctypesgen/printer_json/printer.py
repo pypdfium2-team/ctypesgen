@@ -50,7 +50,6 @@ class WrapperPrinter:
             "function": self.print_function,
             "macro": self.print_macro,
             "struct": self.print_struct,
-            "struct-body": self.print_struct_members,
             "typedef": self.print_typedef,
             "variable": self.print_variable,
             "enum": self.print_enum,
@@ -96,9 +95,6 @@ class WrapperPrinter:
                     field["bitfield"] = ctype.bitfield.py_string(False)
                 res["fields"].append(field)
         return res
-
-    def print_struct_members(self, struct):
-        pass
 
     def print_enum(self, enum):
         res = {"type": "enum", "name": enum.tag}
