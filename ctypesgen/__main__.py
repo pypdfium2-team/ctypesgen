@@ -28,8 +28,7 @@ def find_names_in_modules(modules):
 
 
 def main(givenargs=None):
-    # TODO(geisserml) In the future, convert action="append" to nargs="*" - that's nicer to use
-
+    
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--version",
@@ -38,7 +37,14 @@ def main(givenargs=None):
     )
 
     # Parameters
-    parser.add_argument("headers", nargs="+", help="Sequence of header files")
+    parser.add_argument(
+        "-i", "--include",
+        "--headers",
+        dest="headers",
+        required=True,
+        nargs="+",
+        help="Sequence of header files",
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -47,26 +53,24 @@ def main(givenargs=None):
     )
     parser.add_argument(
         "-l",
-        "--library",
-        dest="libraries",
-        action="append",
+        "--libraries",
+        nargs="+",
         default=[],
         metavar="LIBRARY",
         help="link to LIBRARY",
     )
     parser.add_argument(
-        "--include",
-        dest="other_headers",
-        action="append",
+        "--other-headers",
+        nargs="+",
         default=[],
         metavar="HEADER",
         help="include system header HEADER (e.g. stdio.h or stdlib.h)",
     )
     parser.add_argument(
         "-m",
-        "--module",
-        "--link-module",
-        action="append",
+        "--modules",
+        "--link-modules",
+        nargs="+",
         dest="modules",
         metavar="MODULE",
         default=[],
@@ -74,8 +78,8 @@ def main(givenargs=None):
     )
     parser.add_argument(
         "-I",
-        "--includedir",
-        action="append",
+        "--includedirs",
+        nargs="+",
         dest="include_search_paths",
         default=[],
         metavar="INCLUDEDIR",
@@ -83,27 +87,22 @@ def main(givenargs=None):
     )
     parser.add_argument(
         "-L",
-        "-R",
-        "--rpath",
-        "--libdir",
-        action="append",
-        dest="universal_libdirs",
+        "--universal-libdirs",
+        nargs="+",
         default=[],
         metavar="LIBDIR",
         help="Add LIBDIR to the search path (both compile-time and run-time)",
     )
     parser.add_argument(
-        "--compile-libdir",
-        action="append",
-        dest="compile_libdirs",
+        "--compile-libdirs",
+        nargs="+",
         metavar="LIBDIR",
         default=[],
         help="Add LIBDIR to the compile-time library search path.",
     )
     parser.add_argument(
-        "--runtime-libdir",
-        action="append",
-        dest="runtime_libdirs",
+        "--runtime-libdirs",
+        nargs="+",
         metavar="LIBDIR",
         default=[],
         help="Add LIBDIR to the run-time library search path.",
@@ -120,6 +119,7 @@ def main(givenargs=None):
 
     # Parser options
     parser.add_argument(
+        # NOTE(geisserml) "cpp" is ambiguous - in this context, it does not refer to c++, but to the C pre-processor
         "--cpp",
         dest="cpp",
         default="gcc -E",
@@ -139,7 +139,7 @@ def main(givenargs=None):
     parser.add_argument(
         "-D",
         "--define",
-        action="append",
+        nargs="+",
         dest="cpp_defines",
         metavar="MACRO",
         default=[],
@@ -148,7 +148,7 @@ def main(givenargs=None):
     parser.add_argument(
         "-U",
         "--undefine",
-        action="append",
+        nargs="+",
         dest="cpp_undefines",
         metavar="NAME",
         default=[],
@@ -201,10 +201,8 @@ def main(givenargs=None):
         help="Do not remove macro definitions as per #undef directives",
     )
     parser.add_argument(
-        "-i",
         "--include-symbols",
-        action="append",
-        dest="include_symbols",
+        nargs="+",
         metavar="REGEXPR",
         default=[],
         help="Regular expression for symbols to always include.  Multiple "
@@ -212,10 +210,8 @@ def main(givenargs=None):
         "doing something like '(expr1|expr2|expr3)'.",
     )
     parser.add_argument(
-        "-x",
         "--exclude-symbols",
-        action="append",
-        dest="exclude_symbols",
+        nargs="+",
         metavar="REGEXPR",
         default=[],
         help="Regular expression for symbols to exclude.  Multiple instances "
@@ -266,10 +262,10 @@ def main(givenargs=None):
         help="Strip build path from header paths in the wrapper file.",
     )
     parser.add_argument(
-        "--insert-file",
+        "--insert-files",
         dest="inserted_files",
         default=[],
-        action="append",
+        nargs="+",
         metavar="FILENAME",
         help="Add the contents of FILENAME to the end of the wrapper file.",
     )
