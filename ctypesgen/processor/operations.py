@@ -249,30 +249,29 @@ def fix_conflicting_names(data, opts):
 
 
 def find_source_libraries(data, opts):
-    """find_source_libraries() determines which library contains each function
-    and variable."""
-
-    all_symbols = data.functions + data.variables
+    
+    # NOTE is_available is not currently used throughout ctypesgen because it's not clear what we should do with the info - we already have hasattr() if-guards anyway. And what is more, in practice, binary and headers should always match, otherwise the caller has probably made a mistake.
+    
+    all_symbols = set(data.functions + data.variables)
+    # default assumption: all symbols available
     for symbol in all_symbols:
-        symbol.source_library = None  # FIXME probably unnecessary?
+        symbol.is_available = True
 
-    libraryloader.add_library_search_dirs(opts.compile_libdirs)
+    if opts.no_load_library:
+        status_message(f"Bypass load_library '{opts.library}'.")
+        return
 
-    for library_name in opts.libraries:
-        if opts.no_load_library:
-            status_message("Bypass load_library %s." % library_name)
-            continue
-
-        try:
-            library = libraryloader.load_library(library_name)
-        except ImportError:
-            warning_message(
-                f"Could not load library '{library_name}'. Okay, I'll try to load it at runtime instead.",
-                cls="missing-library",
-            )
-            continue
-        for symbol in all_symbols:
-            # TODO warn if the same symbol is provided by multiple different libs?
-            if symbol.source_library is None:
-                if hasattr(library, symbol.c_name()):
-                    symbol.source_library = library_name
+    try:
+        library = libraryloader.load_library(opts.library, opts.compile_libdirs)
+    except RuntimeError:
+        warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
+        return
+    
+    missing_symbols = set()
+    for symbol in all_symbols:
+        symbol.is_available = hasattr(library, symbol.c_name())
+        if not symbol.is_available:
+            missing_symbols.add(symbol)
+    
+    if missing_symbols:
+        warning_message(f"Some symbols could not be found - binary/headers mismatch suspected. {missing_symbols}", cls="other")

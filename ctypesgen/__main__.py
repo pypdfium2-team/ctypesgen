@@ -46,18 +46,18 @@ def main(givenargs=None):
         help="Sequence of header files",
     )
     parser.add_argument(
+        "-l",
+        "--library",
+        required=True,
+        default=[],
+        metavar="LIBRARY",
+        help="link to LIBRARY",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         metavar="FILE",
         help="write wrapper to FILE [default stdout]",
-    )
-    parser.add_argument(
-        "-l",
-        "--libraries",
-        nargs="+",
-        default=[],
-        metavar="LIBRARY",
-        help="link to LIBRARY",
     )
     parser.add_argument(
         "--other-headers",
@@ -322,8 +322,7 @@ def main(givenargs=None):
     # Figure out what names will be defined by imported Python modules
     args.other_known_names = find_names_in_modules(args.modules)
 
-    if len(args.libraries) == 0:
-        msgs.warning_message("No libraries specified", cls="usage")
+    assert args.library
 
     # Fetch printer for the requested output language
     if args.output_language == "py":

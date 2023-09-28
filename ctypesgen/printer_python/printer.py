@@ -23,49 +23,67 @@ LIBRARYLOADER_PATH = join(CTYPESGEN_DIR, "libraryloader.py")
 class WrapperPrinter:
     def __init__(self, outpath, options, data):
         status_message("Writing to %s." % (outpath or "stdout"))
-
         self.file = open(outpath, "w") if outpath else sys.stdout
-        self.options = options
+        
+        try:
+            self.options = options
+            
+            # FIXME(geisserml) see below
+            if self.options.strip_build_path and self.options.strip_build_path[-1] != os.path.sep:
+                self.options.strip_build_path += os.path.sep
+            
+            if not self.options.embed_preamble and outpath:
+                self._copy_preamble_loader_files(outpath)
+            
+            self.print_header()
+            self.file.write("\n")
+            
+            self.print_preamble()
+            self.file.write("\n")
+            
+            self.print_loader()
+            self.file.write("\n")
+            
+            self.print_library(self.options.library)
+            self.print_group(self.options.modules, "modules", self.print_module)
+            
+            method_table = {
+                "function": self.print_function,
+                "macro": self.print_macro,
+                "struct": self.print_struct,
+                "typedef": self.print_typedef,
+                "variable": self.print_variable,
+                "enum": self.print_enum,
+                "constant": self.print_constant,
+                "undef": self.print_undef,
+            }
+            
+            for kind, desc in data.output_order:
+                if desc.included:
+                    method_table[kind](desc)
+                    self.file.write("\n")
+            
+            self.print_group(self.options.inserted_files, "inserted files", self.insert_file)
+        
+        finally:
+            self.file.close()
+    
+    
+    def print_loader(self):
+        self.file.write("# Begin loader\n\n")
+        if self.options.embed_preamble:
+            with open(LIBRARYLOADER_PATH, "r") as loader_file:
+                self.file.write(loader_file.read())
+        else:
+            self.file.write("from .ctypes_loader import *\n")
+        self.file.write("\n# End loader\n\n")
 
-        if self.options.strip_build_path and self.options.strip_build_path[-1] != os.path.sep:
-            self.options.strip_build_path += os.path.sep
-
-        if not self.options.embed_preamble and outpath:
-            self._copy_preamble_loader_files(outpath)
-
-        self.print_header()
-        self.file.write("\n")
-
-        self.print_preamble()
-        self.file.write("\n")
-
-        self.print_loader()
-        self.file.write("\n")
-
-        self.print_group(self.options.libraries, "libraries", self.print_library)
-        self.print_group(self.options.modules, "modules", self.print_module)
-
-        method_table = {
-            "function": self.print_function,
-            "macro": self.print_macro,
-            "struct": self.print_struct,
-            "typedef": self.print_typedef,
-            "variable": self.print_variable,
-            "enum": self.print_enum,
-            "constant": self.print_constant,
-            "undef": self.print_undef,
-        }
-
-        for kind, desc in data.output_order:
-            if desc.included:
-                method_table[kind](desc)
-                self.file.write("\n")
-
-        self.print_group(self.options.inserted_files, "inserted files", self.insert_file)
-
-    def __del__(self):
-        self.file.close()
-
+    def print_library(self, library):
+        self.file.write(
+            f'_libdirs = {self.options.runtime_libdirs}\n'
+            f'_lib = load_library("{library}", _libdirs)\n'
+        )
+    
     def print_group(self, list, name, function):
         if list:
             self.file.write("# Begin %s\n" % name)
@@ -193,25 +211,6 @@ class WrapperPrinter:
 
         shutil.copyfile(LIBRARYLOADER_PATH, join(dst, "ctypes_loader.py"))
 
-    def print_loader(self):
-        self.file.write("_libs = {}\n")
-        self.file.write("_libdirs = %s\n\n" % self.options.compile_libdirs)
-        self.file.write("# Begin loader\n\n")
-        if self.options.embed_preamble:
-            with open(LIBRARYLOADER_PATH, "r") as loader_file:
-                self.file.write(loader_file.read())
-        else:
-            self.file.write("from .ctypes_loader import *\n")
-        self.file.write("\n# End loader\n\n")
-        self.file.write(
-            "add_library_search_dirs([%s])"
-            % ", ".join([repr(d) for d in self.options.runtime_libdirs])
-        )
-        self.file.write("\n")
-
-    def print_library(self, library):
-        self.file.write('_libs["%s"] = load_library("%s")\n' % (library, library))
-
     def print_module(self, module):
         self.file.write("from %s import *\n" % module)
 
@@ -311,26 +310,19 @@ class WrapperPrinter:
     def print_fixed_function(self, function):
         self.srcinfo(function.src)
 
-        CC = "stdcall" if function.attrib.get("stdcall", False) else "cdecl"
-        use_sourcelib = function.source_library or len(self.options.libraries) == 1
-
-        if use_sourcelib:
-            lib = function.source_library if function.source_library else self.options.libraries[0]
-            self.file.write(
-                'if _libs["{L}"].has("{CN}", "{CC}"):\n'
-                '    {PN} = _libs["{L}"].get("{CN}", "{CC}")\n'.format(
-                    L=lib, CN=function.c_name(), PN=function.py_name(), CC=CC
-                )
+        # NOTE pypdfium2-ctypesgen currently does not support the windows-only stdcall convention
+        # this could theoretically be done by adding a second library handle _lib_stdcall = ctypes.WinDLL(...) on windows and using that for stdcall functions
+        # since this would cause additional complexity and/or produce an unnecessary/invalid handle for a non-stdcall library, it's not implemented ATM
+        
+        assert not function.attrib.get("stdcall", False)
+        
+        # TODO add option to skip hasattr() guard
+        self.file.write(
+            'if hasattr(_lib, "{CN}"):\n'
+            '    {PN} = _lib.{CN}\n'.format(
+                L=self.options.library, CN=function.c_name(), PN=function.py_name(),
             )
-        else:
-            self.file.write(
-                "for _lib in _libs.values():\n"
-                '    if not _lib.has("{CN}", "{CC}"):\n'
-                "        continue\n"
-                '    {PN} = _lib.get("{CN}", "{CC}")\n'.format(
-                    CN=function.c_name(), PN=function.py_name(), CC=CC
-                )
-            )
+        )
 
         # Argument types
         self.file.write(
@@ -346,74 +338,42 @@ class WrapperPrinter:
             self.file.write(
                 "\n    %s.errcheck = %s" % (function.py_name(), function.errcheck.py_string())
             )
-
-        if not use_sourcelib:
-            self.file.write("\n    break")
-
+    
     def print_variadic_function(self, function):
-        CC = "stdcall" if function.attrib.get("stdcall", False) else "cdecl"
+        # TODO see if we can remove the _variadic_function wrapper and use just plain ctypes
+        
+        assert not function.attrib.get("stdcall", False)
 
         self.srcinfo(function.src)
-        if function.source_library:
-            self.file.write(
-                'if _libs["{L}"].has("{CN}", "{CC}"):\n'
-                '    _func = _libs["{L}"].get("{CN}", "{CC}")\n'
-                "    _restype = {RT}\n"
-                "    _errcheck = {E}\n"
-                "    _argtypes = [{t0}]\n"
-                "    {PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
-                    L=function.source_library,
-                    CN=function.c_name(),
-                    RT=function.restype.py_string(),
-                    E=function.errcheck.py_string(),
-                    t0=", ".join([a.py_string() for a in function.argtypes]),
-                    PN=function.py_name(),
-                    CC=CC,
-                )
+        self.file.write(
+            'if hasattr(_lib, {CN}):\n'
+            '    _func = _lib.{CN}\n'
+            "    _restype = {RT}\n"
+            "    _errcheck = {E}\n"
+            "    _argtypes = [{t0}]\n"
+            "    {PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
+                L=self.options.library,
+                CN=function.c_name(),
+                RT=function.restype.py_string(),
+                E=function.errcheck.py_string(),
+                t0=", ".join([a.py_string() for a in function.argtypes]),
+                PN=function.py_name(),
             )
-        else:
-            self.file.write(
-                "for _lib in _libs.values():\n"
-                '    if _lib.has("{CN}", "{CC}"):\n'
-                '        _func = _lib.get("{CN}", "{CC}")\n'
-                "        _restype = {RT}\n"
-                "        _errcheck = {E}\n"
-                "        _argtypes = [{t0}]\n"
-                "        {PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
-                    CN=function.c_name(),
-                    RT=function.restype.py_string(),
-                    E=function.errcheck.py_string(),
-                    t0=", ".join([a.py_string() for a in function.argtypes]),
-                    PN=function.py_name(),
-                    CC=CC,
-                )
-            )
+        )
 
     def print_variable(self, variable):
         self.srcinfo(variable.src)
-        if variable.source_library:
-            self.file.write(
-                "try:\n"
-                '    {PN} = ({PS}).in_dll(_libs["{L}"], "{CN}")\n'
-                "except:\n"
-                "    pass\n".format(
-                    PN=variable.py_name(),
-                    PS=variable.ctype.py_string(),
-                    L=variable.source_library,
-                    CN=variable.c_name(),
-                )
+        self.file.write(
+            "try:\n"
+            '    {PN} = ({PS}).in_dll(_lib, "{CN}")\n'
+            "except:\n"
+            "    pass\n".format(
+                PN=variable.py_name(),
+                PS=variable.ctype.py_string(),
+                L=self.options.library,
+                CN=variable.c_name(),
             )
-        else:
-            self.file.write(
-                "for _lib in _libs.values():\n"
-                "    try:\n"
-                '        {PN} = ({PS}).in_dll(_lib, "{CN}")\n'
-                "        break\n"
-                "    except:\n"
-                "        pass\n".format(
-                    PN=variable.py_name(), PS=variable.ctype.py_string(), CN=variable.c_name()
-                )
-            )
+        )
 
     def print_macro(self, macro):
         if macro.params:
