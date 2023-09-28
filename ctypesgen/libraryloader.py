@@ -24,7 +24,7 @@ def _find_library(libname, libdirs):
         for pat in patterns:
             test_path = dir / pat.format(libname)
             if test_path.is_file():
-                return test_path
+                return str(test_path)
 
 
 def load_library(libname, libdirs):
