@@ -270,6 +270,12 @@ def main(givenargs=None):
         action = "store_true",
         help = "Skip comments stating where members are defined (header, line)."
     )
+    parser.add_argument(
+        "--no-symbol-guards",
+        dest="guard_symbols",
+        action="store_false",
+        help="Do not add hasattr(_lib, ...) if-guards; assume all symbols are present. Use when input headers and runtime binary are guaranteed to match.",
+    )
 
     # Error options
     parser.add_argument(

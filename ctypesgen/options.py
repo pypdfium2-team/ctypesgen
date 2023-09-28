@@ -9,6 +9,7 @@ for convenience.
 import argparse
 import copy
 
+# FIXME order does not match __main__.py
 default_values = {
     "other_headers": [],
     "modules": [],
@@ -42,6 +43,7 @@ default_values = {
     "embed_preamble": True,
     "no_srcinfo": False,
     "no_load_library": False,
+    "guard_symbols": True,
 }
 
 

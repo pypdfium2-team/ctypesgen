@@ -4,6 +4,7 @@ import sys
 import time
 import shutil
 from os.path import join
+from textwrap import indent
 
 from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
 from ctypesgen.expressions import ExpressionNode
@@ -313,55 +314,59 @@ class WrapperPrinter:
         # NOTE pypdfium2-ctypesgen currently does not support the windows-only stdcall convention
         # this could theoretically be done by adding a second library handle _lib_stdcall = ctypes.WinDLL(...) on windows and using that for stdcall functions
         # since this would cause additional complexity and/or produce an unnecessary/invalid handle for a non-stdcall library, it's not implemented ATM
-        
         assert not function.attrib.get("stdcall", False)
         
-        # TODO add option to skip hasattr() guard
-        self.file.write(
-            'if hasattr(_lib, "{CN}"):\n'
-            '    {PN} = _lib.{CN}\n'.format(
-                L=self.options.library, CN=function.c_name(), PN=function.py_name(),
+        pad = " "*4 if self.options.guard_symbols else ""
+        if self.options.guard_symbols:
+            self.file.write(
+                'if hasattr(_lib, "{CN}"):\n'.format(CN=function.c_name())
             )
-        )
-
-        # Argument types
-        self.file.write(
-            "    %s.argtypes = [%s]\n"
-            % (function.py_name(), ", ".join([a.py_string() for a in function.argtypes]))
-        )
-
-        # Return value
-        self.file.write(
-            "    %s.restype = %s" % (function.py_name(), function.restype.py_string())
-        )
+        
+        self.file.write(indent(
+            '{PN} = _lib.{CN}\n'.format(L=self.options.library, CN=function.c_name(), PN=function.py_name()) +
+            
+            "%s.argtypes = [%s]\n"
+            % (function.py_name(), ", ".join([a.py_string() for a in function.argtypes])) +
+            
+            "%s.restype = %s" % (function.py_name(), function.restype.py_string()),
+            
+            prefix=pad,
+        ))
         if function.errcheck:
             self.file.write(
-                "\n    %s.errcheck = %s" % (function.py_name(), function.errcheck.py_string())
+                "\n" + pad + "%s.errcheck = %s" % (function.py_name(), function.errcheck.py_string())
             )
     
     def print_variadic_function(self, function):
         # TODO see if we can remove the _variadic_function wrapper and use just plain ctypes
         
         assert not function.attrib.get("stdcall", False)
-
         self.srcinfo(function.src)
-        self.file.write(
-            'if hasattr(_lib, {CN}):\n'
-            '    _func = _lib.{CN}\n'
-            "    _restype = {RT}\n"
-            "    _errcheck = {E}\n"
-            "    _argtypes = [{t0}]\n"
-            "    {PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
+        
+        pad = " "*4 if self.options.guard_symbols else ""
+        if self.options.guard_symbols:
+            self.file.write(
+                'if hasattr(_lib, {CN}):\n'.format(CN=function.c_name())
+            )
+        
+        self.file.write(indent(
+            '_func = _lib.{CN}\n'
+            "_restype = {RT}\n"
+            "_errcheck = {E}\n"
+            "_argtypes = [{t0}]\n"
+            "{PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
                 L=self.options.library,
                 CN=function.c_name(),
                 RT=function.restype.py_string(),
                 E=function.errcheck.py_string(),
                 t0=", ".join([a.py_string() for a in function.argtypes]),
                 PN=function.py_name(),
-            )
-        )
+            ),
+            prefix=pad,
+        ))
 
     def print_variable(self, variable):
+        # TODO consider to remove try/except, or use only if guard_symbols is True
         self.srcinfo(variable.src)
         self.file.write(
             "try:\n"
@@ -384,6 +389,7 @@ class WrapperPrinter:
     def print_simple_macro(self, macro):
         # NOTE(geisserml) previously, macros had a try/except wrapper - we removed it
         # broken macros should be skipped explicitly and the respective issue may be reported
+        # -> TODO consider re-introducing try/except if guard_symbols is True
         self.srcinfo(macro.src, inline=True)
         self.file.write(
             "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
