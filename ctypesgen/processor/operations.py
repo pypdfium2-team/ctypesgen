@@ -263,7 +263,7 @@ def find_source_libraries(data, opts):
 
     try:
         library = libraryloader.load_library(opts.library, opts.compile_libdirs)
-    except RuntimeError:
+    except Exception:
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
