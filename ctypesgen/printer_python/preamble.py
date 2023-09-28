@@ -1,6 +1,11 @@
+# TODO
+# - add c_ptrdiff_t and _variadic_function only on an as-needed basis
+# - check if we can remove the _variadic_function wrapper entirely and use plain ctypes instead
+# - Avoid ctypes glob import (pollutes namespace)
+
+
 import ctypes
 from ctypes import *  # noqa: F401, F403
-
 
 def _get_ptrdiff_t():
 
@@ -18,12 +23,9 @@ def _get_ptrdiff_t():
 
     return c_ptrdiff_t
 
-
 c_ptrdiff_t = _get_ptrdiff_t()
 
 
-# ctypes doesn't have direct support for variadic functions, so we have to write
-# our own wrapper class
 class _variadic_function(object):
     def __init__(self, func, restype, argtypes, errcheck):
         self.func = func

@@ -18,6 +18,7 @@ LIBRARYLOADER_PATH = join(CTYPESGEN_DIR, "libraryloader.py")
 
 
 # TODO(geisserml) think out a proper concept for line breaks
+# TODO(geisserml) consider to remove or rewrite --no-embed-preamble
 
 class WrapperPrinter:
     def __init__(self, outpath, options, data):
