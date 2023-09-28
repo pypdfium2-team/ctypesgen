@@ -282,17 +282,6 @@ def main(givenargs=None):
         help="Choose output language",
     )
     parser.add_argument(
-        "-P",
-        "--strip-prefix",
-        dest="strip_prefixes",
-        default=[],
-        action="append",
-        metavar="REGEXPR",
-        help="Regular expression to match prefix to strip from all symbols.  "
-        "Multiple instances of this option will be combined into a single "
-        "expression doing something like '(expr1|expr2|expr3)'.",
-    )
-    parser.add_argument(
         "--no-srcinfo",
         action = "store_true",
         help = "Skip comments stating where members are defined (header, line)."

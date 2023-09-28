@@ -39,7 +39,6 @@ default_values = {
     "no_gnu_types": False,
     "no_python_types": False,
     "debug_level": 0,
-    "strip_prefixes": [],
     "embed_preamble": True,
     "no_srcinfo": False,
     "no_load_library": False,
