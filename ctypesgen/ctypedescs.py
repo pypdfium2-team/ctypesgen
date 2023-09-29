@@ -263,6 +263,7 @@ class CtypesFunction(CtypesType):
         self.restype = restype
         self.errcheck = CtypesNoErrorCheck()
 
+        # QUESTION(geisserml) is this still correct?
         # Don't allow POINTER(None) (c_void_p) as a restype... causes errors
         # when ctypes automagically returns it as an int.
         # Instead, convert to POINTER(c_void).  c_void is not a ctypes type,
@@ -272,7 +273,8 @@ class CtypesFunction(CtypesType):
             and type(self.restype.destination) == CtypesSimple
             and self.restype.destination.name == "void"
         ):
-            # we will provide a means of converting this to a c_void_p
+            # use POINTER(c_ubyte) as restype but cast to c_void_p using errcheck
+            # an example where this is used is pdfium's FPDFBitmap_GetBuffer()
             self.restype = CtypesPointer(CtypesSpecial("c_ubyte"), ())
             self.errcheck = CtypesPointerCast(CtypesSpecial("c_void_p"))
 

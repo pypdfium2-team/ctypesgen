@@ -82,7 +82,8 @@ class WrapperPrinter:
     def print_library(self, library):
         self.file.write(
             f'_libdirs = {self.options.runtime_libdirs}\n'
-            f'_lib = load_library("{library}", _libdirs)\n'
+            f'_libpath = _find_library("{library}", _libdirs)\n'
+            f'_lib = ctypes.CDLL(_libpath)\n'
         )
     
     def print_group(self, list, name, function):
@@ -279,10 +280,7 @@ class WrapperPrinter:
             self.file.write(tab + "]\n")
         
         # slots must be defined *in the class body* to prevent setting nonexistent fields
-        self.file.write(tab + "__slots__ = [\n")
-        for name, ctype in struct.members:
-            self.file.write(tab*2 + "'{}',\n".format(name))
-        self.file.write(tab + "]\n")
+        self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}\n")
 
         # fields may contain references to the struct itself, so they must be defined below,
         # causing some unavoidable redundancy with slots
