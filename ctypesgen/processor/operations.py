@@ -6,6 +6,7 @@ ctypesgen.processor.pipeline calls the operations module.
 
 import re
 import os
+import ctypes
 import keyword
 
 from ctypesgen import libraryloader
@@ -262,7 +263,8 @@ def find_source_libraries(data, opts):
         return
 
     try:
-        library = libraryloader.load_library(opts.library, opts.compile_libdirs)
+        _libpath = libraryloader._find_library(opts.library, opts.compile_libdirs)
+        library = ctypes.CDLL(_libpath)
     except Exception:
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
