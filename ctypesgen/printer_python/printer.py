@@ -321,18 +321,14 @@ class WrapperPrinter:
             )
         
         self.file.write(indent(
-            '{PN} = _lib.{CN}\n'.format(L=self.options.library, CN=function.c_name(), PN=function.py_name()) +
-            
-            "%s.argtypes = [%s]\n"
-            % (function.py_name(), ", ".join([a.py_string() for a in function.argtypes])) +
-            
-            "%s.restype = %s" % (function.py_name(), function.restype.py_string()),
-            
+            '{PN} = _lib.{CN}\n'.format(CN=function.c_name(), PN=function.py_name()) +
+            "{PN}.argtypes = [{ATS}]\n".format(PN=function.py_name(), ATS=", ".join([a.py_string() for a in function.argtypes])) +
+            "{PN}.restype = {RT}".format(PN=function.py_name(), RT=function.restype.py_string()),
             prefix=pad,
         ))
         if function.errcheck:
             self.file.write(
-                "\n" + pad + "%s.errcheck = %s" % (function.py_name(), function.errcheck.py_string())
+                "\n" + pad + "{PN}.errcheck = {EC}".format(PN=function.py_name(), EC=function.errcheck.py_string())
             )
     
     def print_variadic_function(self, function):
@@ -351,13 +347,12 @@ class WrapperPrinter:
             '_func = _lib.{CN}\n'
             "_restype = {RT}\n"
             "_errcheck = {E}\n"
-            "_argtypes = [{t0}]\n"
+            "_argtypes = [{ATS}]\n"
             "{PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
-                L=self.options.library,
                 CN=function.c_name(),
                 RT=function.restype.py_string(),
                 E=function.errcheck.py_string(),
-                t0=", ".join([a.py_string() for a in function.argtypes]),
+                ATS=", ".join([a.py_string() for a in function.argtypes]),
                 PN=function.py_name(),
             ),
             prefix=pad,
@@ -373,7 +368,6 @@ class WrapperPrinter:
             "    pass\n".format(
                 PN=variable.py_name(),
                 PS=variable.ctype.py_string(),
-                L=self.options.library,
                 CN=variable.c_name(),
             )
         )
