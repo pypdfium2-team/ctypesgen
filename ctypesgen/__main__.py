@@ -2,6 +2,7 @@
 Command-line interface for ctypesgen
 """
 
+import sys
 import argparse
 
 from ctypesgen import (
@@ -31,6 +32,18 @@ def find_names_in_modules(modules):
 def main(givenargs=None):
     
     parser = argparse.ArgumentParser()
+    
+    if sys.version_info < (3, 8):  # compat, untested
+        
+        class ExtendAction(argparse.Action):
+            def __call__(self, parser, namespace, values, option_string=None):
+                items = getattr(namespace, self.dest) or []
+                items.extend(values)
+                setattr(namespace, self.dest, items)
+        
+        parser.register('action', 'extend', ExtendAction)
+    
+    # Version
     parser.add_argument(
         "--version",
         action="version",
@@ -44,6 +57,7 @@ def main(givenargs=None):
         dest="headers",
         required=True,
         nargs="+",
+        action="extend",
         default=[],
         help="Sequence of header files",
     )
@@ -63,6 +77,7 @@ def main(givenargs=None):
     parser.add_argument(
         "--other-headers",
         nargs="+",
+        action="extend",
         default=[],
         metavar="HEADER",
         help="include system header HEADER (e.g. stdio.h or stdlib.h)",
@@ -73,6 +88,7 @@ def main(givenargs=None):
         "--link-modules",
         dest="modules",
         nargs="+",
+        action="extend",
         default=[],
         metavar="MODULE",
         help="use symbols from Python module MODULE",
@@ -82,6 +98,7 @@ def main(givenargs=None):
         "--includedirs",
         dest="include_search_paths",
         nargs="+",
+        action="extend",
         default=[],
         metavar="INCLUDEDIR",
         help="add INCLUDEDIR as a directory to search for headers",
@@ -90,6 +107,7 @@ def main(givenargs=None):
         "-L",
         "--universal-libdirs",
         nargs="+",
+        action="extend",
         default=[],
         metavar="LIBDIR",
         help="Add LIBDIR to the search path (both compile-time and run-time)",
@@ -97,6 +115,7 @@ def main(givenargs=None):
     parser.add_argument(
         "--compile-libdirs",
         nargs="+",
+        action="extend",
         default=[],
         metavar="LIBDIR",
         help="Add LIBDIR to the compile-time library search path.",
@@ -104,6 +123,7 @@ def main(givenargs=None):
     parser.add_argument(
         "--runtime-libdirs",
         nargs="+",
+        action="extend",
         default=[],
         metavar="LIBDIR",
         help="Add LIBDIR to the run-time library search path.",
@@ -139,6 +159,7 @@ def main(givenargs=None):
         "-D",
         "--define",
         nargs="+",
+        action="extend",
         default=[],
         dest="cpp_defines",
         metavar="MACRO",
@@ -148,6 +169,7 @@ def main(givenargs=None):
         "-U",
         "--undefine",
         nargs="+",
+        action="extend",
         default=[],
         dest="cpp_undefines",
         metavar="NAME",
@@ -196,6 +218,7 @@ def main(givenargs=None):
     parser.add_argument(
         "--include-symbols",
         nargs="+",
+        action="extend",
         default=[],
         metavar="REGEXPR",
         help="Regular expression for symbols to always include.  Multiple "
@@ -205,6 +228,7 @@ def main(givenargs=None):
     parser.add_argument(
         "--exclude-symbols",
         nargs="+",
+        action="extend",
         default=[],
         metavar="REGEXPR",
         help="Regular expression for symbols to exclude.  Multiple instances "
@@ -253,6 +277,7 @@ def main(givenargs=None):
         "--insert-files",
         dest="inserted_files",
         nargs="+",
+        action="extend",
         default=[],
         metavar="FILENAME",
         help="Add the contents of FILENAME to the end of the wrapper file.",
