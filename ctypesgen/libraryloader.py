@@ -25,5 +25,5 @@ def _find_library(libname, libdirs):
     
     libpath = ctypes.util.find_library(libname)
     if not libpath:
-        raise RuntimeError(f"Library '{libname} could not be found in {libdirs} or system.'")
+        raise ImportError(f"Library '{libname} could not be found in {libdirs} or system.'")
     return libpath
