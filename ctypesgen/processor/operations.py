@@ -251,7 +251,7 @@ def fix_conflicting_names(data, opts):
 
 def find_source_libraries(data, opts):
     
-    # NOTE is_available is not currently used throughout ctypesgen because it's not clear what we should do with the info. If input headers and compile-time binary don't match, the caller has probably made a mistake. And for mismatched runtime binary, the compile-time info isn't useful, so we provide global symbol guards for that.
+    # NOTE is_available is not currently used throughout ctypesgen because it's not clear what we should do with the info. If input headers and compile-time binary don't match, the caller has probably made a mistake. As for mismatched runtime binary a) the compile-time info isn't necessarily useful, instead we offer global symbol guards to handle this b) this is discouraged for ABI safety reasons.
     
     all_symbols = set(data.functions + data.variables)
     # default assumption: all symbols available
