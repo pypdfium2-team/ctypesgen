@@ -41,7 +41,7 @@ from ctypesgen.processor.operations import (
     automatically_typedef_structs,
     filter_by_regexes_exclude,
     filter_by_regexes_include,
-    find_source_libraries,
+    check_symbols,
     fix_conflicting_names,
     remove_descriptions_in_system_headers,
     remove_macros,
@@ -63,7 +63,7 @@ def process(data, options):
     if options.output_language == "python":
         # this function is python specific
         fix_conflicting_names(data, options)
-    find_source_libraries(data, options)
+    check_symbols(data, options)
 
     calculate_final_inclusion(data, options)
     print_errors_encountered(data, options)

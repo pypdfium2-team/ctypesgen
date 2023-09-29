@@ -249,15 +249,8 @@ def fix_conflicting_names(data, opts):
                     )
 
 
-def find_source_libraries(data, opts):
+def check_symbols(data, opts):
     
-    # NOTE is_available is not currently used throughout ctypesgen because it's not clear what we should do with the info. If input headers and compile-time binary don't match, the caller has probably made a mistake. As for mismatched runtime binary a) the compile-time info isn't necessarily useful, instead we offer global symbol guards to handle this b) this is discouraged for ABI safety reasons.
-    
-    all_symbols = set(data.functions + data.variables)
-    # default assumption: all symbols available
-    for symbol in all_symbols:
-        symbol.is_available = True
-
     if opts.no_load_library:
         status_message(f"Bypass load_library '{opts.library}'.")
         return
@@ -269,11 +262,7 @@ def find_source_libraries(data, opts):
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
-    missing_symbols = set()
-    for symbol in all_symbols:
-        symbol.is_available = hasattr(library, symbol.c_name())
-        if not symbol.is_available:
-            missing_symbols.add(symbol)
-    
+    all_symbols = set(data.functions + data.variables)
+    missing_symbols = {s for s in all_symbols if not hasattr(library, s.c_name())}
     if missing_symbols:
         warning_message(f"Some symbols could not be found - binary/headers mismatch suspected. {missing_symbols}", cls="other")
