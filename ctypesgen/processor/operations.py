@@ -250,7 +250,7 @@ def fix_conflicting_names(data, opts):
 
 def find_source_libraries(data, opts):
     
-    # NOTE is_available is not currently used throughout ctypesgen because it's not clear what we should do with the info - we already have hasattr() if-guards anyway. And what is more, in practice, binary and headers should always match, otherwise the caller has probably made a mistake.
+    # NOTE is_available is not currently used throughout ctypesgen because it's not clear what we should do with the info. If input headers and compile-time binary don't match, the caller has probably made a mistake. And for mismatched runtime binary, the compile-time info isn't useful, so we provide global symbol guards for that.
     
     all_symbols = set(data.functions + data.variables)
     # default assumption: all symbols available
