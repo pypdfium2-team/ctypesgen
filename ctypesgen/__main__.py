@@ -129,6 +129,12 @@ def main(givenargs=None):
         help="Add LIBDIR to the run-time library search path.",
     )
     parser.add_argument(
+        "--no-system-libsearch",
+        action="store_false",
+        dest="allow_system_search",
+        help="Deactivate fallback system library search; mandate that the library be contained in the given libdirs instead."
+    )
+    parser.add_argument(
         "--no-embed-preamble",
         action="store_false",
         dest="embed_preamble",

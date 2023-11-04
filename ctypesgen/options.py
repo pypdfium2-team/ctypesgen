@@ -44,6 +44,7 @@ default_values = {
     "no_srcinfo": False,
     "no_load_library": False,
     "guard_symbols": True,
+    "allow_system_search": True,
 }
 
 
