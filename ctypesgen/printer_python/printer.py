@@ -45,7 +45,7 @@ class WrapperPrinter:
             self.print_loader()
             self.file.write("\n")
             
-            self.print_library(self.options.library, self.options.allow_system_search)
+            self.print_library(self.options)
             self.print_group(self.options.modules, "modules", self.print_module)
             
             method_table = {
@@ -79,12 +79,16 @@ class WrapperPrinter:
             self.file.write("from .ctypes_loader import *\n")
         self.file.write("\n# End loader\n\n")
 
-    def print_library(self, library, allow_system_search):
-        self.file.write(
-            f'_libdirs = {self.options.runtime_libdirs}\n' +
-            f'_allow_system_search = {allow_system_search}\n' +
-            f'_libpath = _find_library("{library}", _libdirs, _allow_system_search)\n' +
-            f'_lib = ctypes.CDLL(_libpath)\n'
+    def print_library(self, opts):
+        self.file.write(f"""\
+_loader_info = dict(
+    libname = "{opts.library}",
+    libdirs = {opts.runtime_libdirs},
+    allow_system_search = {opts.allow_system_search},
+)
+_loader_info["libpath"] = _find_library(**_loader_info)
+_lib = ctypes.CDLL(_loader_info["libpath"])
+"""
         )
     
     def print_group(self, list, name, function):
