@@ -76,11 +76,10 @@ class WrapperPrinter:
             with open(LIBRARYLOADER_PATH, "r") as loader_file:
                 self.file.write(loader_file.read())
         else:
-            self.file.write("from .ctypes_loader import *\n")
-        self.file.write("\n# End loader\n\n")
+            self.file.write("from .ctypes_loader import *\n\n")
 
     def print_library(self, opts):
-        self.file.write(f"""\
+        self.file.write(f"""
 _loader_info = dict(
     libname = "{opts.library}",
     libdirs = {opts.runtime_libdirs},
@@ -88,6 +87,7 @@ _loader_info = dict(
 )
 _loader_info["libpath"] = _find_library(**_loader_info)
 _lib = ctypes.CDLL(_loader_info["libpath"])
+\n# End loader\n
 """
         )
     
@@ -164,7 +164,7 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         template_file.close()
 
     def print_preamble(self):
-        self.file.write("# Begin preamble for Python\n\n")
+        self.file.write("# Begin preamble\n\n")
         if self.options.embed_preamble:
             with open(PREAMBLE_PATH, "r") as preamble_file:
                 filecontent = preamble_file.read()
