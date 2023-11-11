@@ -33,5 +33,3 @@ def _find_library(libname, libdirs, allow_system_search):
         return libpath
     else:
         raise ImportError(f"Could not find library '{libname}' in libdirs {libdirs} (system search disabled)")
-    
-    assert False, "unreached"

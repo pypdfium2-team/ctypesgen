@@ -79,16 +79,18 @@ class WrapperPrinter:
             self.file.write("from .ctypes_loader import *\n\n")
 
     def print_library(self, opts):
-        self.file.write(f"""
-_loader_info = dict(
-    libname = "{opts.library}",
-    libdirs = {opts.runtime_libdirs},
-    allow_system_search = {opts.allow_system_search},
-)
+        loader_info = dict(
+            libname = opts.library,
+            libdirs = opts.runtime_libdirs,
+            allow_system_search = opts.allow_system_search,
+        )
+        self.file.write("""
+_loader_info = %s
 _loader_info["libpath"] = _find_library(**_loader_info)
+assert _loader_info["libpath"], f"Could not find library with config {_loader_info}"
 _lib = ctypes.CDLL(_loader_info["libpath"])
 \n# End loader\n
-"""
+""" % (loader_info, )
         )
     
     def print_group(self, list, name, function):
