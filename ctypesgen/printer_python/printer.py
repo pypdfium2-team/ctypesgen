@@ -52,6 +52,7 @@ class WrapperPrinter:
                 "function": self.print_function,
                 "macro": self.print_macro,
                 "struct": self.print_struct,
+                "struct-body": self.print_struct_members,
                 "typedef": self.print_typedef,
                 "variable": self.print_variable,
                 "enum": self.print_enum,
@@ -244,11 +245,10 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
     def print_struct(self, struct):
         self.srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
-        self.file.write("class %s_%s (%s):\n" % (struct.variety, struct.tag, base))
-        tab = " " * 4
+        self.file.write("class %s_%s(%s):\n" "    pass" % (struct.variety, struct.tag, base))
 
+    def print_struct_members(self, struct):
         if struct.opaque:
-            self.file.write(tab + "pass")
             return
 
         # is this supposed to be packed?
@@ -259,7 +259,7 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
             if isinstance(aligned, ExpressionNode):
                 # TODO: for non-constant expression nodes, this will fail:
                 aligned = aligned.evaluate(None)
-            self.file.write(tab + "_pack_ = {}\n".format(aligned))
+            self.file.write("{}_{}._pack_ = {}\n".format(struct.variety, struct.tag, aligned))
 
         # handle unnamed fields.
         unnamed_fields = []
@@ -280,26 +280,26 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
                     unnamed_fields.append(name)
                 struct.members[mi] = mem
 
-        if len(unnamed_fields) > 0:
-            self.file.write(tab + "_anonymous_ = [\n")
-            for name in unnamed_fields:
-                self.file.write(tab*2 + "'{}',\n".format(name))
-            self.file.write(tab + "]\n")
-        
-        # slots must be defined *in the class body* to prevent setting nonexistent fields
-        self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}\n")
+        self.file.write("%s_%s.__slots__ = [\n" % (struct.variety, struct.tag))
+        for name, ctype in struct.members:
+            self.file.write("    '%s',\n" % name)
+        self.file.write("]\n")
 
-        # fields may contain references to the struct itself, so they must be defined below,
-        # causing some unavoidable redundancy with slots
+        if len(unnamed_fields) > 0:
+            self.file.write("%s_%s._anonymous_ = [\n" % (struct.variety, struct.tag))
+            for name in unnamed_fields:
+                self.file.write("    '%s',\n" % name)
+            self.file.write("]\n")
+
         self.file.write("%s_%s._fields_ = [\n" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
                 self.file.write(
-                    tab + "('%s', %s, %s),\n"
+                    "    ('%s', %s, %s),\n"
                     % (name, ctype.py_string(), ctype.bitfield.py_string(False))
                 )
             else:
-                self.file.write(tab + "('%s', %s),\n" % (name, ctype.py_string()))
+                self.file.write("    ('%s', %s),\n" % (name, ctype.py_string()))
         self.file.write("]")
 
     def print_enum(self, enum):
