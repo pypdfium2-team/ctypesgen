@@ -33,7 +33,7 @@ default_values = {
     "other_known_names": [],
     "include_macros": True,
     "include_undefs": True,
-    "libraries": [],
+    "library": None,
     "strip_build_path": None,
     "output_language": "py",
     "no_stddef_types": False,

@@ -105,13 +105,13 @@ class StdlibTest(unittest.TestCase):
         header_str = "#include <stdlib.h>\n"
         if sys.platform == "win32":
             # pick something from %windir%\system32\msvc*dll that include stdlib
-            libraries = ["msvcrt.dll"]
-            libraries = ["msvcrt"]
+            library = "msvcrt.dll"
+            library = "msvcrt"
         elif sys.platform.startswith("linux"):
-            libraries = ["libc.so.6"]
+            library = "c"  # libc
         else:
-            libraries = ["libc"]
-        cls.module, _ = generate(header_str, libraries=libraries, all_headers=True)
+            library = "libc"
+        cls.module, _ = generate(header_str, library=library, all_headers=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -2038,13 +2038,13 @@ class MathTest(unittest.TestCase):
 """
         if sys.platform == "win32":
             # pick something from %windir%\system32\msvc*dll that include stdlib
-            libraries = ["msvcrt.dll"]
-            libraries = ["msvcrt"]
+            library = "msvcrt.dll"
+            library = "msvcrt"
         elif sys.platform.startswith("linux"):
-            libraries = ["libm.so.6"]
+            library = "m"  # libm
         else:
-            libraries = ["libc"]
-        cls.module, _ = generate(header_str, libraries=libraries, all_headers=True)
+            library = "libc"
+        cls.module, _ = generate(header_str, library=library, all_headers=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -2414,7 +2414,7 @@ class MainTest(unittest.TestCase):
 
     def test_invalid_option(self):
         """Test that script at least generates a help"""
-        o, e, c = self._exec(["random_header.h", "--oh-what-a-goose-i-am"])
+        o, e, c = self._exec(["-l", "placeholder", "--headers", "random_header.h", "--oh-what-a-goose-i-am"])
         self.assertEqual(c, 2)
         self.assertEqual(o.decode(), "")
         self.assertEqual(

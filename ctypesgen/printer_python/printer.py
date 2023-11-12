@@ -77,7 +77,7 @@ class WrapperPrinter:
             with open(LIBRARYLOADER_PATH, "r") as loader_file:
                 self.file.write(loader_file.read())
         else:
-            self.file.write("from .ctypes_loader import *\n\n")
+            self.file.write("from .ctypes_loader import _find_library\n\n")
 
     def print_library(self, opts):
         loader_info = dict(

@@ -226,6 +226,7 @@ def _generate_common(file_name, common_lib, embed_preamble=True):
     test_options.include_search_paths = [COMMON_DIR]
     test_options.library = common_lib
     test_options.compile_libdirs = [COMMON_DIR]
+    test_options.runtime_libdirs = [COMMON_DIR]
     test_options.embed_preamble = embed_preamble
     if embed_preamble:
         output = f"{COMMON_DIR}/{file_name}.py"
