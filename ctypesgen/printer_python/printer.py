@@ -245,10 +245,12 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
     def print_struct(self, struct):
         self.srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
-        self.file.write("class %s_%s(%s):\n" "    pass" % (struct.variety, struct.tag, base))
-
-    def print_struct_members(self, struct):
+        
+        self.file.write(f"class {struct.variety}_{struct.tag} ({base}):\n")
+        tab = " "*4
+        
         if struct.opaque:
+            self.file.write(tab + "pass")
             return
 
         # is this supposed to be packed?
@@ -259,7 +261,7 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
             if isinstance(aligned, ExpressionNode):
                 # TODO: for non-constant expression nodes, this will fail:
                 aligned = aligned.evaluate(None)
-            self.file.write("{}_{}._pack_ = {}\n".format(struct.variety, struct.tag, aligned))
+            self.file.write(tab + f"_pack_ = {aligned}\n")
 
         # handle unnamed fields.
         unnamed_fields = []
@@ -279,18 +281,14 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
                 if type(mem[1]) is CtypesStruct:
                     unnamed_fields.append(name)
                 struct.members[mi] = mem
-
-        self.file.write("%s_%s.__slots__ = [\n" % (struct.variety, struct.tag))
-        for name, ctype in struct.members:
-            self.file.write("    '%s',\n" % name)
-        self.file.write("]\n")
-
+        
         if len(unnamed_fields) > 0:
-            self.file.write("%s_%s._anonymous_ = [\n" % (struct.variety, struct.tag))
-            for name in unnamed_fields:
-                self.file.write("    '%s',\n" % name)
-            self.file.write("]\n")
+            self.file.write(tab + f"_anonymous_ = {unnamed_fields}\n")
 
+        self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}\n")
+
+    def print_struct_members(self, struct):
+        # Fields must be defined indepedent of the actual class to handle self-references, cyclic struct references and forward declarations
         self.file.write("%s_%s._fields_ = [\n" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
