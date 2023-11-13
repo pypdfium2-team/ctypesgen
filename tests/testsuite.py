@@ -2024,7 +2024,6 @@ typedef struct {
         self.assertEqual(PBAR0._type_, BAR0)
 
 
-# FIXME test class broken with "ZeroDivisionError: float division by zero", not sure why
 # FIXME ctypesgen includes a lot of __* garbage from <math.h>. This also seems to trigger a "Some symbols could not be found" warning.
 class MathTest(unittest.TestCase):
     """Based on math_functions.py"""
@@ -2042,7 +2041,9 @@ class MathTest(unittest.TestCase):
             library = "m"  # libm
         else:
             library = "libc"
-        cls.module, _ = generate(header_str, library=library, all_headers=True)
+        # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol. Luckily, the macro is not used otherwise across the header, so this works.
+        # TODO add new --replace-symbol and --add-imports options so the caller could do things like NAN=math.nan instead to avoid breakage in dependent members
+        cls.module, _ = generate(header_str, library=library, all_headers=True, exclude_symbols=["NAN"])
 
     @classmethod
     def tearDownClass(cls):
