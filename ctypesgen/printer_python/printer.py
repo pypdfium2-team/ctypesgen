@@ -88,9 +88,13 @@ class WrapperPrinter:
         )
         self.file.write("""
 _loader_info = %s
-_loader_info["libpath"] = _find_library(**_loader_info)
-assert _loader_info["libpath"], f"Could not find library with config {_loader_info}"
-_lib = ctypes.CDLL(_loader_info["libpath"])
+if _loader_info["libname"]:
+    _loader_info["libpath"] = _find_library(**_loader_info)
+    assert _loader_info["libpath"], f"Could not find library with config {_loader_info}"
+    _lib = ctypes.CDLL(_loader_info["libpath"])
+else:
+    # FIXME ctypesgen's test suite currently relies on this, but it isn't suitable for pratice, really
+    warnings.warn("No library name specified. Assuming pure headers without binary symbols.")
 \n# End loader\n
 """ % (loader_info, )
         )
