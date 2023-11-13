@@ -33,7 +33,7 @@ def _find_library(libname, libdirs, allow_system_search):
     
     if allow_system_search:
         if libdirs:
-            warnings.warn(f"Could not find library '{libname}' in libdirs {libdirs}, searching system...")
+            warnings.warn(f"Could not find library '{libname}' in libdirs {libdirs}, falling back to system")
         libpath = ctypes.util.find_library(libname)
         if not libpath:
             raise ImportError(f"Could not find library '{libname}' in system")
