@@ -2405,9 +2405,7 @@ class MainTest(unittest.TestCase):
         """Test that script at least generates a help"""
         o, e, c = self._exec(["--help"])
         self.assertEqual(c, 0)
-        self.assertEqual(
-            o.decode().splitlines()[0].startswith("usage: run.py"), True
-        )
+        self.assertTrue(o.decode().splitlines()[0].startswith("usage: run.py"))
         self.assertGreater(len(o), 3000)  # its long, so it must be the generated help
         self.assertEqual(e.decode(), "")
 
@@ -2416,9 +2414,7 @@ class MainTest(unittest.TestCase):
         o, e, c = self._exec(["-l", "placeholder", "--headers", "random_header.h", "--oh-what-a-goose-i-am"])
         self.assertEqual(c, 2)
         self.assertEqual(o.decode(), "")
-        self.assertEqual(
-            e.decode().splitlines()[0].startswith("usage: run.py"), True
-        )
+        self.assertTrue(e.decode().splitlines()[0].startswith("usage: run.py"))
         self.assertIn("error: unrecognized arguments: --oh-what-a-goose-i-am", e.decode())
 
 
