@@ -387,10 +387,10 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         # NOTE(geisserml) previously, macros had a try/except wrapper - we removed it
         # broken macros should be skipped explicitly and the respective issue may be reported
         # -> TODO consider re-introducing try/except if guard_symbols is True
-        self.srcinfo(macro.src, inline=True)
         self.file.write(
             "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
         )
+        self.srcinfo(macro.src, inline=True)
 
     def print_func_macro(self, macro):
         self.srcinfo(macro.src)
