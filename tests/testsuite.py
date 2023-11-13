@@ -105,12 +105,9 @@ class StdlibTest(unittest.TestCase):
         header_str = "#include <stdlib.h>\n"
         if sys.platform == "win32":
             # pick something from %windir%\system32\msvc*dll that include stdlib
-            library = "msvcrt.dll"
             library = "msvcrt"
-        elif sys.platform.startswith("linux"):
-            library = "c"  # libc
         else:
-            library = "libc"
+            library = "c"  # libc
         cls.module, _ = generate(header_str, library=library, all_headers=True)
 
     @classmethod
@@ -2038,7 +2035,6 @@ class MathTest(unittest.TestCase):
 """
         if sys.platform == "win32":
             # pick something from %windir%\system32\msvc*dll that include stdlib
-            library = "msvcrt.dll"
             library = "msvcrt"
         elif sys.platform.startswith("linux"):
             library = "m"  # libm
