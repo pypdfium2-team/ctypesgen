@@ -73,8 +73,7 @@ def remove_macros(data, opts):
 
 
 def filter_by_regexes_exclude(data, opts):
-    """filter_by_regexes_exclude() uses regular expressions specified by options
-    dictionary to filter symbols."""
+    """Exclude symbols by regular expressions."""
     if opts.exclude_symbols:
         expr = re.compile("({})".format("|".join(opts.exclude_symbols)))
         for object in data.all:
@@ -83,8 +82,8 @@ def filter_by_regexes_exclude(data, opts):
 
 
 def filter_by_regexes_include(data, opts):
-    """filter_by_regexes_include() uses regular expressions specified by options
-    dictionary to re-include symbols previously rejected by other operations."""
+    """Force-include symbols otherwise handled on is_needed basis. Note, this currently does not override excludes."""
+    # FIXME this behavior doesn't fit all needs - more common than force-including a symbol rejected by the automatic strategy is perhaps to re-include a subset of exclude_symbols
     if opts.include_symbols:
         expr = re.compile("({})".format("|".join(opts.include_symbols)))
         for object in data.all:
