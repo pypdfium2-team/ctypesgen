@@ -14,11 +14,18 @@ def _find_library(libname, libdirs, allow_system_search):
     else:  # assume unix pattern or plain libname
         patterns = ["lib{}.so", "{}.so", "{}"]
     
-    RELDIR = Path(__file__).parent
+    try:
+        THIS_DIR = Path(__file__).parent
+    except NameError as e:
+        # Issue a warning if unable to determine the containing directory. After this, it's OK to just fail with NameError below if actually attempting to resolve a relative path.
+        assert e.name == "__file__"
+        warnings.warn("Bindings not stored as file, will be unable to resolve relative dirs")
     
     for dir in libdirs:
-        # joining an absolute path silently discardy the path before
-        dir = (RELDIR / dir).resolve(strict=False)
+        dir = Path(dir)
+        if not dir.is_absolute():
+            # note, joining an absolute path silently discardy the path before
+            dir = (THIS_DIR / dir).resolve(strict=False)
         for pat in patterns:
             libpath = dir / pat.format(libname)
             if libpath.is_file():
