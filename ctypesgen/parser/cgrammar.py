@@ -194,7 +194,7 @@ def p_string_literal(p):
     p[0] = expressions.ConstantExpressionNode(p[1])
 
 
-# TODO(geisserml) think if/how we can rid of unnecessary brackets
+# FIXME(geisserml) any way to avoid unnecessary brackets ?
 
 def p_multi_string_literal(p):
     """ multi_string_literal : string_literal

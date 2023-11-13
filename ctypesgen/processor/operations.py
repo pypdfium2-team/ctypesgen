@@ -274,7 +274,7 @@ def check_symbols(data, opts):
             "Some symbols could not be found. Possible causes include:\n"
             "- Private members (use --exclude-symbols to handle)\n"
             "- Binary/headers mismatch (ABI unsafe, should be avoided by caller)\n"
-            "Note, missing symbols bypass --no-symbol-guards if given.\n"
+            "Note, this incident bypasses --no-symbol-guards if given.\n"
             f"Missing symbols {missing_symbols}",
             cls="other"
         )

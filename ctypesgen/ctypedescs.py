@@ -274,7 +274,7 @@ class CtypesFunction(CtypesType):
             and self.restype.destination.name == "void"
         ):
             # use POINTER(c_ubyte) as restype but cast to c_void_p using errcheck
-            # an example where this is used is pdfium's FPDFBitmap_GetBuffer()
+            # NOTE(geisserml) an example for this code path is pdfium's FPDFBitmap_GetBuffer()
             self.restype = CtypesPointer(CtypesSpecial("c_ubyte"), ())
             self.errcheck = CtypesPointerCast(CtypesSpecial("c_void_p"))
 

@@ -234,6 +234,7 @@ else:
         self.srcinfo(constant.src, inline=True)
 
     def print_undef(self, undef):
+        # TODO remove try/except, or use only if --guard-symbols given
         self.srcinfo(undef.src)
         self.file.write(
             "# #undef {macro}\n"
@@ -321,7 +322,7 @@ else:
 
         # NOTE pypdfium2-ctypesgen currently does not support the windows-only stdcall convention
         # this could theoretically be done by adding a second library handle _lib_stdcall = ctypes.WinDLL(...) on windows and using that for stdcall functions
-        # since this would cause additional complexity and/or produce an unnecessary/invalid handle for a non-stdcall library, it's not implemented ATM
+        # see also https://github.com/pypdfium2-team/ctypesgen/issues/1
         assert not function.attrib.get("stdcall", False)
         
         pad = " "*4 if self.options.guard_symbols else ""

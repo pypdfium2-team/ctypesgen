@@ -121,13 +121,13 @@ class WrapperPrinter:
         }
         # FIXME source library mandatory?
         if self.options.library:
-            res["source"] =  self.options.library
+            res["source"] = self.options.library
         return res
 
     def print_variable(self, variable):
         res = {"type": "variable", "ctype": todict(variable.ctype), "name": variable.c_name()}
         if self.options.library:
-            res["source"] =  self.options.library
+            res["source"] = self.options.library
         return res
 
     def print_macro(self, macro):
