@@ -61,6 +61,7 @@ def main(givenargs=None):
         default=[],
         help="Sequence of header files",
     )
+    # FIXME should we allow building from headers only, without linked library? it doesn't seem really pratical, but the test suite's designed around this...
     parser.add_argument(
         "-l",
         "--library",

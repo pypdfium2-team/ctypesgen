@@ -118,12 +118,16 @@ class WrapperPrinter:
             "args": todict(function.argtypes),
             "return": todict(function.restype),
             "attrib": function.attrib,
-            "source": self.options.library,
         }
+        # FIXME source library mandatory?
+        if self.options.library:
+            res["source"] =  self.options.library
         return res
 
     def print_variable(self, variable):
-        res = {"type": "variable", "ctype": todict(variable.ctype), "name": variable.c_name(), "source": self.options.library}
+        res = {"type": "variable", "ctype": todict(variable.ctype), "name": variable.c_name()}
+        if self.options.library:
+            res["source"] =  self.options.library
         return res
 
     def print_macro(self, macro):
