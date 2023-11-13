@@ -2024,6 +2024,8 @@ typedef struct {
         self.assertEqual(PBAR0._type_, BAR0)
 
 
+# FIXME test class broken with "ZeroDivisionError: float division by zero", not sure why
+# FIXME ctypesgen includes a lot of __* garbage from <math.h>. This also seems to trigger a "Some symbols could not be found" warning.
 class MathTest(unittest.TestCase):
     """Based on math_functions.py"""
 
