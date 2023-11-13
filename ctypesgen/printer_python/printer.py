@@ -68,7 +68,8 @@ class WrapperPrinter:
             self.print_group(self.options.inserted_files, "inserted files", self.insert_file)
         
         finally:
-            self.file.close()
+            if self.file != sys.stdout:
+                self.file.close()
     
     
     def print_loader(self):
