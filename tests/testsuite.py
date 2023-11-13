@@ -2043,7 +2043,7 @@ class MathTest(unittest.TestCase):
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
         # TODO consider adding --replace-symbol/--add-symbols/--add-imports options so the caller could do things like NAN=math.nan instead
         # NOTE We exclude members starting with __ because they're private. This avoids garbage and a missing symbols warning.
-        cls.module, _ = generate(header_str, library=library, all_headers=True, exclude_symbols=["NAN", "__.+"])
+        cls.module, _ = generate(header_str, library=library, all_headers=True, exclude_symbols=["NAN", r"__\w+"])
 
     @classmethod
     def tearDownClass(cls):

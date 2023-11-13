@@ -40,7 +40,8 @@ from ctypesgen.processor.dependencies import find_dependencies
 from ctypesgen.processor.operations import (
     automatically_typedef_structs,
     filter_by_regexes_exclude,
-    filter_by_regexes_include,
+    filter_by_regexes_include_extra,
+    filter_by_regexes_reinclude,
     check_symbols,
     fix_conflicting_names,
     remove_descriptions_in_system_headers,
@@ -55,11 +56,12 @@ def process(data, options):
     find_dependencies(data, options)
 
     automatically_typedef_structs(data, options)
-    remove_NULL(data, options)
     remove_descriptions_in_system_headers(data, options)
+    filter_by_regexes_include_extra(data, options)
     filter_by_regexes_exclude(data, options)
-    filter_by_regexes_include(data, options)
     remove_macros(data, options)
+    filter_by_regexes_reinclude(data, options)
+    remove_NULL(data, options)
     if options.output_language == "python":
         # this function is python specific
         fix_conflicting_names(data, options)

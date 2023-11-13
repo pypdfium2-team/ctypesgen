@@ -72,8 +72,16 @@ def remove_macros(data, opts):
             macro.include_rule = "never"
 
 
+def filter_by_regexes_include_extra(data, opts):
+    if opts.include_extra_symbols:
+        expr = re.compile("({})".format("|".join(opts.include_extra_symbols)))
+        for object in data.all:
+            if object.include_rule != "never":
+                if expr.match(object.py_name()):
+                    object.include_rule = "yes"
+
+
 def filter_by_regexes_exclude(data, opts):
-    """Exclude symbols by regular expressions."""
     if opts.exclude_symbols:
         expr = re.compile("({})".format("|".join(opts.exclude_symbols)))
         for object in data.all:
@@ -81,15 +89,12 @@ def filter_by_regexes_exclude(data, opts):
                 object.include_rule = "never"
 
 
-def filter_by_regexes_include(data, opts):
-    """Force-include symbols otherwise handled on is_needed basis. Note, this currently does not override excludes."""
-    # FIXME this behavior doesn't fit all needs - more common than force-including a symbol rejected by the automatic strategy is perhaps to re-include a subset of exclude_symbols
-    if opts.include_symbols:
-        expr = re.compile("({})".format("|".join(opts.include_symbols)))
+def filter_by_regexes_reinclude(data, opts):
+    if opts.reinclude_symbols:
+        expr = re.compile("({})".format("|".join(opts.reinclude_symbols)))
         for object in data.all:
-            if object.include_rule != "never":
-                if expr.match(object.py_name()):
-                    object.include_rule = "yes"
+            if expr.match(object.py_name()):
+                object.include_rule = "if_needed"
 
 
 def fix_conflicting_names(data, opts):

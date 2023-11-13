@@ -223,14 +223,12 @@ def main(givenargs=None):
         help="Do not remove macro definitions as per #undef directives",
     )
     parser.add_argument(
-        "--include-symbols",
+        "--include-extra-symbols",
         nargs="+",
         action="extend",
         default=[],
         metavar="REGEXPR",
-        help="Regular expression for symbols to always include.  Multiple "
-        "instances of this option will be combined into a single expression "
-        "doing something like '(expr1|expr2|expr3)'.",
+        help="Regular expression to include symbols the default selector would exclude. This is overridden by --exclude-symbols. Note, multiple symbols will be merged into a single expression by doing something like (e1|e2|e3). This applies to the other symbol options as well.",
     )
     parser.add_argument(
         "--exclude-symbols",
@@ -238,9 +236,15 @@ def main(givenargs=None):
         action="extend",
         default=[],
         metavar="REGEXPR",
-        help="Regular expression for symbols to exclude.  Multiple instances "
-        "of this option will be combined into a single expression doing "
-        "something like '(expr1|expr2|expr3)'.",
+        help="Regular expression to exclude symbols the default selector or --include-extra-symbols would include. This is overridden by --reinclude-symbols. Beware: --exclude-symbols implicitly excludes any dependent symbols.",
+    )
+    parser.add_argument(
+        "--reinclude-symbols",
+        nargs="+",
+        action="extend",
+        default=[],
+        metavar="REGEXPR",
+        help="Reset excluded symbols to the default selector. Overrides --exclude-symbols and --no-macros."
     )
     parser.add_argument(
         "--no-stddef-types",
