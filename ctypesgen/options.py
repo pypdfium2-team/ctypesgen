@@ -25,7 +25,7 @@ default_values = {
     "builtin_symbols": False,
     "include_extra_symbols": [],
     "exclude_symbols": [],
-    "reinclude_symbols": [],
+    "reset_symbols": [],
     "show_all_errors": False,
     "show_long_errors": False,
     "show_macro_warnings": True,

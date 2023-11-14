@@ -222,29 +222,31 @@ def main(givenargs=None):
         dest="include_undefs",
         help="Do not remove macro definitions as per #undef directives",
     )
+    # FIXME There may still be situations where these symbol filter options aren't sufficient to achieve the desired result, due to the grouped processing with pre-defined order. For full control, we'd need a way to take a chain of include/exclude and process it in given order. Also, we might need separate resets, but maybe excluding more specific patterns from a match can be handled on regex level, anyway.
     parser.add_argument(
         "--include-extra-symbols",
         nargs="+",
         action="extend",
         default=[],
         metavar="REGEXPR",
-        help="Regular expression to include symbols the default selector would exclude. This is overridden by --exclude-symbols. Note, multiple symbols will be merged into a single expression by doing something like (e1|e2|e3). This applies to the other symbol options as well.",
+        help="Regular expression of symbols to include. This overrides the default selector, and is overridden by --exclude-symbols or --reset-symbols. Note, multiple symbols will be merged into a single expression by doing something like (e1|e2|e3). This applies to the other symbol options as well.",
     )
     parser.add_argument(
+        # FIXME limited applicability (see Beware: ...)
         "--exclude-symbols",
         nargs="+",
         action="extend",
         default=[],
         metavar="REGEXPR",
-        help="Regular expression to exclude symbols the default selector or --include-extra-symbols would include. This is overridden by --reinclude-symbols. Beware: --exclude-symbols implicitly excludes any dependent symbols.",
+        help="Regular expression of symbols to exclude. This overrides the default selector and --include-extra-symbols, and is overridden by --reset-symbols. Beware: --exclude-symbols implicitly removes any dependent symbols, without merging aliases.",
     )
     parser.add_argument(
-        "--reinclude-symbols",
+        "--reset-symbols",
         nargs="+",
         action="extend",
         default=[],
         metavar="REGEXPR",
-        help="Reset excluded symbols to the default selector. Overrides --exclude-symbols and --no-macros."
+        help="Regular expression of symbols to reset to the default selector. Overrides --include-extra-symbols, --exclude-symbols and --no-macros."
     )
     parser.add_argument(
         "--no-stddef-types",

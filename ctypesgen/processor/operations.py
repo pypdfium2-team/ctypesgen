@@ -76,9 +76,8 @@ def filter_by_regexes_include_extra(data, opts):
     if opts.include_extra_symbols:
         expr = re.compile("({})".format("|".join(opts.include_extra_symbols)))
         for object in data.all:
-            if object.include_rule != "never":
-                if expr.match(object.py_name()):
-                    object.include_rule = "yes"
+            if object.include_rule != "never" and expr.match(object.py_name()):
+                object.include_rule = "yes"
 
 
 def filter_by_regexes_exclude(data, opts):
@@ -89,9 +88,9 @@ def filter_by_regexes_exclude(data, opts):
                 object.include_rule = "never"
 
 
-def filter_by_regexes_reinclude(data, opts):
-    if opts.reinclude_symbols:
-        expr = re.compile("({})".format("|".join(opts.reinclude_symbols)))
+def filter_by_regexes_reset(data, opts):
+    if opts.reset_symbols:
+        expr = re.compile("({})".format("|".join(opts.reset_symbols)))
         for object in data.all:
             if expr.match(object.py_name()):
                 object.include_rule = "if_needed"
