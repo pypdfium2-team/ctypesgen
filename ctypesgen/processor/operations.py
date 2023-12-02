@@ -268,15 +268,18 @@ def check_symbols(data, opts):
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
-    # honor --exclude-symbols etc. when checking for missing symbols
-    missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
+    # only check symbols that we actually want to include
+    missing_symbols = {s for s in (data.functions + data.variables) if s.included and not hasattr(library, s.c_name())}
     if missing_symbols:
-        opts.guard_symbols = True
         warning_message(
             "Some symbols could not be found. Possible causes include:\n"
             "- Private members (use --exclude-symbols to handle)\n"
             "- Binary/headers mismatch (ABI unsafe, should be avoided by caller)\n"
-            "Note, this incident bypasses --no-symbol-guards if given.\n"
             f"Missing symbols {missing_symbols}",
             cls="other"
         )
+        if not opts.guard_symbols:
+            status_message("Missing symbols will be guarded selectively despite --no-symbol-guards")
+    
+    for s in missing_symbols:
+        s.is_missing = True

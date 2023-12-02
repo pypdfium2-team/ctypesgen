@@ -65,11 +65,13 @@ def process(data, options):
     if options.output_language == "python":
         # this function is python specific
         fix_conflicting_names(data, options)
-    check_symbols(data, options)
 
     calculate_final_inclusion(data, options)
     print_errors_encountered(data, options)
     calculate_final_inclusion(data, options)
+    
+    # run check_symbols() after we have calculated the inclusion rules so we can use the .included property to skip symbols that will not be part of the output
+    check_symbols(data, options)
 
 
 def calculate_final_inclusion(data, opts):

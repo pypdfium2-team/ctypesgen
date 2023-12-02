@@ -321,7 +321,12 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
             self.print_variadic_function(function)
         else:
             self.print_fixed_function(function)
-
+    
+    def _check_guard(self, symbol):
+        needs_guard = self.options.guard_symbols or getattr(symbol, "is_missing", False)
+        pad = " "*4 if needs_guard else ""
+        return needs_guard, pad
+    
     def print_fixed_function(self, function):
         self.srcinfo(function.src)
 
@@ -330,8 +335,8 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         # see also https://github.com/pypdfium2-team/ctypesgen/issues/1
         assert not function.attrib.get("stdcall", False)
         
-        pad = " "*4 if self.options.guard_symbols else ""
-        if self.options.guard_symbols:
+        needs_guard, pad = self._check_guard(function)
+        if needs_guard:
             self.file.write(
                 'if hasattr(_lib, "{CN}"):\n'.format(CN=function.c_name())
             )
@@ -353,8 +358,8 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         assert not function.attrib.get("stdcall", False)
         self.srcinfo(function.src)
         
-        pad = " "*4 if self.options.guard_symbols else ""
-        if self.options.guard_symbols:
+        needs_guard, pad = self._check_guard(function)
+        if needs_guard:
             self.file.write(
                 'if hasattr(_lib, {CN}):\n'.format(CN=function.c_name())
             )
