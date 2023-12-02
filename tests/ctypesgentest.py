@@ -15,7 +15,9 @@ from contextlib import contextmanager
 import types
 import subprocess
 from shutil import rmtree
+from itertools import product
 
+from ctypesgen.__main__ import main as ctypesgen_main
 from ctypesgen import options, messages, parser, processor
 from ctypesgen import printer_python, printer_json, VERSION
 
@@ -180,93 +182,68 @@ class JsonHelper:
 # Functions facilitating tests of use of cross inclusion
 #
 
-
+# TODO migrate to pathlib.Path
 COMMON_DIR = os.path.join(os.path.dirname(__file__), "common")
 
 
 def generate_common():
     common_lib = "libcommon.dll" if sys.platform == "win32" else "libcommon.so"
-
     _create_common_files()
-
     _compile_common(common_lib)
-
-    for file_name in ["a", "b"]:
-        _generate_common(file_name, common_lib)
-
-    for file_name in ["a", "b"]:
-        _generate_common(file_name, common_lib, False)
+    
+    ctypesgen_main(["-i", f"{COMMON_DIR}/common.h", "--no-embed-preamble", "-o", f"{COMMON_DIR}/common.py"])
+    for file_name, shared in product(["a", "b"], [False, True]):
+        _generate_common(file_name, shared)
 
 
 def cleanup_common():
     # Attention: currently not working on MS Windows.
     # cleanup_common() tries to delete "common.dll" while it is still loaded
     # by ctypes. See unittest for further details.
-    rmtree(COMMON_DIR)
+    # rmtree(COMMON_DIR)  # XXX commented out for testing
+    pass
 
 
 def _compile_common(common_lib):
     subprocess.run(["gcc", "-c", f"{COMMON_DIR}/a.c", "-o", f"{COMMON_DIR}/a.o"])
     subprocess.run(["gcc", "-c", f"{COMMON_DIR}/b.c", "-o", f"{COMMON_DIR}/b.o"])
-    subprocess.run(
-        [
-            "gcc",
-            "-shared",
-            "-o",
-            f"{COMMON_DIR}/{common_lib}",
-            f"{COMMON_DIR}/a.o",
-            f"{COMMON_DIR}/b.o",
-        ]
-    )
+    subprocess.run(["gcc", "-shared", "-o", f"{COMMON_DIR}/{common_lib}", f"{COMMON_DIR}/a.o", f"{COMMON_DIR}/b.o"])
 
 
-def _generate_common(file_name, common_lib, embed_preamble=True):
-    test_options = options.get_default_options()
-    test_options.headers = [f"{COMMON_DIR}/{file_name}.h"]
-    test_options.include_search_paths = [COMMON_DIR]
-    test_options.library = common_lib
-    test_options.compile_libdirs = [COMMON_DIR]
-    test_options.runtime_libdirs = [COMMON_DIR]
-    test_options.embed_preamble = embed_preamble
-    if embed_preamble:
-        output = f"{COMMON_DIR}/{file_name}.py"
+def _generate_common(file_name, shared):
+    args = ["-i", f"{COMMON_DIR}/{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
+    if shared:
+        file_name += "_shared"
+        args += ["-m", "common/.common", "--no-embed-preamble"]
     else:
-        output = f"{COMMON_DIR}/{file_name}2.py"
-
-    descriptions = parser.parse(test_options.headers, test_options)
-    processor.process(descriptions, test_options)
-    printer_python.WrapperPrinter(output, test_options, descriptions)
+        file_name += "_unshared"
+    args += ["-o", f"{COMMON_DIR}/{file_name}.py"]
+    ctypesgen_main(args)
 
 
 def _create_common_files():
-    a_h = """#include "common.h"
-
-void foo(struct mystruct *m);
-
-"""
-    a_c = """#include "a.h"
-
-void foo(struct mystruct *m) {
-
-}
-
-"""
-    b_h = """#include "common.h"
-
-void bar(struct mystruct *m);
-
-"""
-    b_c = """#include "b.h"
-
-void bar(struct mystruct *m) {
-
-}
-
-"""
-    common_h = """struct mystruct {
+    names = {}
+    names["common.h"] = """\
+struct mystruct {
     int a;
 };
-
+"""
+    
+    names["a.h"] = """\
+#include "common.h"\n
+void foo(struct mystruct *m);
+"""
+    names["a.c"] = """\
+#include "a.h"\n
+void foo(struct mystruct *m) { }
+"""
+    names["b.h"] = """\
+#include "common.h"\n
+void bar(struct mystruct *m);
+"""
+    names["b.c"] = """\
+#include "b.h"\n
+void bar(struct mystruct *m) { }
 """
 
     try:
@@ -275,7 +252,6 @@ void bar(struct mystruct *m) {
         rmtree(COMMON_DIR)
         os.mkdir(COMMON_DIR)
 
-    names = {"a.h": a_h, "a.c": a_c, "b.h": b_h, "b.c": b_c, "common.h": common_h}
     for (name, source) in names.items():
         with open(f"{COMMON_DIR}/{name}", "w") as f:
             f.write(source)

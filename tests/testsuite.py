@@ -176,29 +176,31 @@ class CommonHeaderTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cleanup_common()
+    
+    # NOTE `common` is a meta-module hosted by the test class, and {a,b}{shared,unshared} are the actual python files in question
+    
+    def test_unshared(self):
+        from .common import a_unshared as a
+        from .common import b_unshared as b
 
-    @unittest.expectedFailure
-    def test_two_import_with_embedded_preamble(self):
-        from .common import a
-        from .common import b
+        m = b.struct_mystruct()
+        b.bar(ctypes.byref(m))
+        with self.assertRaises(ctypes.ArgumentError):
+            a.foo(ctypes.byref(m))
+
+    def test_unshared_local(self):
+        from .common import b_unshared as b
+
+        m = b.struct_mystruct()
+        b.bar(ctypes.byref(m))
+    
+    def test_shared_interop(self):
+        from .common import a_shared as a
+        from .common import b_shared as b
 
         m = b.struct_mystruct()
         b.bar(ctypes.byref(m))
         a.foo(ctypes.byref(m))
-
-    def test_one_import(self):
-        from .common import b
-
-        m = b.struct_mystruct()
-        b.bar(ctypes.byref(m))
-
-    def test_two_import(self):
-        from .common import a2
-        from .common import b2
-
-        m = b2.struct_mystruct()
-        b2.bar(ctypes.byref(m))
-        a2.foo(ctypes.byref(m))
 
 
 class StdBoolTest(unittest.TestCase):

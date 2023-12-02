@@ -46,6 +46,3 @@ class _variadic_function(object):
             fixed_args.append(argtype.from_param(args[i]))
             i += 1
         return self.func(*fixed_args + list(args[i:]))
-
-
-# ~POINTER~

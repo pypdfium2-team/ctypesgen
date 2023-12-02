@@ -77,9 +77,10 @@ class WrapperPrinter:
         if self.options.embed_preamble:
             self.file.write("# Begin loader template\n\n")
             with open(LIBRARYLOADER_PATH, "r") as loader_file:
-                self.file.write(loader_file.read())
+                shutil.copyfileobj(loader_file, self.file)
             self.file.write("\n# End loader template")
         else:
+            self.file.write("from .ctypes_loader import *\n")
             self.file.write("from .ctypes_loader import _find_library\n\n")
 
     def print_library(self, opts):
@@ -180,9 +181,7 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         self.file.write("# Begin preamble\n\n")
         if self.options.embed_preamble:
             with open(PREAMBLE_PATH, "r") as preamble_file:
-                filecontent = preamble_file.read()
-                filecontent = filecontent.replace("# ~POINTER~", "").strip() + "\n"
-                self.file.write(filecontent)
+                shutil.copyfileobj(preamble_file, self.file)
         else:
             self.file.write("from .ctypes_preamble import *\n")
             self.file.write("from .ctypes_preamble import _variadic_function\n")
@@ -193,42 +192,10 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         if os.path.isfile(path):
             dst = os.path.dirname(os.path.abspath(path))
         else:
-            error_message(
-                "Cannot copy preamble and loader files",
-                cls="missing-file",
-            )
+            error_message("Cannot copy preamble and loader files", cls="missing-file")
             return
-
-        c_preamblefile = join(dst, "ctypes_preamble.py")
-        if os.path.isfile(c_preamblefile):
-            return
-
-        pointer = """def POINTER(obj):
-    p = ctypes.POINTER(obj)
-
-    # Convert None to a real NULL pointer to work around bugs
-    # in how ctypes handles None on 64-bit platforms
-    if not isinstance(p.from_param, classmethod):
-
-        def from_param(cls, x):
-            if x is None:
-                return cls()
-            else:
-                return x
-
-        p.from_param = classmethod(from_param)
-
-    return p
-
-"""
-
-        with open(PREAMBLE_PATH) as preamble_file:
-            preamble_file_content = preamble_file.read()
-            filecontent = preamble_file_content.replace("# ~POINTER~", pointer).strip() + "\n"
-
-        with open(c_preamblefile, "w") as f:
-            f.write(filecontent)
-
+        
+        shutil.copyfile(PREAMBLE_PATH, join(dst, "ctypes_preamble.py"))
         shutil.copyfile(LIBRARYLOADER_PATH, join(dst, "ctypes_loader.py"))
 
     def print_module(self, module):

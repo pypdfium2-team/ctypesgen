@@ -2,6 +2,7 @@
 Command-line interface for ctypesgen
 """
 
+import re
 import sys
 import importlib
 import argparse
@@ -19,14 +20,24 @@ from ctypesgen import (
 
 def find_symbols_in_modules(modnames):
     symbols = set()
+    new_modnames = []
+    
     for modname in modnames:
-        try:
-            module = importlib.import_module(modname)
-        except ImportError:
-            pass
-        else:
-            symbols.update(dir(module))
-    return symbols
+        
+        compile_time_package = None
+        if "/" in modname:
+            compile_time_package, modname = modname.split("/")
+        new_modnames.append(modname)
+        
+        # NOTE All specified modules must be importable at compile time so we can determine their symbols and prevent them from being overwritten. This is important to support shared headers.
+        module = importlib.import_module(modname, compile_time_package)
+        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
+        assert len(module_syms) > 0, "Linked modules must provide symbols"
+        print(f"Found symbols {module_syms} in module {module}", file=sys.stderr)
+        
+        symbols.update(module_syms)
+    
+    return symbols, new_modnames
 
 
 # FIXME argparse parameters are not ordered consistently...
@@ -91,7 +102,7 @@ def main(givenargs=None):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="use symbols from Python module MODULE",
+        help="Use symbols from the given Python module. For a relative module, you may use the 'COMPILE_PKG_DIR/.MODULE' syntax. Otherwise, we will try to import from the system.",
     )
     parser.add_argument(
         "-I",
@@ -348,7 +359,7 @@ def main(givenargs=None):
     args.runtime_libdirs += args.universal_libdirs
 
     # Figure out what names will be defined by imported Python modules
-    args.other_known_names = find_symbols_in_modules(args.modules)
+    args.other_known_names, args.modules = find_symbols_in_modules(args.modules)
 
     # Fetch printer for the requested output language
     if args.output_language == "py":
