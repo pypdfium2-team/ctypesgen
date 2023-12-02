@@ -3,6 +3,7 @@ Command-line interface for ctypesgen
 """
 
 import sys
+import importlib
 import argparse
 
 from ctypesgen import (
@@ -16,16 +17,16 @@ from ctypesgen import (
 )
 
 
-def find_names_in_modules(modules):
-    names = set()
-    for module in modules:
+def find_symbols_in_modules(modnames):
+    symbols = set()
+    for modname in modnames:
         try:
-            mod = __import__(module)
-        except Exception:
+            module = importlib.import_module(modname)
+        except ImportError:
             pass
         else:
-            names.update(dir(mod))
-    return names
+            symbols.update(dir(module))
+    return symbols
 
 
 # FIXME argparse parameters are not ordered consistently...
@@ -61,11 +62,9 @@ def main(givenargs=None):
         default=[],
         help="Sequence of header files",
     )
-    # FIXME should we allow building from headers only, without linked library? it doesn't seem really pratical, but the test suite's designed around this...
     parser.add_argument(
         "-l",
         "--library",
-        required=True,
         metavar="LIBRARY",
         help="link to LIBRARY",
     )
@@ -349,9 +348,7 @@ def main(givenargs=None):
     args.runtime_libdirs += args.universal_libdirs
 
     # Figure out what names will be defined by imported Python modules
-    args.other_known_names = find_names_in_modules(args.modules)
-
-    assert args.library
+    args.other_known_names = find_symbols_in_modules(args.modules)
 
     # Fetch printer for the requested output language
     if args.output_language == "py":

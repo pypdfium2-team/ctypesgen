@@ -108,7 +108,7 @@ class StdlibTest(unittest.TestCase):
             library = "msvcrt"
         else:
             library = "c"  # libc
-        cls.module, _ = generate(header_str, library=library, all_headers=True)
+        cls.module, _ = generate(header_str, library=library, all_headers=True, exclude_symbols=[r"__\w+"])
 
     @classmethod
     def tearDownClass(cls):

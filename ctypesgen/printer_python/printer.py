@@ -8,7 +8,7 @@ from textwrap import indent
 
 from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
 from ctypesgen.expressions import ExpressionNode
-from ctypesgen.messages import error_message, status_message
+from ctypesgen.messages import error_message, warning_message, status_message
 
 
 THIS_DIR = os.path.dirname(__file__)
@@ -46,6 +46,7 @@ class WrapperPrinter:
             self.file.write("\n")
             
             self.print_library(self.options)
+            self.file.write("\n")
             self.print_group(self.options.modules, "modules", self.print_module)
             
             method_table = {
@@ -73,31 +74,36 @@ class WrapperPrinter:
     
     
     def print_loader(self):
-        self.file.write("# Begin loader\n\n")
         if self.options.embed_preamble:
+            self.file.write("# Begin loader template\n\n")
             with open(LIBRARYLOADER_PATH, "r") as loader_file:
                 self.file.write(loader_file.read())
+            self.file.write("\n# End loader template")
         else:
             self.file.write("from .ctypes_loader import _find_library\n\n")
 
     def print_library(self, opts):
-        loader_info = dict(
-            libname = opts.library,
-            libdirs = opts.runtime_libdirs,
-            allow_system_search = opts.allow_system_search,
-        )
-        self.file.write("""
+        if not opts.library:
+            notice = "No library name specified. Assuming pure headers without binary symbols."
+            warning_message(notice, cls="usage")
+            self.file.write(f'\nwarnings.warn("{notice}")\n')
+        else:
+            loader_info = dict(
+                libname = opts.library,
+                libdirs = opts.runtime_libdirs,
+                allow_system_search = opts.allow_system_search,
+            )
+            self.file.write("""
+# Begin library load
+
 _loader_info = %s
-if _loader_info["libname"]:
-    _loader_info["libpath"] = _find_library(**_loader_info)
-    assert _loader_info["libpath"], f"Could not find library with config {_loader_info}"
-    _lib = ctypes.CDLL(_loader_info["libpath"])
-else:
-    # FIXME ctypesgen's test suite currently relies on this, but it isn't suitable for practice, really
-    warnings.warn("No library name specified. Assuming pure headers without binary symbols.")
-\n# End loader\n
+_loader_info["libpath"] = _find_library(**_loader_info)
+assert _loader_info["libpath"], f"Could not find library with config {_loader_info}"
+_lib = ctypes.CDLL(_loader_info["libpath"])
+
+# End library load
 """ % (loader_info, )
-        )
+            )
     
     def print_group(self, list, name, function):
         if list:
@@ -158,8 +164,7 @@ else:
                 template_file = open(path, "r")
             except IOError:
                 error_message(
-                    'Cannot load header template from file "%s" '
-                    " - using default template." % path,
+                    f"Cannot load header template from file '{path}' - using default template.",
                     cls="missing-file",
                 )
 

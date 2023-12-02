@@ -257,6 +257,9 @@ def check_symbols(data, opts):
     if opts.no_load_library:
         status_message(f"Bypass load_library '{opts.library}'.")
         return
+    if not opts.library:
+        status_message(f"No library given, nothing to load.")
+        return
 
     try:
         libpath = libraryloader._find_library(opts.library, opts.compile_libdirs, opts.allow_system_search)
