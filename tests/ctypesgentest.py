@@ -16,10 +16,17 @@ import types
 import subprocess
 from shutil import rmtree
 from itertools import product
+from pathlib import Path
 
 from ctypesgen.__main__ import main as ctypesgen_main
 from ctypesgen import options, messages, parser, processor
 from ctypesgen import printer_python, printer_json, VERSION
+
+
+# TODO migrate test suite to pathlib.Path type
+
+TEST_DIR = str(Path(__file__).resolve().parent)
+
 
 module_factory = types.ModuleType
 
@@ -36,6 +43,7 @@ def redirect(stdout=sys.stdout):
     finally:
         sys.stdout = backup
 
+# TODO(geisserml) migrate generate() to actual package CLI
 
 def generate(header, **more_options):
 
@@ -178,12 +186,10 @@ class JsonHelper:
                     self._search_anon_tags(value)
 
 
-#
-# Functions facilitating tests of use of cross inclusion
-#
+# -- Functions facilitating tests of use of cross inclusion --
 
-# TODO migrate to pathlib.Path
-COMMON_DIR = os.path.join(os.path.dirname(__file__), "common")
+COMMON_DIR = str(Path(TEST_DIR)/"common")
+COMMON_RELATIVE_PKG = str(Path(COMMON_DIR).relative_to(Path.cwd())).replace(os.path.sep, ".")
 
 
 def generate_common():
@@ -214,8 +220,10 @@ def _generate_common(file_name, shared):
     args = ["-i", f"{COMMON_DIR}/{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
     if shared:
         file_name += "_shared"
-        args += ["-m", "common/.common", "--no-embed-preamble"]
+        args += ["-m", f"{COMMON_RELATIVE_PKG}/.common", "--no-embed-preamble"]
     else:
+        # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
+        args += ["--include-extra-symbols", "mystruct"]
         file_name += "_unshared"
     args += ["-o", f"{COMMON_DIR}/{file_name}.py"]
     ctypesgen_main(args)

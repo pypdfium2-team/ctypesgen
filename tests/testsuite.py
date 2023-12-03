@@ -40,9 +40,8 @@ from tests.ctypesgentest import (
     generate_common,
     JsonHelper,
     set_logging_level,
+    TEST_DIR,
 )
-
-TEST_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def compare_json(test_instance, json, json_ans, verbose=False):
@@ -183,9 +182,8 @@ class CommonHeaderTest(unittest.TestCase):
         from .common import a_unshared as a
         from .common import b_unshared as b
         
-        # NOTE ctypesgen does not create the mystruct alias here since it is not defined natively, but only through an include header
-        self.assertFalse(a.struct_mystruct is b.struct_mystruct)
-        m = b.struct_mystruct()
+        self.assertFalse(a.mystruct is b.mystruct)
+        m = b.mystruct()
         b.bar(m)
         with self.assertRaises(ctypes.ArgumentError):
             a.foo(m)
@@ -193,7 +191,7 @@ class CommonHeaderTest(unittest.TestCase):
     def test_unshared_local(self):
         from .common import b_unshared as b
 
-        m = b.struct_mystruct()
+        m = b.mystruct()
         b.bar(m)
     
     def test_shared_interop(self):

@@ -33,7 +33,7 @@ def find_symbols_in_modules(modnames):
         module = importlib.import_module(modname, compile_time_package)
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, "Linked modules must provide symbols"
-        print(f"Found symbols {module_syms} in module {module}", file=sys.stderr)
+        msgs.status_message(f"Found symbols {module_syms} in module {module}")
         
         symbols.update(module_syms)
     
@@ -102,7 +102,7 @@ def main(givenargs=None):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from the given Python module. For a relative module, you may use the 'COMPILE_PKG_DIR/.MODULE' syntax. Otherwise, we will try to import from the system.",
+        help="Use symbols from the given Python module. For a relative module, you may do 'PKG_IMPORT/.MODULE', with PKG_IMPORT being an optional, compile-time, dot-delimited path to the parent. Otherwise, we will import from the system.",
     )
     parser.add_argument(
         "-I",
