@@ -13,11 +13,11 @@ from ctypesgen import (
     messages as msgs,
     options as core_options,
     parser as core_parser,
-    printer_python,
-    printer_json,
     processor,
     version,
 )
+from ctypesgen.printer_python import WrapperPrinter as PythonPrinter
+from ctypesgen.printer_json import WrapperPrinter as JsonPrinter
 
 @contextlib.contextmanager
 def tmp_searchpath(path, active):
@@ -49,7 +49,7 @@ def main(givenargs=None):
     
     parser = argparse.ArgumentParser()
     
-    if sys.version_info < (3, 8):  # compat, untested
+    if sys.version_info < (3, 8):  # compat
         
         class ExtendAction(argparse.Action):
             def __call__(self, parser, namespace, values, option_string=None):
@@ -286,6 +286,12 @@ def main(givenargs=None):
         action="store_true",
         help="Do not try to load library during the processing"
     )
+    parser.add_argument(
+        "--no-missing-symbols",
+        dest="include_missing_symbols",
+        action="store_false",
+        help="If given, exclude missing symbols from the output, as determined on library loading.",
+    )
 
     # Printer options
     parser.add_argument(
@@ -302,7 +308,6 @@ def main(givenargs=None):
     )
     parser.add_argument(
         "--insert-files",
-        dest="inserted_files",
         nargs="+",
         action="extend",
         default=[],
@@ -311,22 +316,27 @@ def main(givenargs=None):
     )
     parser.add_argument(
         "--output-language",
-        dest="output_language",
         metavar="LANGUAGE",
         default="py",
         choices=("py", "json"),
         help="Choose output language",
     )
     parser.add_argument(
+        "--dllclass",
+        default=None,  # auto
+        choices=("CDLL", "WinDLL", "OleDLL", "PyDLL"),
+        help="The ctypes library class to use. 'CDLL' corresponds to the 'cdecl' calling convention, 'WinDLL' to windows-only 'stdcall'. See ctypes docs for more options. Note, this fork of ctypesgen does not currently support libraries with mixed calling convention.",
+    )
+    parser.add_argument(
         "--no-srcinfo",
-        action = "store_true",
-        help = "Skip comments stating where members are defined (header, line)."
+        action="store_true",
+        help="Skip comments stating where members are defined (header, line)."
     )
     parser.add_argument(
         "--no-symbol-guards",
         dest="guard_symbols",
         action="store_false",
-        help="Do not add hasattr(_lib, ...) if-guards; assume all symbols are present. Use when input headers and runtime binary are guaranteed to match.",
+        help="Do not add hasattr(_lib, ...) if-guards. Use when input headers and runtime binary are guaranteed to match. Note, if the library was loaded and missing symbols were determined, these would still be guarded selectively, if included.",
     )
 
     # Error options
@@ -364,35 +374,20 @@ def main(givenargs=None):
 
     # Figure out what names will be defined by imported Python modules
     args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))
-
-    # Fetch printer for the requested output language
-    if args.output_language == "py":
-        printer = printer_python.WrapperPrinter
-    elif args.output_language == "json":
-        printer = printer_json.WrapperPrinter
-    else:
-        assert False  # handled by argparse choices
-
-    # Step 1: Parse
+    
+    printer = {"py": PythonPrinter, "json": JsonPrinter}[args.output_language]
+    
     descriptions = core_parser.parse(args.headers, args)
-
-    # Step 2: Process
     processor.process(descriptions, args)
-
-    # Step 3: Print
     printer(args.output, args, descriptions)
 
     msgs.status_message("Wrapping complete.")
 
-    # Correct what may be a common mistake
-    if descriptions.all == []:
+    if not descriptions.all:
+        msgs.warning_message("There wasn't anything of use in the specified header file(s).", cls="usage")
+        # Note what may be a common mistake
         if not args.all_headers:
-            msgs.warning_message(
-                "There wasn't anything of use in the "
-                "specified header file(s). Perhaps you meant to run with "
-                "--all-headers to include objects from included sub-headers? ",
-                cls="usage",
-            )
+            msgs.warning_message("Perhaps you meant to run with --all-headers to include objects from included sub-headers?", cls="usage")
 
 
 if __name__ == "__main__":

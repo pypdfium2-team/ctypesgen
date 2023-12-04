@@ -46,6 +46,8 @@ default_values = {
     "no_load_library": False,
     "guard_symbols": True,
     "allow_system_search": True,
+    "dllclass": None,
+    "include_missing_symbols": True,
 }
 
 

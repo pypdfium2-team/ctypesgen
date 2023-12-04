@@ -2,6 +2,7 @@ import os
 import os.path
 import sys
 import time
+import ctypes
 import shutil
 from os.path import join
 from textwrap import indent
@@ -19,7 +20,6 @@ LIBRARYLOADER_PATH = join(CTYPESGEN_DIR, "libraryloader.py")
 
 
 # TODO(geisserml) think out a proper concept for line breaks
-# TODO(geisserml) consider to remove or rewrite --no-embed-preamble
 
 class WrapperPrinter:
     def __init__(self, outpath, options, data):
@@ -45,7 +45,7 @@ class WrapperPrinter:
             self.print_loader()
             self.file.write("\n")
             
-            self.print_library(self.options)
+            self.print_library(self.options, data)
             self.file.write("\n")
             self.print_group(self.options.modules, "modules", self.print_module)
             
@@ -83,27 +83,40 @@ class WrapperPrinter:
             self.file.write("from .ctypes_loader import *\n")
             self.file.write("from .ctypes_loader import _find_library\n\n")
 
-    def print_library(self, opts):
+    def print_library(self, opts, data):
         if not opts.library:
             notice = "No library name specified. Assuming pure headers without binary symbols."
             warning_message(notice, cls="usage")
             self.file.write(f'\nwarnings.warn("{notice}")\n')
+        
         else:
             loader_info = dict(
                 libname = opts.library,
                 libdirs = opts.runtime_libdirs,
                 allow_system_search = opts.allow_system_search,
             )
-            self.file.write("""
+            
+            # poke into the first function to guess the dllclass
+            # this fork of ctypesgen does not currently support mixed calling conventions
+            if not self.options.dllclass:
+                if data.functions[0].attrib.get("stdcall", False):
+                    self.options.dllclass = "WinDLL"
+                else:
+                    self.options.dllclass = "CDLL"
+            
+            assert opts.dllclass.endswith("DLL") and hasattr(ctypes, opts.dllclass), \
+                f"Bad dllclass {opts.dllclass}"
+            
+            self.file.write(f"""
 # Begin library load
 
-_loader_info = %s
+_loader_info = {loader_info}
 _loader_info["libpath"] = _find_library(**_loader_info)
-assert _loader_info["libpath"], f"Could not find library with config {_loader_info}"
-_lib = ctypes.CDLL(_loader_info["libpath"])
+assert _loader_info["libpath"], "Could not find library with config %s" % (_loader_info, )
+_lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
 
 # End library load
-""" % (loader_info, )
+"""
             )
     
     def print_group(self, list, name, function):
@@ -118,24 +131,20 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
             self.file.write("# No %s\n" % name)
         self.file.write("\n")
 
-    def srcinfo(self, src, inline=False):
+    def srcinfo(self, src, wants_nl=True):
         
         if self.options.no_srcinfo or src is None:
-            if not inline:
+            if wants_nl:
                 self.file.write("\n")
             return
         
         filename, lineno = src
-        pad = "  " if inline else "\n"
         if filename in ("<built-in>", "<command line>"):
-            self.file.write(pad + "# %s" % filename)
+            self.file.write("\n# %s\n" % filename)
         else:
             if self.options.strip_build_path and filename.startswith(self.options.strip_build_path):
                 filename = filename[len(self.options.strip_build_path):]
-            self.file.write(pad + "# %s: %s" % (filename, lineno))
-        
-        if not inline:
-            self.file.write("\n")
+            self.file.write("\n# %s: %s\n" % (filename, lineno))
 
     def template_subs(self):
         # TODO(geisserml) address BUG(160)
@@ -202,8 +211,8 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         self.file.write("from %s import *\n" % module)
 
     def print_constant(self, constant):
+        self.srcinfo(constant.src, wants_nl=False)
         self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
-        self.srcinfo(constant.src, inline=True)
 
     def print_undef(self, undef):
         # TODO remove try/except, or use only if --guard-symbols given
@@ -213,12 +222,12 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
             "try:\n"
             "    del {macro}\n"
             "except NameError:\n"
-            "    pass\n".format(macro=undef.macro.py_string(False))
+            "    pass".format(macro=undef.macro.py_string(False))
         )
 
     def print_typedef(self, typedef):
+        self.srcinfo(typedef.src, wants_nl=False)
         self.file.write("%s = %s" % (typedef.name, typedef.ctype.py_string()))
-        self.srcinfo(typedef.src, inline=True)
 
     def print_struct(self, struct):
         self.srcinfo(struct.src)
@@ -263,7 +272,7 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         if len(unnamed_fields) > 0:
             self.file.write(tab + f"_anonymous_ = {unnamed_fields}\n")
 
-        self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}\n")
+        self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}")
 
     def print_struct_members(self, struct):
         # Fields must be defined indepedent of the actual class to handle self-references, cyclic struct references and forward declarations
@@ -279,35 +288,37 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         self.file.write("]")
 
     def print_enum(self, enum):
+        self.srcinfo(enum.src, wants_nl=False)
+        # NOTE Values of enumerator are output as constants
         self.file.write("enum_%s = c_int" % enum.tag)
-        self.srcinfo(enum.src, inline=True)
-        # Values of enumerator are output as constants.
-
-    def print_function(self, function):
-        if function.variadic:
-            self.print_variadic_function(function)
-        else:
-            self.print_fixed_function(function)
     
     def _check_guard(self, symbol):
         needs_guard = self.options.guard_symbols or getattr(symbol, "is_missing", False)
         pad = " "*4 if needs_guard else ""
         return needs_guard, pad
     
-    def print_fixed_function(self, function):
-        self.srcinfo(function.src)
-
-        # NOTE pypdfium2-ctypesgen currently does not support the windows-only stdcall convention
-        # this could theoretically be done by adding a second library handle _lib_stdcall = ctypes.WinDLL(...) on windows and using that for stdcall functions
-        # see also https://github.com/pypdfium2-team/ctypesgen/issues/1
-        assert not function.attrib.get("stdcall", False)
+    def _try_except_wrap(self, entry, pad):
+        return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
+    
+    def print_function(self, function):
         
+        if "stdcall" in function.attrib:
+            assert self.options.dllclass in ("WinDLL", "OleDLL"), \
+                f"DLL class is {self.options.dllclass}, but function {function} needs WinDLL (stdcall)"
+        
+        self.srcinfo(function.src)
         needs_guard, pad = self._check_guard(function)
         if needs_guard:
             self.file.write(
                 'if hasattr(_lib, "{CN}"):\n'.format(CN=function.c_name())
             )
-        
+        if function.variadic:
+            self._print_variadic_function(function, pad)
+        else:
+            self._print_fixed_function(function, pad)
+    
+    
+    def _print_fixed_function(self, function, pad):
         self.file.write(indent(
             '{PN} = _lib.{CN}\n'.format(CN=function.c_name(), PN=function.py_name()) +
             "{PN}.argtypes = [{ATS}]\n".format(PN=function.py_name(), ATS=", ".join([a.py_string() for a in function.argtypes])) +
@@ -319,18 +330,8 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
                 "\n" + pad + "{PN}.errcheck = {EC}".format(PN=function.py_name(), EC=function.errcheck.py_string())
             )
     
-    def print_variadic_function(self, function):
+    def _print_variadic_function(self, function, pad):
         # TODO see if we can remove the _variadic_function wrapper and use just plain ctypes
-        
-        assert not function.attrib.get("stdcall", False)
-        self.srcinfo(function.src)
-        
-        needs_guard, pad = self._check_guard(function)
-        if needs_guard:
-            self.file.write(
-                'if hasattr(_lib, {CN}):\n'.format(CN=function.c_name())
-            )
-        
         self.file.write(indent(
             '_func = _lib.{CN}\n'
             "_restype = {RT}\n"
@@ -347,18 +348,16 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
         ))
 
     def print_variable(self, variable):
-        # TODO consider to remove try/except, or use only if guard_symbols is True
         self.srcinfo(variable.src)
-        self.file.write(
-            "try:\n"
-            '    {PN} = ({PS}).in_dll(_lib, "{CN}")\n'
-            "except:\n"
-            "    pass\n".format(
-                PN=variable.py_name(),
-                PS=variable.ctype.py_string(),
-                CN=variable.c_name(),
-            )
+        entry = '{PN} = ({PS}).in_dll(_lib, "{CN}")'.format(
+            PN=variable.py_name(),
+            PS=variable.ctype.py_string(),
+            CN=variable.c_name(),
         )
+        needs_guard, pad = self._check_guard(variable)
+        if needs_guard:
+            entry = self._try_except_wrap(entry, pad)
+        self.file.write(entry)
 
     def print_macro(self, macro):
         if macro.params:
@@ -367,13 +366,11 @@ _lib = ctypes.CDLL(_loader_info["libpath"])
             self.print_simple_macro(macro)
 
     def print_simple_macro(self, macro):
-        # NOTE(geisserml) previously, macros had a try/except wrapper - we removed it
-        # broken macros should be skipped explicitly and the respective issue may be reported
-        # -> TODO consider re-introducing try/except if guard_symbols is True
-        self.file.write(
-            "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
-        )
-        self.srcinfo(macro.src, inline=True)
+        self.srcinfo(macro.src, wants_nl=self.options.guard_symbols)
+        entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
+        if self.options.guard_symbols:
+            entry = self._try_except_wrap(entry, " "*4)
+        self.file.write(entry)
 
     def print_func_macro(self, macro):
         self.srcinfo(macro.src)
