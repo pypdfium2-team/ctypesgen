@@ -366,9 +366,9 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
             self.print_simple_macro(macro)
 
     def print_simple_macro(self, macro):
-        self.srcinfo(macro.src, wants_nl=self.options.guard_symbols)
+        self.srcinfo(macro.src, wants_nl=self.options.guard_macros)
         entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
-        if self.options.guard_symbols:
+        if self.options.guard_macros:
             entry = self._try_except_wrap(entry, " "*4)
         self.file.write(entry)
 

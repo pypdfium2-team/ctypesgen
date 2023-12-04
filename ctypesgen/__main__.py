@@ -338,6 +338,12 @@ def main(givenargs=None):
         action="store_false",
         help="Do not add hasattr(_lib, ...) if-guards. Use when input headers and runtime binary are guaranteed to match. Note, if the library was loaded and missing symbols were determined, these would still be guarded selectively, if included.",
     )
+    parser.add_argument(
+        "--no-macro-guards",
+        dest="guard_macros",
+        action="store_false",
+        help="Do not wrap macros in try/except.",
+    )
 
     # Error options
     parser.add_argument(

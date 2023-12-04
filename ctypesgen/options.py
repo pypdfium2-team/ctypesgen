@@ -45,6 +45,7 @@ default_values = {
     "no_srcinfo": False,
     "no_load_library": False,
     "guard_symbols": True,
+    "guard_macros": True,
     "allow_system_search": True,
     "dllclass": None,
     "include_missing_symbols": True,
