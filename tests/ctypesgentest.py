@@ -189,7 +189,6 @@ class JsonHelper:
 # -- Functions facilitating tests of use of cross inclusion --
 
 COMMON_DIR = str(Path(TEST_DIR)/"common")
-COMMON_RELATIVE_PKG = str(Path(COMMON_DIR).relative_to(Path.cwd())).replace(os.path.sep, ".")
 
 
 def generate_common():
@@ -220,7 +219,7 @@ def _generate_common(file_name, shared):
     args = ["-i", f"{COMMON_DIR}/{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
     if shared:
         file_name += "_shared"
-        args += ["-m", f"{COMMON_RELATIVE_PKG}/.common", "--no-embed-preamble"]
+        args += ["-m", f".common", "--no-embed-preamble"]
     else:
         # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
         args += ["--include-extra-symbols", "mystruct"]

@@ -31,7 +31,7 @@ default_values = {
     "show_macro_warnings": True,
     "header_template": None,
     "inserted_files": [],
-    "other_known_names": [],
+    "imported_symbols": [],
     "include_macros": True,
     "include_undefs": True,
     "library": None,

@@ -5,7 +5,9 @@ Command-line interface for ctypesgen
 import re
 import sys
 import importlib
+import contextlib
 import argparse
+from pathlib import Path
 
 from ctypesgen import (
     messages as msgs,
@@ -17,27 +19,29 @@ from ctypesgen import (
     version,
 )
 
+@contextlib.contextmanager
+def tmp_searchpath(path, active):
+    if active:
+        sys.path.insert(0, path)
+        try:
+            yield
+        finally:
+            sys.path.pop(0)
+    else:
+        yield
+        return
 
-def find_symbols_in_modules(modnames):
+def find_symbols_in_modules(modnames, outpath):
     symbols = set()
-    new_modnames = []
-    
     for modname in modnames:
-        
-        compile_time_package = None
-        if "/" in modname:
-            compile_time_package, modname = modname.split("/")
-        new_modnames.append(modname)
-        
-        # NOTE All specified modules must be importable at compile time so we can determine their symbols and prevent them from being overwritten. This is important to support shared headers.
-        module = importlib.import_module(modname, compile_time_package)
+        include_path = str(outpath.parents[1].resolve())
+        with tmp_searchpath(include_path, active=modname.startswith(".")):
+            module = importlib.import_module(modname, outpath.parent.name)
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, "Linked modules must provide symbols"
         msgs.status_message(f"Found symbols {module_syms} in module {module}")
-        
         symbols.update(module_syms)
-    
-    return symbols, new_modnames
+    return symbols
 
 
 # FIXME argparse parameters are not ordered consistently...
@@ -102,7 +106,7 @@ def main(givenargs=None):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from the given Python module. For a relative module, you may do 'PKG_IMPORT/.MODULE', with PKG_IMPORT being an optional, compile-time, dot-delimited path to the parent. Otherwise, we will import from the system.",
+        help="Use symbols from python module MODULE. The syntax is similar to a python import: If prefixed with ., it will be interpreted relative to the output dir. Otherwise, the module will be imported from installed packages.",
     )
     parser.add_argument(
         "-I",
@@ -359,7 +363,7 @@ def main(givenargs=None):
     args.runtime_libdirs += args.universal_libdirs
 
     # Figure out what names will be defined by imported Python modules
-    args.other_known_names, args.modules = find_symbols_in_modules(args.modules)
+    args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))
 
     # Fetch printer for the requested output language
     if args.output_language == "py":

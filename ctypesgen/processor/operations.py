@@ -184,7 +184,7 @@ def fix_conflicting_names(data, opts):
         important_names[name] = "a name needed by ctypes or ctypesgen"
     for name in dir(__builtins__):
         important_names[name] = "a Python builtin"
-    for name in opts.other_known_names:
+    for name in opts.imported_symbols:
         important_names[name] = "a name from an included Python module"
     for name in keyword.kwlist:
         important_names[name] = "a Python keyword"
