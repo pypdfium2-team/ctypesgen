@@ -269,7 +269,7 @@ def check_symbols(data, opts):
         return
     
     # only check symbols that we actually want to include
-    missing_symbols = {s for s in (data.functions + data.variables) if s.included and not hasattr(library, s.c_name())}
+    missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     if missing_symbols:
         if opts.include_missing_symbols:
             warning_message(
@@ -287,4 +287,5 @@ def check_symbols(data, opts):
         
         for s in missing_symbols:
             s.is_missing = True
-            s.included = opts.include_missing_symbols
+            if not opts.include_missing_symbols:
+                s.include_rule = "never"
