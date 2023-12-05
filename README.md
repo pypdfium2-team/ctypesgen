@@ -24,7 +24,7 @@ We are only testing with GCC at this time, others may or may not work.
 
 ### Known Limitations
 
-* We only support the regular `cdecl` calling convention at this time. Restoring the windows-only `stdcall` convention is planned. Note that ctypes cannot handle other rare calling conventions, as of this writing.
+* We do not support libraries with mixed calling conventions at this time.
 
 ### Bugs
 
