@@ -13,18 +13,20 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for a draft overview of
 
 ### System Dependencies
 
-ctypesgen depends on the presence of an external C pre-processor.
-We are only testing with GCC at this time, others may or may not work.
+ctypesgen depends on the presence of an external C pre-processor, by default GCC.
+You may specify an alternative pre-processor command using the `--cpp` option.
+However, we are only testing with GCC at this time – others may or may not work.
 
 ### Tips & Tricks
 
-* If you encounter a broken macro, use `--exclude-symbols` or replace it manually. This can be necessary with C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python.
+* If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
+  If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share the template using `--no-embed-preamble`. Relative modules will be expected to be present in the output directory at compile time.
 * To provide extra dependency headers that are not present in the system, you can set the `CPATH` or `C_INCLUDE_PATH` env vars for the C pre-processor. It may also be possible to use this for "cross-compilation" of bindings, or to spoof an optional foreign symbol using `typedef void* SYMBOL;` (`c_void_p`).
-* If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependents. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
+* If building with `--no-macro-guards` and you encounter a broken macro, use `--exclude-symbols` or replace it manually. This can be necessary for C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python.
 
 ### Known Limitations
 
-* We do not support libraries with mixed calling conventions at this time.
+* At this time, our fork supports either the `cdecl` or `stdcall` calling convention homogeneously, but not a mixture of both (we try to auto-detect the right DLL class from the first function signature). We do not support other rare calling conventions, because `ctypes` itself does not.
 
 ### Bugs
 
