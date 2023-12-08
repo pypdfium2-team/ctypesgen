@@ -302,7 +302,7 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
     
     def print_function(self, function):
         
-        if "stdcall" in function.attrib:
+        if function.attrib.get("stdcall", False):
             assert self.options.dllclass in ("WinDLL", "OleDLL"), \
                 f"DLL class is {self.options.dllclass}, but function {function} needs WinDLL (stdcall)"
         
