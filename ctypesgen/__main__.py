@@ -26,7 +26,8 @@ def tmp_searchpath(path, active):
         try:
             yield
         finally:
-            sys.path.pop(0)
+            popped = sys.path.pop(0)
+            assert popped is path
     else:
         yield
         return
