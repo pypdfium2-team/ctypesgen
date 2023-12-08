@@ -116,33 +116,33 @@ def fix_conflicting_names(data, opts):
     # came from.
     important_names = {}
 
-    preamble_names = set()
-    preamble_names = preamble_names.union(
+    occupied_names = set()
+    occupied_names = occupied_names.union(
+        # ctypesgen names
         [
-            "DarwinLibraryLoader",
-            "LibraryLoader",
-            "LinuxLibraryLoader",
-            "WindowsLibraryLoader",
-            "_WindowsLibrary",
-            "add_library_search_dirs",
-            "_environ_path",
-            "ctypes",
-            "load_library",
-            "loader",
-            "os",
-            "re",
-            "sys",
+            "_lib",
+            "_variadic_function",
+            "_loader_info",
+            # the following names are only accessed before the symbols list, so we don't strictly care about them being overridden
+            # "sys",
+            # "warnings",
+            # "pathlib",
+            # "_find_library",
         ]
     )
-    preamble_names = preamble_names.union(
+    occupied_names = occupied_names.union(
+        # ctypes names, required for symbol prints
         [
-            "ArgumentError",
-            "CFUNCTYPE",
-            "POINTER",
-            "Structure",
-            "Union",
-            "_variadic_function",
+            "ctypes",
             "addressof",
+            "ArgumentError",
+            "cast",
+            "CFUNCTYPE",
+            "pointer",
+            "POINTER",
+            "Union",
+            "sizeof",
+            "Structure",
             "c_buffer",
             "c_byte",
             "c_char",
@@ -173,14 +173,9 @@ def fix_conflicting_names(data, opts):
             "c_voidp",
             "c_wchar",
             "c_wchar_p",
-            "cast",
-            "ctypes",
-            "os",
-            "pointer",
-            "sizeof",
         ]
     )
-    for name in preamble_names:
+    for name in occupied_names:
         important_names[name] = "a name needed by ctypes or ctypesgen"
     for name in dir(__builtins__):
         important_names[name] = "a Python builtin"
