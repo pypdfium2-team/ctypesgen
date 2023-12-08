@@ -229,7 +229,7 @@ def main(givenargs=None):
         "--no-macros",
         action="store_false",
         dest="include_macros",
-        help="Don't output macros.",
+        help="Don't output macros. May be overridden selectively by --symbol-rules.",
     )
     parser.add_argument(
         "--no-undefs",
@@ -237,31 +237,12 @@ def main(givenargs=None):
         dest="include_undefs",
         help="Do not remove macro definitions as per #undef directives",
     )
-    # FIXME There may still be situations where these symbol filter options aren't sufficient to achieve the desired result, due to the grouped processing with pre-defined order. For full control, we'd need a way to take a chain of include/exclude and process it in given order. Also, we might need separate resets, but maybe excluding more specific patterns from a match can be handled on regex level, anyway.
     parser.add_argument(
-        "--include-extra-symbols",
+        "--symbol-rules",
         nargs="+",
         action="extend",
         default=[],
-        metavar="REGEXPR",
-        help="Regular expression of symbols to include. This overrides the default selector, and is overridden by --exclude-symbols or --reset-symbols. Note, multiple symbols will be merged into a single expression by doing something like (e1|e2|e3). This applies to the other symbol options as well.",
-    )
-    parser.add_argument(
-        # FIXME limited applicability (see Beware: ...)
-        "--exclude-symbols",
-        nargs="+",
-        action="extend",
-        default=[],
-        metavar="REGEXPR",
-        help="Regular expression of symbols to exclude. This overrides the default selector and --include-extra-symbols, and is overridden by --reset-symbols. Beware: --exclude-symbols implicitly removes any dependent symbols, without merging aliases.",
-    )
-    parser.add_argument(
-        "--reset-symbols",
-        nargs="+",
-        action="extend",
-        default=[],
-        metavar="REGEXPR",
-        help="Regular expression of symbols to reset to the default selector. Overrides --include-extra-symbols, --exclude-symbols and --no-macros."
+        help="Sequence of symbol inclusion rules of format RULE=re1|re2|..., where RULE is one of [never, if_needed, yes], followed by a python regular expression (multiple REs may be delimited using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
     )
     parser.add_argument(
         "--no-stddef-types",
@@ -372,13 +353,13 @@ def main(givenargs=None):
         type=int,
         help="Run ctypesgen with specified debug level (also applies to yacc parser)",
     )
-
+    
     parser.set_defaults(**core_options.default_values)
     args = parser.parse_args(givenargs)
-
+    
     args.compile_libdirs += args.universal_libdirs
     args.runtime_libdirs += args.universal_libdirs
-
+    
     # Figure out what names will be defined by imported Python modules
     args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))
     
@@ -387,9 +368,9 @@ def main(givenargs=None):
     descriptions = core_parser.parse(args.headers, args)
     processor.process(descriptions, args)
     printer(args.output, args, descriptions)
-
+    
     msgs.status_message("Wrapping complete.")
-
+    
     if not descriptions.all:
         msgs.warning_message("There wasn't anything of use in the specified header file(s).", cls="usage")
         # Note what may be a common mistake

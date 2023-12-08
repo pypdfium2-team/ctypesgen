@@ -22,7 +22,17 @@ However, we are only testing with GCC at this time – others may or may not wor
 * If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
   If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share the template using `--no-embed-preamble`. Relative modules will be expected to be present in the output directory at compile time.
 * To provide extra dependency headers that are not present in the system, you can set the `CPATH` or `C_INCLUDE_PATH` env vars for the C pre-processor. It may also be possible to use this for "cross-compilation" of bindings, or to spoof an optional foreign symbol using `typedef void* SYMBOL;` (`c_void_p`).
-* If building with `--no-macro-guards` and you encounter a broken macro, use `--exclude-symbols` or replace it manually. This can be necessary for C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python.
+* If building with `--no-macro-guards` and you encounter broken macros, you may use `--symbol-rules` (see below) or replace them manually. This can be necessary on C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python. In particular, you are likely to run into this with `--all-headers`.
+
+#### Notes on symbol inclusion
+* ctypesgen works with the following symbol rules:
+  - `yes`: The symbol is eagerly included.
+  - `if_needed`: The symbol is included if other included symbols depend on it (e.g. a type used in a function signature).
+  - `never`: The symbol is always excluded, and implicitly all its dependants.
+* Initially, symbols from caller-given headers get assigned the include rule `yes`, and any others `if_needed`. If building with `--all-headers`, all symbols default to `yes`, regardless of their origin.
+* `--no-macros` sets the include rule of all macro objects to `never`.
+* Finally, the `--symbol-rules` option is applied, which takes a sequence of RULE=(symbol match expressions), providing callers with powerful means of control over symbol inclusion.
+* Note that you should be very careful with `never` because of the potential for accidental exclusion of dependants. As a rule of thumb, you'll usually want to use `if_needed` rather than `never`.
 
 ### Known Limitations
 

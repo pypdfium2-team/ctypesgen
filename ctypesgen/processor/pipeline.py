@@ -39,9 +39,7 @@ from ctypesgen.messages import (
 from ctypesgen.processor.dependencies import find_dependencies
 from ctypesgen.processor.operations import (
     automatically_typedef_structs,
-    filter_by_regexes_exclude,
-    filter_by_regexes_include_extra,
-    filter_by_regexes_reset,
+    filter_by_regex_rules,
     check_symbols,
     fix_conflicting_names,
     remove_descriptions_in_system_headers,
@@ -52,22 +50,18 @@ from ctypesgen.processor.operations import (
 
 def process(data, options):
     status_message("Processing description list.")
-
+    
     find_dependencies(data, options)
     automatically_typedef_structs(data, options)
     remove_descriptions_in_system_headers(data, options)
-    filter_by_regexes_include_extra(data, options)
-    filter_by_regexes_exclude(data, options)
     remove_macros(data, options)
-    filter_by_regexes_reset(data, options)
+    filter_by_regex_rules(data, options)
     remove_NULL(data, options)
     if options.output_language == "python":
         # this function is python specific
         fix_conflicting_names(data, options)
     
-    # run check_symbols() after filters were applied but before the final inclusion is calculated, to avoid both unnecessary checks and unused dependency includes as much as possible.
     check_symbols(data, options)
-    
     calculate_final_inclusion(data, options)
     print_errors_encountered(data, options)
     calculate_final_inclusion(data, options)

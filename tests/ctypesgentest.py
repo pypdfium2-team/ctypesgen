@@ -219,10 +219,10 @@ def _generate_common(file_name, shared):
     args = ["-i", f"{COMMON_DIR}/{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
     if shared:
         file_name += "_shared"
-        args += ["-m", f".common", "--no-embed-preamble"]
+        args += ["-m", ".common", "--no-embed-preamble"]
     else:
         # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
-        args += ["--include-extra-symbols", "mystruct"]
+        args += ["--symbol-rules", "yes=mystruct"]
         file_name += "_unshared"
     args += ["-o", f"{COMMON_DIR}/{file_name}.py"]
     ctypesgen_main(args)

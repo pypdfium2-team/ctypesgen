@@ -107,7 +107,7 @@ class StdlibTest(unittest.TestCase):
             library = "msvcrt"
         else:
             library = "c"  # libc
-        cls.module, _ = generate(header_str, library=library, all_headers=True, exclude_symbols=[r"__\w+"])
+        cls.module, _ = generate(header_str, library=library, all_headers=True, symbol_rules=["if_needed="+r"__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -2045,9 +2045,9 @@ class MathTest(unittest.TestCase):
         else:
             library = "libc"
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
-        # TODO consider adding --replace-symbol/--add-symbols/--add-imports options so the caller could do things like NAN=math.nan instead
-        # NOTE We exclude members starting with __ because they're private. This avoids garbage and a missing symbols warning.
-        cls.module, _ = generate(header_str, library=library, all_headers=True, exclude_symbols=["NAN", r"__\w+"])
+        # Also exclude unused members starting with __ to avoid garbage in the output.
+        # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
+        cls.module, _ = generate(header_str, library=library, all_headers=True, symbol_rules=["never="+r"NAN", "if_needed="+r"__\w+"])
 
     @classmethod
     def tearDownClass(cls):

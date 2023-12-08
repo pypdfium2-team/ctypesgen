@@ -72,28 +72,15 @@ def remove_macros(data, opts):
             macro.include_rule = "never"
 
 
-def filter_by_regexes_include_extra(data, opts):
-    if opts.include_extra_symbols:
-        expr = re.compile("({})".format("|".join(opts.include_extra_symbols)))
+def filter_by_regex_rules(data, opts):
+    valid_rules = {"never", "if_needed", "yes"}
+    for rules_entry in opts.symbol_rules:
+        rule_name, symbols_regex = rules_entry.split("=", maxsplit=1)
+        assert rule_name in valid_rules
+        expr = re.compile(symbols_regex)
         for object in data.all:
-            if object.include_rule != "never" and expr.match(object.py_name()):
-                object.include_rule = "yes"
-
-
-def filter_by_regexes_exclude(data, opts):
-    if opts.exclude_symbols:
-        expr = re.compile("({})".format("|".join(opts.exclude_symbols)))
-        for object in data.all:
-            if expr.match(object.py_name()):
-                object.include_rule = "never"
-
-
-def filter_by_regexes_reset(data, opts):
-    if opts.reset_symbols:
-        expr = re.compile("({})".format("|".join(opts.reset_symbols)))
-        for object in data.all:
-            if expr.match(object.py_name()):
-                object.include_rule = "if_needed"
+            if expr.fullmatch(object.py_name()):
+                object.include_rule = rule_name
 
 
 def fix_conflicting_names(data, opts):
