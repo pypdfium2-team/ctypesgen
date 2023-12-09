@@ -242,7 +242,7 @@ def main(givenargs=None):
         nargs="+",
         action="extend",
         default=[],
-        help="Sequence of symbol inclusion rules of format RULE=re1|re2|..., where RULE is one of [never, if_needed, yes], followed by a python regular expression (multiple REs may be delimited using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
+        help="Sequence of symbol inclusion rules of format RULE=exp1|exp2|..., where RULE is one of [never, if_needed, yes], followed by a python re.Pattern.fullmatch() regular expression (multiple REs may be concatenated using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
     )
     parser.add_argument(
         "--no-stddef-types",

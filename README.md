@@ -29,9 +29,9 @@ However, we are only testing with GCC at this time – others may or may not wor
   - `yes`: The symbol is eagerly included.
   - `if_needed`: The symbol is included if other included symbols depend on it (e.g. a type used in a function signature).
   - `never`: The symbol is always excluded, and implicitly all its dependants.
-* Initially, symbols from caller-given headers get assigned the include rule `yes`, and any others `if_needed`. If building with `--all-headers`, all symbols default to `yes`, regardless of their origin.
+* Roughly speaking, symbols from caller-given headers get assigned the include rule `yes`, and any others `if_needed`. When building with `--all-headers`, all symbols default to `yes` regardless of their origin.
 * `--no-macros` sets the include rule of all macro objects to `never`.
-* Finally, the `--symbol-rules` option is applied, which takes a sequence of RULE=(symbol match expressions), providing callers with powerful means of control over symbol inclusion.
+* Finally, the `--symbol-rules` option is applied, which can be used to assign symbol rules by regex fullmatch expressions, providing callers with powerful means of control over symbol inclusion.
 * Note that you should be very careful with `never` because of the potential for accidental exclusion of dependants. As a rule of thumb, you'll usually want to use `if_needed` rather than `never`.
 
 ### Known Limitations
