@@ -35,6 +35,7 @@ class WrapperPrinter:
                 self.options.strip_build_path += os.path.sep
             
             if not self.options.embed_preamble:
+                # TODO merge EXT_LOADER and EXT_LIBS
                 self.EXT_PREAMBLE = outpath.parent / "_ctg_preamble.py"
                 self.EXT_LOADER = outpath.parent / "_ctg_loader.py"
                 self.EXT_LIBS = outpath.parent / "_ctg_libs.py"
@@ -98,6 +99,7 @@ class WrapperPrinter:
             search_sys = opts.allow_system_search,
         )
         LI = f"_libs_info['{self.options.library}']"
+        # TODO move to libraryloader function
         content = f"""
 {LI} = {loader_info}
 {LI}['path'] = _find_library(**{LI})
