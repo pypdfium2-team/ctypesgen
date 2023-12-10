@@ -8,19 +8,17 @@ resulting module object and the output that ctypesgen produced.
 
 import os
 import sys
-from io import StringIO
 import glob
 import json
-from contextlib import contextmanager
 import types
 import subprocess
 from shutil import rmtree
 from itertools import product
+import tempfile
 from pathlib import Path
 
 from ctypesgen.__main__ import main as ctypesgen_main
-from ctypesgen import options, messages, parser, processor
-from ctypesgen import printer_python, printer_json, VERSION
+from ctypesgen import messages, VERSION
 
 
 # TODO migrate test suite to pathlib.Path type
@@ -28,81 +26,32 @@ from ctypesgen import printer_python, printer_json, VERSION
 TEST_DIR = str(Path(__file__).resolve().parent)
 
 
-module_factory = types.ModuleType
+def module_from_code(name, python_code):
+    module = types.ModuleType(name)
+    exec(python_code, module.__dict__)
+    return module
 
-# set redirect_stdout to False if using console based debugger like pdb
-redirect_stdout = True
 
-
-@contextmanager
-def redirect(stdout=sys.stdout):
-    backup = sys.stdout
-    sys.stdout = stdout
-    try:
-        yield stdout
-    finally:
-        sys.stdout = backup
-
-# TODO(geisserml) migrate generate() to actual package CLI
-
-def generate(header, **more_options):
-
-    assert isinstance(header, str)
-    with open("temp.h", "wb") as f:
-        f.write(header.encode('utf-8'))
-
-    test_options = options.get_default_options()
-    test_options.headers = ["temp.h"]
-    for opt, val in more_options.items():
-        setattr(test_options, opt, val)
-
-    if redirect_stdout:
-        # Redirect output
-        sys.stdout = StringIO()
-
-    # Step 1: Parse
-    descriptions = parser.parse(test_options.headers, test_options)
-
-    # Step 2: Process
-    processor.process(descriptions, test_options)
-
-    # Step 3: Print
-    if test_options.output_language.startswith("py"):
-
-        def module_from_code(name, python_code):
-            module = module_factory(name)
-            exec(python_code, module.__dict__)
-            return module
-
-        # we have to redirect stdout, as WrapperPrinter is only able to write
-        # to files or stdout
-        with redirect(stdout=StringIO()) as printer_output:
-            # do not discard WrapperPrinter object, as the target file gets
-            # closed on printer deletion
-            _ = printer_python.WrapperPrinter(None, test_options, descriptions)
-            generated_python_code = printer_output.getvalue()
-            module = module_from_code("temp", generated_python_code)
-            retval = module
-
-    elif test_options.output_language == "json":
-        with redirect(stdout=StringIO()) as printer_output:
-            # do not discard WrapperPrinter object, as the target file gets
-            # closed on printer deletion
-            _ = printer_json.WrapperPrinter(None, test_options, descriptions)
-            JSON = json.loads(printer_output.getvalue())
-            retval = JSON
+def generate(header_str, args=[], lang="py"):
+    
+    tmp_header = tempfile.NamedTemporaryFile()
+    tmp_header.write(header_str.encode())
+    tmp_header.seek(0)
+    tmp_out = tempfile.NamedTemporaryFile()
+    ctypesgen_main(["-i", tmp_header.name, "-o", tmp_out.name, "--output-language", lang, *args])
+    
+    tmp_header_name = tmp_header.name
+    tmp_header.close()
+    tmp_out.seek(0)
+    content = tmp_out.read().decode()
+    tmp_out.close()
+    
+    if lang.startswith("py"):
+        return module_from_code("tmp_module", content)
+    elif lang == "json":
+        return json.loads(content), tmp_header_name
     else:
-        raise RuntimeError("No such output language `" + test_options.output_language + "'")
-
-    if redirect_stdout:
-        # Un-redirect output
-        output = sys.stdout.getvalue()
-        sys.stdout.close()
-        sys.stdout = sys.__stdout__
-    else:
-        output = ""
-
-    return retval, output
+        assert False
 
 
 def cleanup(filepattern="temp.*"):

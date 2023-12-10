@@ -107,7 +107,7 @@ class StdlibTest(unittest.TestCase):
             library = "msvcrt"
         else:
             library = "c"  # libc
-        cls.module, _ = generate(header_str, library=library, all_headers=True, symbol_rules=["if_needed="+r"__\w+"])
+        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", "if_needed=__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -219,7 +219,7 @@ struct foo
     int a;
 };
 """
-        cls.module, _ = generate(header_str)  # , all_headers=True)
+        cls.module = generate(header_str)  # ["--all-headers"]
 
     @classmethod
     def tearDownClass(cls):
@@ -253,7 +253,7 @@ struct int_types {
     long int unsigned long t_long_int_u_long;
 };
 """
-        cls.module, _ = generate(header_str)
+        cls.module = generate(header_str)
 
     @classmethod
     def tearDownClass(cls):
@@ -301,8 +301,8 @@ class SimpleMacrosTest(unittest.TestCase):
 #define subcall_macro_minus(x,y) minus_macro(x,y)
 #define subcall_macro_minus_plus(x,y,z) (minus_macro(x,y)) + (z)
 """
-        cls.module, _ = generate(header_str)
-        cls.json, _ = generate(header_str, output_language="json")
+        cls.module = generate(header_str)
+        cls.json, _ = generate(header_str, lang="json")
 
     def _json(self, name):
         for i in SimpleMacrosTest.json:
@@ -629,8 +629,8 @@ typedef struct {
   char b;
 } BAR0, *PBAR0;
 """
-        cls.module, _ = generate(header_str)
-        cls.json, _ = generate(header_str, output_language="json")
+        cls.module = generate(header_str)
+        cls.json, cls.tmp_header_path = generate(header_str, lang="json")
 
     @classmethod
     def tearDownClass(cls):
@@ -955,7 +955,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {},
-                    "src": ["/some-path/temp.h", 21],
+                    "src": [self.tmp_header_path, 21],
                     "tag": "anon_1",
                     "variety": "struct",
                 },
@@ -1120,7 +1120,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {"packed": True},
-                    "src": ["/some-path/temp.h", 30],
+                    "src": [self.tmp_header_path, 30],
                     "tag": "anon_2",
                     "variety": "struct",
                 },
@@ -1285,7 +1285,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {"packed": True, "aligned": [4]},
-                    "src": ["/some-path/temp.h", 40],
+                    "src": [self.tmp_header_path, 40],
                     "tag": "anon_3",
                     "variety": "struct",
                 },
@@ -1497,7 +1497,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {},
-                    "src": ["/some-path/temp.h", 77],
+                    "src": [self.tmp_header_path, 77],
                     "tag": "anon_4",
                     "variety": "struct",
                 },
@@ -1560,7 +1560,7 @@ typedef struct {
                         ],
                     ],
                     "opaque": False,
-                    "src": ["/some-path/temp.h", 81],
+                    "src": [self.tmp_header_path, 81],
                     "tag": "anon_5",
                     "variety": "struct",
                 },
@@ -1598,7 +1598,7 @@ typedef struct {
                             ],
                         ],
                         "opaque": False,
-                        "src": ["/some-path/temp.h", 81],
+                        "src": [self.tmp_header_path, 81],
                         "tag": "anon_5",
                         "variety": "struct",
                     },
@@ -1687,7 +1687,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {},
-                    "src": ["/some-path/temp.h", 3],
+                    "src": [self.tmp_header_path, 3],
                     "tag": "foo",
                     "variety": "struct",
                 },
@@ -1773,7 +1773,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {"packed": True},
-                    "src": ["/some-path/temp.h", 12],
+                    "src": [self.tmp_header_path, 12],
                     "tag": "packed_foo",
                     "variety": "struct",
                 },
@@ -1859,7 +1859,7 @@ typedef struct {
                         ],
                     ],
                     "opaque": False,
-                    "src": ["/some-path/temp.h", 56],
+                    "src": [self.tmp_header_path, 56],
                     "tag": "pragma_packed_foo2",
                     "variety": "struct",
                 },
@@ -1945,7 +1945,7 @@ typedef struct {
                         ],
                     ],
                     "opaque": False,
-                    "src": ["/some-path/temp.h", 66],
+                    "src": [self.tmp_header_path, 66],
                     "tag": "foo3",
                     "variety": "struct",
                 },
@@ -2047,7 +2047,7 @@ class MathTest(unittest.TestCase):
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
         # Also exclude unused members starting with __ to avoid garbage in the output.
         # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
-        cls.module, _ = generate(header_str, library=library, all_headers=True, symbol_rules=["never="+r"NAN", "if_needed="+r"__\w+"])
+        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", "never=NAN", "if_needed=__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -2096,8 +2096,8 @@ class EnumTest(unittest.TestCase):
             TEST_2
         } test_status_t;
         """
-        cls.module, _ = generate(header_str)
-        cls.json, _ = generate(header_str, output_language="json")
+        cls.module = generate(header_str)
+        cls.json, cls.tmp_header_path = generate(header_str, lang="json")
 
     @classmethod
     def tearDownClass(cls):
@@ -2186,7 +2186,7 @@ class EnumTest(unittest.TestCase):
                     ],
                     "errors": [],
                     "opaque": False,
-                    "src": ["/some-path/temp.h", 2],
+                    "src": [self.tmp_header_path, 2],
                     "tag": "anon_1",
                 },
                 "name": "test_status_t",
@@ -2209,7 +2209,7 @@ class PrototypeTest(unittest.TestCase):
         void * __attribute__((stdcall)) * foo4(void);
         void foo5(void) __attribute__((__stdcall__));
         """
-        cls.json, output = generate(header_str, output_language="json")
+        cls.json, _ = generate(header_str, lang="json")
 
     @classmethod
     def tearDownClass(cls):
@@ -2362,7 +2362,7 @@ class LongDoubleTest(unittest.TestCase):
             int a;
         };
         """
-        cls.module, _ = generate(header_str)  # , all_headers=True)
+        cls.module = generate(header_str)  # ["--all-headers"]
 
     @classmethod
     def tearDownClass(cls):
@@ -2430,7 +2430,7 @@ class UncheckedTest(unittest.TestCase):
         header_str = """
         typedef int (*some_type_of_answer)(void*);
         """
-        cls.module, cls.output = generate(header_str, all_headers=False)
+        cls.module = generate(header_str)
 
     def test_unchecked_prototype(self):
         module = UncheckedTest.module
@@ -2476,7 +2476,7 @@ struct foo
 
 #define CHAR_CONST u'🍌'
 """
-        cls.module, _ = generate(header_str)
+        cls.module = generate(header_str)
 
     @classmethod
     def tearDownClass(cls):
@@ -2528,7 +2528,7 @@ class NULLTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = "#define A_NULL_MACRO NULL"
-        cls.module, _ = generate(header_str)  # , all_headers=True)
+        cls.module = generate(header_str)  # ["--all-headers"]
 
     @classmethod
     def tearDownClass(cls):
@@ -2565,7 +2565,7 @@ class MacromanEncodeTest(unittest.TestCase):
 
         """
 
-        cls.module, _ = generate(header_str)
+        cls.module = generate(header_str)
 
     @classmethod
     def tearDownClass(cls):
