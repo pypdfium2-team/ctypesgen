@@ -22,8 +22,8 @@ LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 class WrapperPrinter:
     def __init__(self, outpath, options, data):
-        status_message("Writing to %s." % (outpath or "stdout"))
-        self.file = open(outpath, "w") if outpath else sys.stdout
+        status_message(f"Writing to {outpath}.")
+        self.file = open(outpath, "w")
         
         try:
             self.options = options
@@ -32,7 +32,7 @@ class WrapperPrinter:
             if self.options.strip_build_path and self.options.strip_build_path[-1] != os.path.sep:
                 self.options.strip_build_path += os.path.sep
             
-            if not self.options.embed_preamble and outpath:
+            if not self.options.embed_preamble:
                 self._copy_preamble_loader_files(outpath)
             
             self.print_header()
@@ -68,8 +68,7 @@ class WrapperPrinter:
             self.print_group(self.options.inserted_files, "inserted files", self.insert_file)
         
         finally:
-            if self.file != sys.stdout:
-                self.file.close()
+            self.file.close()
     
     
     def print_loader(self):

@@ -87,8 +87,9 @@ def main(givenargs=None):
     parser.add_argument(
         "-o",
         "--output",
+        required=True,
         metavar="FILE",
-        help="write wrapper to FILE [default stdout]",
+        help="write wrapper to FILE",
     )
     parser.add_argument(
         "--other-headers",
