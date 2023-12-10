@@ -45,7 +45,7 @@ default_values = {
     "guard_symbols": True,
     "guard_macros": True,
     "allow_system_search": True,
-    "dllclass": None,
+    "dllclass": "CDLL",
     "include_missing_symbols": True,
 }
 

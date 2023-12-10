@@ -36,7 +36,7 @@ However, we are only testing with GCC at this time – others may or may not wor
 
 ### Known Limitations
 
-* At this time, our fork supports either the `cdecl` or `stdcall` calling convention homogeneously, but not a mixture of both (we try to auto-detect the right DLL class from the first function signature). We do not support other rare calling conventions, because `ctypes` itself does not.
+* The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, and none other than `cdecl` or `stdcall`, because ctypes itself does not.
 
 ### Bugs
 

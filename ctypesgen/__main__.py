@@ -305,9 +305,9 @@ def main(givenargs=None):
     )
     parser.add_argument(
         "--dllclass",
-        default=None,  # auto
+        default="CDLL",
         choices=("CDLL", "WinDLL", "OleDLL", "PyDLL"),
-        help="The ctypes library class to use. 'CDLL' corresponds to the 'cdecl' calling convention, 'WinDLL' to windows-only 'stdcall'. See ctypes docs for more options. Note, this fork of ctypesgen does not currently support libraries with mixed calling convention.",
+        help="The ctypes library class to use. 'CDLL' corresponds to the 'cdecl' calling convention, 'WinDLL' to windows-only 'stdcall'. We do not currently support libraries with mixed calling convention.",
     )
     parser.add_argument(
         "--no-srcinfo",

@@ -2,7 +2,6 @@ import os
 import os.path
 import sys
 import time
-import ctypes
 import shutil
 from os.path import join
 from textwrap import indent
@@ -45,7 +44,7 @@ class WrapperPrinter:
             self.print_loader()
             self.file.write("\n")
             
-            self.print_library(self.options, data)
+            self.print_library(self.options)
             self.file.write("\n")
             self.print_group(self.options.modules, "modules", self.print_module)
             
@@ -83,7 +82,7 @@ class WrapperPrinter:
             self.file.write("from .ctypes_loader import *\n")
             self.file.write("from .ctypes_loader import _find_library\n\n")
 
-    def print_library(self, opts, data):
+    def print_library(self, opts):
         if not opts.library:
             notice = "No library name specified. Assuming pure headers without binary symbols."
             warning_message(notice, cls="usage")
@@ -95,18 +94,6 @@ class WrapperPrinter:
                 libdirs = opts.runtime_libdirs,
                 allow_system_search = opts.allow_system_search,
             )
-            
-            # poke into the first function to guess the dllclass
-            # this fork of ctypesgen does not currently support mixed calling conventions
-            if not self.options.dllclass:
-                if data.functions[0].attrib.get("stdcall", False):
-                    self.options.dllclass = "WinDLL"
-                else:
-                    self.options.dllclass = "CDLL"
-            
-            assert opts.dllclass.endswith("DLL") and hasattr(ctypes, opts.dllclass), \
-                f"Bad dllclass {opts.dllclass}"
-            
             self.file.write(f"""
 # Begin library load
 
@@ -275,7 +262,8 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
         self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}")
 
     def print_struct_members(self, struct):
-        # Fields must be defined indepedent of the actual class to handle self-references, cyclic struct references and forward declarations
+        # Fields are defined indepedent of the actual class to handle things like self-references, cyclic struct references and forward declarations
+        # https://docs.python.org/3/library/ctypes.html#incomplete-types
         self.file.write("%s_%s._fields_ = [\n" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
@@ -301,11 +289,6 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
         return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
     
     def print_function(self, function):
-        
-        if function.attrib.get("stdcall", False):
-            assert self.options.dllclass in ("WinDLL", "OleDLL"), \
-                f"DLL class is {self.options.dllclass}, but function {function} needs WinDLL (stdcall)"
-        
         self.srcinfo(function.src)
         needs_guard, pad = self._check_guard(function)
         if needs_guard:
