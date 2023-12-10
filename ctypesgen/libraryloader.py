@@ -44,8 +44,7 @@ def _find_library(name, dirs, search_sys, reldir=None):
 _libs_info, _libs = {}, {}
 
 def _register_library(name, dllclass, **kwargs):
-    _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs}
-    _libs_info[name]["path"] = _find_library(name, **kwargs)
-    if not _libs_info[name]["path"]:
-        raise ImportError(f"Could not find library with config {_libs_info[name]}")
-    return getattr(ctypes, dllclass)(_libs_info[name]["path"])
+    libpath = _find_library(name, **kwargs)
+    assert libpath, "output expected from _find_library()"
+    _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs, "path": libpath}
+    return getattr(ctypes, dllclass)(libpath)
