@@ -2389,11 +2389,11 @@ class MainTest(unittest.TestCase):
     the root of source code tree.
     """
 
-    script = os.path.join(TEST_DIR, os.pardir, "run.py")
+    script = TEST_DIR.parent/"run.py"
 
     @staticmethod
     def _exec(args):
-        p = Popen([sys.executable, MainTest.script] + args, stdout=PIPE, stderr=PIPE)
+        p = Popen([sys.executable, str(MainTest.script)] + args, stdout=PIPE, stderr=PIPE)
         o, e = p.communicate()
         print(o, e, p.returncode)
         return o, e, p.returncode

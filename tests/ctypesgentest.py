@@ -12,18 +12,21 @@ import glob
 import json
 import types
 import subprocess
-from shutil import rmtree
+import shutil
 from itertools import product
 import tempfile
 from pathlib import Path
 
-from ctypesgen.__main__ import main as ctypesgen_main
+import ctypesgen.__main__
 from ctypesgen import messages, VERSION
 
 
-# TODO migrate test suite to pathlib.Path type
+TEST_DIR = Path(__file__).resolve().parent
+COMMON_DIR = TEST_DIR/"common"
 
-TEST_DIR = str(Path(__file__).resolve().parent)
+
+def ctypesgen_main(args):
+    return ctypesgen.__main__.main([str(a) for a in args])
 
 
 def module_from_code(name, python_code):
@@ -137,15 +140,13 @@ class JsonHelper:
 
 # -- Functions facilitating tests of use of cross inclusion --
 
-COMMON_DIR = str(Path(TEST_DIR)/"common")
-
 
 def generate_common():
     common_lib = "libcommon.dll" if sys.platform == "win32" else "libcommon.so"
     _create_common_files()
     _compile_common(common_lib)
     
-    ctypesgen_main(["-i", f"{COMMON_DIR}/common.h", "--no-embed-preamble", "-o", f"{COMMON_DIR}/common.py"])
+    ctypesgen_main(["-i", COMMON_DIR/"common.h", "--no-embed-preamble", "-o", COMMON_DIR/"common.py"])
     for file_name, shared in product(["a", "b"], [False, True]):
         _generate_common(file_name, shared)
 
@@ -154,18 +155,17 @@ def cleanup_common():
     # Attention: currently not working on MS Windows.
     # cleanup_common() tries to delete "common.dll" while it is still loaded
     # by ctypes. See unittest for further details.
-    # rmtree(COMMON_DIR)  # XXX commented out for testing
-    pass
+    shutil.rmtree(COMMON_DIR)
 
 
 def _compile_common(common_lib):
-    subprocess.run(["gcc", "-c", f"{COMMON_DIR}/a.c", "-o", f"{COMMON_DIR}/a.o"])
-    subprocess.run(["gcc", "-c", f"{COMMON_DIR}/b.c", "-o", f"{COMMON_DIR}/b.o"])
-    subprocess.run(["gcc", "-shared", "-o", f"{COMMON_DIR}/{common_lib}", f"{COMMON_DIR}/a.o", f"{COMMON_DIR}/b.o"])
+    subprocess.run(["gcc", "-c", COMMON_DIR/"a.c", "-o", COMMON_DIR/"a.o"])
+    subprocess.run(["gcc", "-c", COMMON_DIR/"b.c", "-o", COMMON_DIR/"b.o"])
+    subprocess.run(["gcc", "-shared", "-o", COMMON_DIR/common_lib, COMMON_DIR/"a.o", COMMON_DIR/"b.o"])
 
 
 def _generate_common(file_name, shared):
-    args = ["-i", f"{COMMON_DIR}/{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
+    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
     if shared:
         file_name += "_shared"
         args += ["-m", ".common", "--no-embed-preamble"]
@@ -173,7 +173,7 @@ def _generate_common(file_name, shared):
         # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
         args += ["--symbol-rules", "yes=mystruct"]
         file_name += "_unshared"
-    args += ["-o", f"{COMMON_DIR}/{file_name}.py"]
+    args += ["-o", COMMON_DIR/f"{file_name}.py"]
     ctypesgen_main(args)
 
 
@@ -203,11 +203,11 @@ void bar(struct mystruct *m) { }
 """
 
     try:
-        os.mkdir(COMMON_DIR)
+        COMMON_DIR.mkdir()
     except FileExistsError:
-        rmtree(COMMON_DIR)
-        os.mkdir(COMMON_DIR)
+        shutil.rmtree(COMMON_DIR)
+        COMMON_DIR.mkdir()
 
     for (name, source) in names.items():
-        with open(f"{COMMON_DIR}/{name}", "w") as f:
+        with (COMMON_DIR/name).open("w") as f:
             f.write(source)
