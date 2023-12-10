@@ -35,10 +35,8 @@ class WrapperPrinter:
                 self.options.strip_build_path += os.path.sep
             
             if not self.options.embed_preamble:
-                # TODO merge EXT_LOADER and EXT_LIBS
                 self.EXT_PREAMBLE = outpath.parent / "_ctg_preamble.py"
                 self.EXT_LOADER = outpath.parent / "_ctg_loader.py"
-                self.EXT_LIBS = outpath.parent / "_ctg_libs.py"
                 self._write_external_files()
             
             self.print_header()
@@ -85,7 +83,7 @@ class WrapperPrinter:
                 shutil.copyfileobj(loader_file, self.file)
             self.file.write("\n# End loader template\n")
         else:
-            self.file.write("from ._ctg_libs import _libs\n")
+            self.file.write("from ._ctg_loader import _libs\n")
 
     def print_library(self, opts):
         
@@ -93,30 +91,23 @@ class WrapperPrinter:
             warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             return
         
-        loader_info = dict(
-            name = self.options.library,
-            dirs = opts.runtime_libdirs,
-            search_sys = opts.allow_system_search,
-        )
-        LI = f"_libs_info['{self.options.library}']"
-        # TODO move to libraryloader function
         content = f"""
-{LI} = {loader_info}
-{LI}['path'] = _find_library(**{LI})
-if not {LI}['path']:
-    raise ImportError("Could not find library with config %s" % ({LI}, ))
-{self.lib_access} = ctypes.{opts.dllclass}({LI}['path'])
+{self.lib_access} = _register_library(
+    name = '{self.options.library}',
+    dirs = {opts.runtime_libdirs},
+    search_sys = {opts.allow_system_search},
+    dllclass = '{opts.dllclass}',
+)
 """
         if self.options.embed_preamble:
-            self.file.write("_libs_info, _libs = {}, {}\n")
-            self.file.write(content + "\n")
+            self.file.write(content)
         else:
-            libs_txt = self.EXT_LIBS.read_text()
-            if f"{self.lib_access} = " in libs_txt:
+            loader_txt = self.EXT_LOADER.read_text()
+            if f"{self.lib_access} = _register_library(" in loader_txt:
                 status_message(f"Library already loaded in shared file, won't rewrite.")
             else:
                 status_message(f"Adding library loader to shared file.")
-                self.EXT_LIBS.write_text(f"{libs_txt}\n{content}")
+                self.EXT_LOADER.write_text(f"{loader_txt}\n{content}")
     
     def print_group(self, list, name, function):
         if list:
@@ -187,14 +178,6 @@ if not {LI}['path']:
             shutil.copyfile(PREAMBLE_PATH, self.EXT_PREAMBLE)
         if not self.EXT_LOADER.exists():
             shutil.copyfile(LIBRARYLOADER_PATH, self.EXT_LOADER)
-        if not self.EXT_LIBS.exists():
-            self.EXT_LIBS.write_text("""
-import ctypes
-from ._ctg_loader import _find_library
-
-_libs, _libs_info = {}, {}
-"""
-            )
 
     def print_module(self, module):
         self.file.write("from %s import *\n" % module)

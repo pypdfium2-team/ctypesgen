@@ -4,7 +4,6 @@ import ctypes.util
 import warnings
 import pathlib
 
-
 def _find_library(name, dirs, search_sys, reldir=None):
     
     if sys.platform in ("win32", "cygwin", "msys"):
@@ -41,3 +40,12 @@ def _find_library(name, dirs, search_sys, reldir=None):
         return libpath
     else:
         raise ImportError(f"Could not find library '{name}' in {dirs} (system search disabled)")
+
+_libs_info, _libs = {}, {}
+
+def _register_library(name, dllclass, **kwargs):
+    _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs}
+    _libs_info[name]["path"] = _find_library(name, **kwargs)
+    if not _libs_info[name]["path"]:
+        raise ImportError(f"Could not find library with config {_libs_info[name]}")
+    return getattr(ctypes, dllclass)(_libs_info[name]["path"])
