@@ -8,6 +8,7 @@ import re
 import os
 import ctypes
 import keyword
+from pathlib import Path
 
 from ctypesgen import libraryloader
 from ctypesgen.descriptions import (
@@ -244,7 +245,7 @@ def check_symbols(data, opts):
         return
 
     try:
-        libpath = libraryloader._find_library(opts.library, opts.compile_libdirs, opts.allow_system_search)
+        libpath = libraryloader._find_library(opts.library, opts.compile_libdirs, opts.allow_system_search, reldir=Path.cwd())
         library = ctypes.CDLL(libpath)
     except Exception:
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
