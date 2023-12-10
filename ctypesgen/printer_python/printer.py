@@ -22,8 +22,9 @@ LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 class WrapperPrinter:
     def __init__(self, outpath, options, data):
+        outpath = Path(outpath).resolve()
         status_message(f"Writing to {outpath}.")
-        self.file = open(outpath, "w")
+        self.file = outpath.open("w")
         
         try:
             self.options = options
@@ -34,7 +35,10 @@ class WrapperPrinter:
                 self.options.strip_build_path += os.path.sep
             
             if not self.options.embed_preamble:
-                self._write_external_files(outpath)
+                self.EXT_PREAMBLE = outpath.parent / "_ctg_preamble.py"
+                self.EXT_LOADER = outpath.parent / "_ctg_loader.py"
+                self.EXT_LIBS = outpath.parent / "_ctg_libs.py"
+                self._write_external_files()
             
             self.print_header()
             self.file.write("\n")
@@ -66,6 +70,7 @@ class WrapperPrinter:
                     method_table[kind](desc)
                     self.file.write("\n")
             
+            self.file.write("\n")
             self.print_group(self.options.inserted_files, "inserted files", self.insert_file)
         
         finally:
@@ -77,32 +82,39 @@ class WrapperPrinter:
             self.file.write("# Begin loader template\n\n")
             with LIBRARYLOADER_PATH.open("r") as loader_file:
                 shutil.copyfileobj(loader_file, self.file)
-            self.file.write("\n\n# End loader template")
+            self.file.write("\n# End loader template\n")
         else:
-            self.file.write("from .ctypes_loader import *\n")
-            self.file.write("from .ctypes_loader import _find_library, _libs_info, _libs\n\n")
+            self.file.write("from ._ctg_libs import _libs\n")
 
     def print_library(self, opts):
-        if not opts.library:
-            notice = "No library name specified. Assuming pure headers without binary symbols."
-            warning_message(notice, cls="usage")
-            self.file.write(f"\nwarnings.warn('{notice}')\n")
         
-        else:
-            loader_info = dict(
-                name = self.options.library,
-                dirs = opts.runtime_libdirs,
-                search_sys = opts.allow_system_search,
-            )
-            LI = f'_libs_info["{self.options.library}"]'
-            self.file.write(f"""
+        if not opts.library:
+            warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
+            return
+        
+        loader_info = dict(
+            name = self.options.library,
+            dirs = opts.runtime_libdirs,
+            search_sys = opts.allow_system_search,
+        )
+        LI = f"_libs_info['{self.options.library}']"
+        content = f"""
 {LI} = {loader_info}
 {LI}['path'] = _find_library(**{LI})
 if not {LI}['path']:
     raise ImportError("Could not find library with config %s" % ({LI}, ))
 {self.lib_access} = ctypes.{opts.dllclass}({LI}['path'])
 """
-            )
+        if self.options.embed_preamble:
+            self.file.write("_libs_info, _libs = {}, {}\n")
+            self.file.write(content + "\n")
+        else:
+            libs_txt = self.EXT_LIBS.read_text()
+            if f"{self.lib_access} = " in libs_txt:
+                status_message(f"Library already loaded in shared file, won't rewrite.")
+            else:
+                status_message(f"Adding library loader to shared file.")
+                self.EXT_LIBS.write_text(f"{libs_txt}\n{content}")
     
     def print_group(self, list, name, function):
         if list:
@@ -161,17 +173,26 @@ if not {LI}['path']:
     def print_preamble(self):
         self.file.write("# Begin preamble\n\n")
         if self.options.embed_preamble:
-            with open(PREAMBLE_PATH, "r") as preamble_file:
-                shutil.copyfileobj(preamble_file, self.file)
+            with open(PREAMBLE_PATH, "r") as fsrc:
+                shutil.copyfileobj(fsrc, self.file)
         else:
-            self.file.write("from .ctypes_preamble import *\n")
-            self.file.write("from .ctypes_preamble import _variadic_function\n")
+            self.file.write("from ._ctg_preamble import *\n")
+            self.file.write("from ._ctg_preamble import _variadic_function\n")
         self.file.write("\n# End preamble\n")
 
-    def _write_external_files(self, path):
-        dst = Path(path).resolve().parent
-        shutil.copyfile(PREAMBLE_PATH, dst/"ctypes_preamble.py")
-        shutil.copyfile(LIBRARYLOADER_PATH, dst/"ctypes_loader.py")
+    def _write_external_files(self):
+        if not self.EXT_PREAMBLE.exists():
+            shutil.copyfile(PREAMBLE_PATH, self.EXT_PREAMBLE)
+        if not self.EXT_LOADER.exists():
+            shutil.copyfile(LIBRARYLOADER_PATH, self.EXT_LOADER)
+        if not self.EXT_LIBS.exists():
+            self.EXT_LIBS.write_text("""
+import ctypes
+from ._ctg_loader import _find_library
+
+_libs, _libs_info = {}, {}
+"""
+            )
 
     def print_module(self, module):
         self.file.write("from %s import *\n" % module)
@@ -266,12 +287,13 @@ if not {LI}['path']:
         return needs_guard
     
     def print_function(self, function):
+        assert self.options.library, "Binary symbol requires library"
         self.srcinfo(function.src)
         needs_guard = self._needs_guard(function)
         pad = " "*4 if needs_guard else ""
         if needs_guard:
             self.file.write(
-                'if hasattr({L}, "{CN}"):\n'.format(L=self.lib_access, CN=function.c_name())
+                "if hasattr({L}, '{CN}'):\n".format(L=self.lib_access, CN=function.c_name())
             )
         if function.variadic:
             self._print_variadic_function(function, pad)
@@ -310,6 +332,7 @@ if not {LI}['path']:
         ))
 
     def print_variable(self, variable):
+        assert self.options.library, "Binary symbol requires library"
         self.srcinfo(variable.src)
         entry = '{PN} = ({PS}).in_dll({L}, "{CN}")'.format(
             PN=variable.py_name(),

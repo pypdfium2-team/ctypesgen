@@ -108,9 +108,9 @@ def fix_conflicting_names(data, opts):
     occupied_names = occupied_names.union(
         # ctypesgen names
         [
-            "_lib",
-            "_variadic_function",
+            "_libs",
             "_loader_info",
+            "_variadic_function",
             # the following names are only accessed before the symbols list, so we don't strictly care about them being overridden
             # "sys",
             # "warnings",

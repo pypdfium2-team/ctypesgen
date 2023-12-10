@@ -41,6 +41,3 @@ def _find_library(name, dirs, search_sys, reldir=None):
         return libpath
     else:
         raise ImportError(f"Could not find library '{name}' in {dirs} (system search disabled)")
-
-
-_libs_info, _libs = {}, {}
