@@ -27,13 +27,14 @@ class WrapperPrinter:
         
         try:
             self.options = options
+            self.lib_access = f"_libs['{self.options.library}']"
             
             # FIXME(geisserml) see below
             if self.options.strip_build_path and self.options.strip_build_path[-1] != os.path.sep:
                 self.options.strip_build_path += os.path.sep
             
             if not self.options.embed_preamble:
-                self._copy_preamble_loader_files(outpath)
+                self._write_external_files(outpath)
             
             self.print_header()
             self.file.write("\n")
@@ -76,32 +77,30 @@ class WrapperPrinter:
             self.file.write("# Begin loader template\n\n")
             with LIBRARYLOADER_PATH.open("r") as loader_file:
                 shutil.copyfileobj(loader_file, self.file)
-            self.file.write("\n# End loader template")
+            self.file.write("\n\n# End loader template")
         else:
             self.file.write("from .ctypes_loader import *\n")
-            self.file.write("from .ctypes_loader import _find_library\n\n")
+            self.file.write("from .ctypes_loader import _find_library, _libs_info, _libs\n\n")
 
     def print_library(self, opts):
         if not opts.library:
             notice = "No library name specified. Assuming pure headers without binary symbols."
             warning_message(notice, cls="usage")
-            self.file.write(f'\nwarnings.warn("{notice}")\n')
+            self.file.write(f"\nwarnings.warn('{notice}')\n")
         
         else:
             loader_info = dict(
-                libname = opts.library,
-                libdirs = opts.runtime_libdirs,
-                allow_system_search = opts.allow_system_search,
+                name = self.options.library,
+                dirs = opts.runtime_libdirs,
+                search_sys = opts.allow_system_search,
             )
+            LI = f'_libs_info["{self.options.library}"]'
             self.file.write(f"""
-# Begin library load
-
-_loader_info = {loader_info}
-_loader_info["libpath"] = _find_library(**_loader_info)
-assert _loader_info["libpath"], "Could not find library with config %s" % (_loader_info, )
-_lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
-
-# End library load
+{LI} = {loader_info}
+{LI}['path'] = _find_library(**{LI})
+if not {LI}['path']:
+    raise ImportError("Could not find library with config %s" % ({LI}, ))
+{self.lib_access} = ctypes.{opts.dllclass}({LI}['path'])
 """
             )
     
@@ -169,28 +168,30 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
             self.file.write("from .ctypes_preamble import _variadic_function\n")
         self.file.write("\n# End preamble\n")
 
-    def _copy_preamble_loader_files(self, path):
+    def _write_external_files(self, path):
         dst = Path(path).resolve().parent
         shutil.copyfile(PREAMBLE_PATH, dst/"ctypes_preamble.py")
         shutil.copyfile(LIBRARYLOADER_PATH, dst/"ctypes_loader.py")
 
     def print_module(self, module):
         self.file.write("from %s import *\n" % module)
-
+    
     def print_constant(self, constant):
         self.srcinfo(constant.src, wants_nl=False)
         self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
+    
+    def _try_except_wrap(self, entry):
+        pad = " "*4
+        return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
 
     def print_undef(self, undef):
-        # TODO remove try/except, or use only if --guard-symbols given
         self.srcinfo(undef.src)
-        self.file.write(
-            "# #undef {macro}\n"
-            "try:\n"
-            "    del {macro}\n"
-            "except NameError:\n"
-            "    pass".format(macro=undef.macro.py_string(False))
-        )
+        name = undef.macro.py_string(False)
+        self.file.write(f"# undef {name}\n")
+        entry = f"del {name}"
+        if self.options.guard_macros:
+            entry = self._try_except_wrap(entry)
+        self.file.write(entry)
 
     def print_typedef(self, typedef):
         self.srcinfo(typedef.src, wants_nl=False)
@@ -260,20 +261,17 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
         # NOTE Values of enumerator are output as constants
         self.file.write("enum_%s = c_int" % enum.tag)
     
-    def _check_guard(self, symbol):
+    def _needs_guard(self, symbol):
         needs_guard = self.options.guard_symbols or getattr(symbol, "is_missing", False)
-        pad = " "*4 if needs_guard else ""
-        return needs_guard, pad
-    
-    def _try_except_wrap(self, entry, pad):
-        return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
+        return needs_guard
     
     def print_function(self, function):
         self.srcinfo(function.src)
-        needs_guard, pad = self._check_guard(function)
+        needs_guard = self._needs_guard(function)
+        pad = " "*4 if needs_guard else ""
         if needs_guard:
             self.file.write(
-                'if hasattr(_lib, "{CN}"):\n'.format(CN=function.c_name())
+                'if hasattr({L}, "{CN}"):\n'.format(L=self.lib_access, CN=function.c_name())
             )
         if function.variadic:
             self._print_variadic_function(function, pad)
@@ -283,7 +281,7 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
     
     def _print_fixed_function(self, function, pad):
         self.file.write(indent(
-            '{PN} = _lib.{CN}\n'.format(CN=function.c_name(), PN=function.py_name()) +
+            '{PN} = {L}.{CN}\n'.format(L=self.lib_access, CN=function.c_name(), PN=function.py_name()) +
             "{PN}.argtypes = [{ATS}]\n".format(PN=function.py_name(), ATS=", ".join([a.py_string() for a in function.argtypes])) +
             "{PN}.restype = {RT}".format(PN=function.py_name(), RT=function.restype.py_string()),
             prefix=pad,
@@ -296,11 +294,12 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
     def _print_variadic_function(self, function, pad):
         # TODO see if we can remove the _variadic_function wrapper and use just plain ctypes
         self.file.write(indent(
-            '_func = _lib.{CN}\n'
+            '_func = {L}.{CN}\n'
             "_restype = {RT}\n"
             "_errcheck = {E}\n"
             "_argtypes = [{ATS}]\n"
             "{PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
+                L=self.lib_access,
                 CN=function.c_name(),
                 RT=function.restype.py_string(),
                 E=function.errcheck.py_string(),
@@ -312,14 +311,14 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
 
     def print_variable(self, variable):
         self.srcinfo(variable.src)
-        entry = '{PN} = ({PS}).in_dll(_lib, "{CN}")'.format(
+        entry = '{PN} = ({PS}).in_dll({L}, "{CN}")'.format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
+            L=self.lib_access,
             CN=variable.c_name(),
         )
-        needs_guard, pad = self._check_guard(variable)
-        if needs_guard:
-            entry = self._try_except_wrap(entry, pad)
+        if self._needs_guard(variable):
+            entry = self._try_except_wrap(entry)
         self.file.write(entry)
 
     def print_macro(self, macro):
@@ -333,7 +332,7 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
         self.srcinfo(macro.src, wants_nl=self.options.guard_macros)
         entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
         if self.options.guard_macros:
-            entry = self._try_except_wrap(entry, " "*4)
+            entry = self._try_except_wrap(entry)
         self.file.write(entry)
 
     def print_func_macro(self, macro):

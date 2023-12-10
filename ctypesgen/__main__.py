@@ -19,6 +19,7 @@ from ctypesgen import (
 from ctypesgen.printer_python import WrapperPrinter as PythonPrinter
 from ctypesgen.printer_json import WrapperPrinter as JsonPrinter
 
+
 @contextlib.contextmanager
 def tmp_searchpath(path, active):
     if active:
@@ -32,16 +33,22 @@ def tmp_searchpath(path, active):
         yield
         return
 
+
 def find_symbols_in_modules(modnames, outpath):
+    
     symbols = set()
+    
     for modname in modnames:
+        
         include_path = str(outpath.parents[1].resolve())
         with tmp_searchpath(include_path, active=modname.startswith(".")):
             module = importlib.import_module(modname, outpath.parent.name)
+        
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, "Linked modules must provide symbols"
         msgs.status_message(f"Found symbols {module_syms} in module {module}")
         symbols.update(module_syms)
+    
     return symbols
 
 
