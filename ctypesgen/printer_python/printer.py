@@ -3,19 +3,19 @@ import os.path
 import sys
 import time
 import shutil
-from os.path import join
+from pathlib import Path
 from textwrap import indent
 
 from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
 from ctypesgen.expressions import ExpressionNode
-from ctypesgen.messages import error_message, warning_message, status_message
+from ctypesgen.messages import warning_message, status_message
 
 
-THIS_DIR = os.path.dirname(__file__)
-CTYPESGEN_DIR = join(THIS_DIR, os.path.pardir)
-PREAMBLE_PATH = join(THIS_DIR, "preamble.py")
-DEFAULTHEADER_PATH = join(THIS_DIR, "defaultheader.py")
-LIBRARYLOADER_PATH = join(CTYPESGEN_DIR, "libraryloader.py")
+THIS_DIR = Path(__file__).resolve().parent
+CTYPESGEN_DIR = THIS_DIR.parent
+PREAMBLE_PATH = THIS_DIR/"preamble.py"
+DEFAULTHEADER_PATH = THIS_DIR/"defaultheader.py"
+LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 
 # TODO(geisserml) think out a proper concept for line breaks
@@ -75,7 +75,7 @@ class WrapperPrinter:
     def print_loader(self):
         if self.options.embed_preamble:
             self.file.write("# Begin loader template\n\n")
-            with open(LIBRARYLOADER_PATH, "r") as loader_file:
+            with LIBRARYLOADER_PATH.open("r") as loader_file:
                 shutil.copyfileobj(loader_file, self.file)
             self.file.write("\n# End loader template")
         else:
@@ -153,25 +153,12 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
         return template_subs
 
     def print_header(self):
-        template_file = None
-
+        # TODO(geisserml) consider removing custom --header-template as bloat, always use default header?
         if self.options.header_template:
-            path = self.options.header_template
-            try:
-                template_file = open(path, "r")
-            except IOError:
-                error_message(
-                    f"Cannot load header template from file '{path}' - using default template.",
-                    cls="missing-file",
-                )
-
-        if not template_file:
-            template_file = open(DEFAULTHEADER_PATH, "r")
-
-        template_subs = self.template_subs()
-        self.file.write(template_file.read() % template_subs)
-
-        template_file.close()
+            template = Path(self.options.header_template).read_text()
+        else:
+            template = DEFAULTHEADER_PATH.read_text()
+        self.file.write(template % self.template_subs())
 
     def print_preamble(self):
         self.file.write("# Begin preamble\n\n")
@@ -181,18 +168,12 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
         else:
             self.file.write("from .ctypes_preamble import *\n")
             self.file.write("from .ctypes_preamble import _variadic_function\n")
-
         self.file.write("\n# End preamble\n")
 
     def _copy_preamble_loader_files(self, path):
-        if os.path.isfile(path):
-            dst = os.path.dirname(os.path.abspath(path))
-        else:
-            error_message("Cannot copy preamble and loader files", cls="missing-file")
-            return
-        
-        shutil.copyfile(PREAMBLE_PATH, join(dst, "ctypes_preamble.py"))
-        shutil.copyfile(LIBRARYLOADER_PATH, join(dst, "ctypes_loader.py"))
+        dst = Path(path).resolve().parent
+        shutil.copyfile(PREAMBLE_PATH, dst/"ctypes_preamble.py")
+        shutil.copyfile(LIBRARYLOADER_PATH, dst/"ctypes_loader.py")
 
     def print_module(self, module):
         self.file.write("from %s import *\n" % module)
@@ -365,16 +346,8 @@ _lib = ctypes.{opts.dllclass}(_loader_info["libpath"])
             )
         )
     
-    def insert_file(self, filename):
-        try:
-            inserted_file = open(filename, "r")
-        except IOError:
-            error_message('Cannot open file "%s". Skipped it.' % filename, cls="missing-file")
-
-        self.file.write(
-            '# Begin "{filename}"\n'
-            "\n{file}\n"
-            '# End "{filename}"\n'.format(filename=filename, file=inserted_file.read())
-        )
-
-        inserted_file.close()
+    def insert_file(self, filepath):
+        self.file.write(f"# Begin '{filepath}'\n\n")
+        with open(filepath, "r") as fh:
+            shutil.copyfileobj(fh, self.file)
+        self.file.write(f"\n# End '{filepath}'\n")
