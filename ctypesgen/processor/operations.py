@@ -109,7 +109,7 @@ def fix_conflicting_names(data, opts):
         # ctypesgen names
         [
             "_libs",
-            "_loader_info",
+            "_libs_info",
             "_variadic_function",
             # the following names are only accessed before the symbols list, so we don't strictly care about them being overridden
             # "sys",
