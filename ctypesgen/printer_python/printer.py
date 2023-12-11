@@ -91,9 +91,10 @@ class WrapperPrinter:
             warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             return
         
+        name_define = f"name = '{self.options.library}'"
         content = f"""
-{self.lib_access} = _register_library(
-    name = '{self.options.library}',
+_register_library(
+    {name_define},
     dllclass = ctypes.{opts.dllclass},
     dirs = {opts.runtime_libdirs},
     search_sys = {opts.allow_system_search},
@@ -103,7 +104,7 @@ class WrapperPrinter:
             self.file.write(content)
         else:
             loader_txt = self.EXT_LOADER.read_text()
-            if f"{self.lib_access} = _register_library(" in loader_txt:
+            if name_define in loader_txt:
                 status_message(f"Library already loaded in shared file, won't rewrite.")
             else:
                 status_message(f"Adding library loader to shared file.")

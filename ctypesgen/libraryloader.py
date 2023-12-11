@@ -47,4 +47,4 @@ def _register_library(name, dllclass, **kwargs):
     libpath = _find_library(name, **kwargs)
     assert libpath, "output expected from _find_library()"
     _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs, "path": libpath}
-    return dllclass(libpath)
+    _libs[name] = dllclass(libpath)

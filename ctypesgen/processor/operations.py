@@ -116,6 +116,7 @@ def fix_conflicting_names(data, opts):
             # "warnings",
             # "pathlib",
             # "_find_library",
+            # "_register_library",
         ]
     )
     occupied_names = occupied_names.union(
@@ -253,11 +254,12 @@ def check_symbols(data, opts):
             reldir = Path.cwd(),
         )
         library = libraryloader._libs[opts.library]
-    except Exception:
+    except ImportError as e:
+        warning_message(e)
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
-    # only check symbols that we actually want to include
+    # don't bother checking symbols that will definitely be excluded
     missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     if missing_symbols:
         if opts.include_missing_symbols:
