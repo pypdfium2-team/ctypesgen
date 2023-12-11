@@ -247,7 +247,7 @@ def check_symbols(data, opts):
     try:
         libraryloader._register_library(
             name = opts.library,
-            dllclass = opts.dllclass,
+            dllclass = getattr(ctypes, opts.dllclass),
             dirs = opts.compile_libdirs,
             search_sys = opts.allow_system_search,
             reldir = Path.cwd(),

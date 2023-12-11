@@ -94,9 +94,9 @@ class WrapperPrinter:
         content = f"""
 {self.lib_access} = _register_library(
     name = '{self.options.library}',
+    dllclass = ctypes.{opts.dllclass},
     dirs = {opts.runtime_libdirs},
     search_sys = {opts.allow_system_search},
-    dllclass = '{opts.dllclass}',
 )
 """
         if self.options.embed_preamble:

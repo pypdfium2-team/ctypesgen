@@ -53,6 +53,7 @@ def find_symbols_in_modules(modnames, outpath):
 
 
 # FIXME argparse parameters are not ordered consistently...
+# TODO consider BooleanOptionalAction (with compat backport)
 def main(givenargs=None):
     
     parser = argparse.ArgumentParser()
