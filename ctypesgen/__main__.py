@@ -365,8 +365,9 @@ def main(givenargs=None):
     parser.set_defaults(**core_options.default_values)
     args = parser.parse_args(givenargs)
     
-    args.compile_libdirs += args.universal_libdirs
-    args.runtime_libdirs += args.universal_libdirs
+    # important: must not use +=, this would mutate the original object, which is problematic when calling ctypesgen natively from the python API
+    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
+    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
     
     # Figure out what names will be defined by imported Python modules
     args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))

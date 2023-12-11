@@ -2043,7 +2043,7 @@ class MathTest(unittest.TestCase):
         elif sys.platform.startswith("linux"):
             library = "m"  # libm
         else:
-            library = "libc"
+            library = "c"  # libc
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
         # Also exclude unused members starting with __ to avoid garbage in the output.
         # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan

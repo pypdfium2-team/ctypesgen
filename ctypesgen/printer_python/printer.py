@@ -94,7 +94,7 @@ class WrapperPrinter:
         content = f"""
 {self.lib_access} = _register_library(
     name = '{self.options.library}',
-    dirs = {list(set(opts.runtime_libdirs))},
+    dirs = {opts.runtime_libdirs},
     search_sys = {opts.allow_system_search},
     dllclass = '{opts.dllclass}',
 )
