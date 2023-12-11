@@ -15,9 +15,9 @@ from ctypesgen import (
     parser as core_parser,
     processor,
     version,
+    printer_python,
+    printer_json,
 )
-from ctypesgen.printer_python import WrapperPrinter as PythonPrinter
-from ctypesgen.printer_json import WrapperPrinter as JsonPrinter
 
 
 @contextlib.contextmanager
@@ -373,7 +373,9 @@ def main(givenargs=None):
     # Figure out what names will be defined by imported Python modules
     args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))
     
-    printer = {"py": PythonPrinter, "json": JsonPrinter}[args.output_language]
+    printer = {
+        "py": printer_python, "json": printer_json
+    }[args.output_language].WrapperPrinter
     
     descriptions = core_parser.parse(args.headers, args)
     processor.process(descriptions, args)
