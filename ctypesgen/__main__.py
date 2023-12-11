@@ -371,7 +371,7 @@ def main(givenargs=None):
     args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
     
     # Figure out what names will be defined by imported Python modules
-    args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))
+    args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output).resolve())
     
     printer = {
         "py": printer_python, "json": printer_json
