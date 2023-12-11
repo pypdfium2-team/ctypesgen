@@ -1,11 +1,3 @@
-"""ctypesgentest is a simple module for testing ctypesgen on various C constructs.
-
-It consists of a single function, test(). test() takes a string that represents
-a C header file, along with some keyword arguments representing options. It
-processes the header using ctypesgen and returns a tuple containing the
-resulting module object and the output that ctypesgen produced.
-"""
-
 import os
 import sys
 import glob
