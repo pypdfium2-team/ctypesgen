@@ -21,17 +21,14 @@ from ctypesgen import (
 
 
 @contextlib.contextmanager
-def tmp_searchpath(path, active):
-    if active:
-        sys.path.insert(0, path)
-        try:
-            yield
-        finally:
-            popped = sys.path.pop(0)
-            assert popped is path
-    else:
+def tmp_searchpath(path):
+    path = str(path)
+    sys.path.insert(0, path)
+    try:
         yield
-        return
+    finally:
+        popped = sys.path.pop(0)
+        assert popped is path
 
 
 def find_symbols_in_modules(modnames, outpath):
@@ -40,9 +37,12 @@ def find_symbols_in_modules(modnames, outpath):
     
     for modname in modnames:
         
-        include_path = str(outpath.parents[1].resolve())
-        with tmp_searchpath(include_path, active=modname.startswith(".")):
-            module = importlib.import_module(modname, outpath.parent.name)
+        if modname.startswith("."):
+            anchor_dir = outpath.parent
+            with tmp_searchpath(anchor_dir.parent):
+                module = importlib.import_module(modname, anchor_dir.name)
+        else:
+            module = importlib.import_module(modname)
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, "Linked modules must provide symbols"
