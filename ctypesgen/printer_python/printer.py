@@ -28,6 +28,7 @@ class WrapperPrinter:
         
         try:
             self.options = options
+            # TODO remove .lib_access, spell out in functions?
             self.lib_access = f"_libs['{self.options.library}']"
             
             # FIXME(geisserml) see below
