@@ -35,14 +35,11 @@ def todict(obj, classkey="Klass"):
 
 
 class WrapperPrinter:
-    def __init__(self, outpath, options, data):
+    def __init__(self, outpath, options, data, argv):
         status_message("Writing to %s." % (outpath or "stdout"))
 
         self.file = open(outpath, "w") if outpath else sys.stdout
         self.options = options
-
-        if self.options.strip_build_path and self.options.strip_build_path[-1] != os.path.sep:
-            self.options.strip_build_path += os.path.sep
 
         self.print_library(self.options.library)
 

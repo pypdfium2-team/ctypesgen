@@ -54,7 +54,7 @@ def find_symbols_in_modules(modnames, outpath):
 
 # FIXME argparse parameters are not ordered consistently...
 # TODO consider BooleanOptionalAction (with compat backport)
-def main(givenargs=None):
+def main(given_argv=sys.argv[1:]):
     
     parser = argparse.ArgumentParser()
     
@@ -286,18 +286,6 @@ def main(givenargs=None):
 
     # Printer options
     parser.add_argument(
-        "--header-template",
-        dest="header_template",
-        metavar="TEMPLATE",
-        help="Use TEMPLATE as the header template in the output file.",
-    )
-    parser.add_argument(
-        "--strip-build-path",
-        dest="strip_build_path",
-        metavar="BUILD_PATH",
-        help="Strip build path from header paths in the wrapper file.",
-    )
-    parser.add_argument(
         "--insert-files",
         nargs="+",
         action="extend",
@@ -364,7 +352,7 @@ def main(givenargs=None):
     )
     
     parser.set_defaults(**core_options.default_values)
-    args = parser.parse_args(givenargs)
+    args = parser.parse_args(given_argv)
     
     # important: must not use +=, this would mutate the original object, which is problematic when calling ctypesgen natively from the python API
     args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
@@ -379,7 +367,7 @@ def main(givenargs=None):
     
     descriptions = core_parser.parse(args.headers, args)
     processor.process(descriptions, args)
-    printer(args.output, args, descriptions)
+    printer(args.output, args, descriptions, given_argv)
     
     msgs.status_message("Wrapping complete.")
     
