@@ -1,10 +1,9 @@
----
 name: Test
 
-on:
-  - push
-  - pull_request
-  - fork
+# on:
+#   - push
+#   - pull_request
+#   - fork
 
 jobs:
   setup-and-test:

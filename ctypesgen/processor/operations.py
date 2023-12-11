@@ -108,14 +108,15 @@ def fix_conflicting_names(data, opts):
     occupied_names = occupied_names.union(
         # ctypesgen names
         [
-            "_lib",
+            "_libs",
+            "_libs_info",
             "_variadic_function",
-            "_loader_info",
             # the following names are only accessed before the symbols list, so we don't strictly care about them being overridden
             # "sys",
             # "warnings",
             # "pathlib",
             # "_find_library",
+            # "_register_library",
         ]
     )
     occupied_names = occupied_names.union(
@@ -245,13 +246,20 @@ def check_symbols(data, opts):
         return
 
     try:
-        libpath = libraryloader._find_library(opts.library, opts.compile_libdirs, opts.allow_system_search, reldir=Path.cwd())
-        library = ctypes.CDLL(libpath)
-    except Exception:
+        libraryloader._register_library(
+            name = opts.library,
+            dllclass = getattr(ctypes, opts.dllclass),
+            dirs = opts.compile_libdirs,
+            search_sys = opts.allow_system_search,
+            reldir = Path.cwd(),
+        )
+        library = libraryloader._libs[opts.library]
+    except ImportError as e:
+        warning_message(e)
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
-    # only check symbols that we actually want to include
+    # don't bother checking symbols that will definitely be excluded
     missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     if missing_symbols:
         if opts.include_missing_symbols:

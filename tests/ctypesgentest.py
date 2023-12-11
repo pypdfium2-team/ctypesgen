@@ -1,11 +1,3 @@
-"""ctypesgentest is a simple module for testing ctypesgen on various C constructs.
-
-It consists of a single function, test(). test() takes a string that represents
-a C header file, along with some keyword arguments representing options. It
-processes the header using ctypesgen and returns a tuple containing the
-resulting module object and the output that ctypesgen produced.
-"""
-
 import os
 import sys
 import glob
@@ -30,6 +22,9 @@ def ctypesgen_main(args):
 
 
 def module_from_code(name, python_code):
+    # exec'ed modules do not have __file__, but we could define it manually as an anchor point for relative paths (commented out because no test case needs this yet)
+    # file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
+    # python_code = file_spoof + python_code
     module = types.ModuleType(name)
     exec(python_code, module.__dict__)
     return module

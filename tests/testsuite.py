@@ -107,7 +107,7 @@ class StdlibTest(unittest.TestCase):
             library = "msvcrt"
         else:
             library = "c"  # libc
-        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", "if_needed=__\w+"])
+        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -2043,11 +2043,11 @@ class MathTest(unittest.TestCase):
         elif sys.platform.startswith("linux"):
             library = "m"  # libm
         else:
-            library = "libc"
+            library = "c"  # libc
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
         # Also exclude unused members starting with __ to avoid garbage in the output.
         # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
-        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", "never=NAN", "if_needed=__\w+"])
+        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", "never=NAN", r"if_needed=__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -2415,11 +2415,11 @@ class MainTest(unittest.TestCase):
 
     def test_invalid_option(self):
         """Test that script at least generates a help"""
-        o, e, c = self._exec(["-l", "placeholder", "--headers", "random_header.h", "--oh-what-a-goose-i-am"])
+        o, e, c = self._exec(["-i", "_", "-l", "_", "-o", "_", "--this-does-not-exist"])
         self.assertEqual(c, 2)
         self.assertEqual(o.decode(), "")
         self.assertTrue(e.decode().splitlines()[0].startswith("usage: run.py"))
-        self.assertIn("error: unrecognized arguments: --oh-what-a-goose-i-am", e.decode())
+        self.assertIn("error: unrecognized arguments: --this-does-not-exist", e.decode())
 
 
 class UncheckedTest(unittest.TestCase):

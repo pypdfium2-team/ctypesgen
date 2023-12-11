@@ -15,9 +15,10 @@ from ctypesgen import (
     parser as core_parser,
     processor,
     version,
+    printer_python,
+    printer_json,
 )
-from ctypesgen.printer_python import WrapperPrinter as PythonPrinter
-from ctypesgen.printer_json import WrapperPrinter as JsonPrinter
+
 
 @contextlib.contextmanager
 def tmp_searchpath(path, active):
@@ -32,20 +33,27 @@ def tmp_searchpath(path, active):
         yield
         return
 
+
 def find_symbols_in_modules(modnames, outpath):
+    
     symbols = set()
+    
     for modname in modnames:
+        
         include_path = str(outpath.parents[1].resolve())
         with tmp_searchpath(include_path, active=modname.startswith(".")):
             module = importlib.import_module(modname, outpath.parent.name)
+        
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, "Linked modules must provide symbols"
         msgs.status_message(f"Found symbols {module_syms} in module {module}")
         symbols.update(module_syms)
+    
     return symbols
 
 
 # FIXME argparse parameters are not ordered consistently...
+# TODO consider BooleanOptionalAction (with compat backport)
 def main(givenargs=None):
     
     parser = argparse.ArgumentParser()
@@ -358,13 +366,16 @@ def main(givenargs=None):
     parser.set_defaults(**core_options.default_values)
     args = parser.parse_args(givenargs)
     
-    args.compile_libdirs += args.universal_libdirs
-    args.runtime_libdirs += args.universal_libdirs
+    # important: must not use +=, this would mutate the original object, which is problematic when calling ctypesgen natively from the python API
+    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
+    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
     
     # Figure out what names will be defined by imported Python modules
     args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output))
     
-    printer = {"py": PythonPrinter, "json": JsonPrinter}[args.output_language]
+    printer = {
+        "py": printer_python, "json": printer_json
+    }[args.output_language].WrapperPrinter
     
     descriptions = core_parser.parse(args.headers, args)
     processor.process(descriptions, args)
