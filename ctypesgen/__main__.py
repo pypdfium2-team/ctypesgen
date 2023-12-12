@@ -38,6 +38,8 @@ def find_symbols_in_modules(modnames, outpath):
     for modname in modnames:
         
         if modname.startswith("."):
+            # NOTE(geisserml) I've been unable to find another way than adding the output dir's parent to sys.path, considering that the module itself may contain relative imports.
+            # It seems like this is a limitation in the import system, though technically I imagine the output dir's path itself should be a sufficient anchor.
             anchor_dir = outpath.parent
             with tmp_searchpath(anchor_dir.parent):
                 module = importlib.import_module(modname, anchor_dir.name)
@@ -116,7 +118,7 @@ def main(given_argv=sys.argv[1:]):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from python module MODULE. The syntax is similar to a python import: If prefixed with ., it will be interpreted relative to the output dir. Otherwise, the module will be imported from installed packages.",
+        help="Use symbols from python module MODULE. If prefixed with '.', the import is interpreted relative to the output dir. Otherwise, we import from installed packages. (Note, in case of a relative import, the output dir's parent has to be temporarily added to sys.path (PYTHONPATH) due to import system limitations, so you'll want to check it does not contain conflicting files.)",
     )
     parser.add_argument(
         "-I",
