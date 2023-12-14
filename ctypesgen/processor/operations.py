@@ -110,7 +110,6 @@ def fix_conflicting_names(data, opts):
         [
             "_libs",
             "_libs_info",
-            "_variadic_function",
             # the following names are only accessed before the symbols list, so we don't strictly care about them being overridden
             # "sys",
             # "warnings",

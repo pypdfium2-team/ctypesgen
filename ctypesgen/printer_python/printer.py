@@ -152,7 +152,6 @@ _register_library(
                 shutil.copyfileobj(fsrc, self.file)
         else:
             self.file.write("from ._ctg_preamble import *\n")
-            self.file.write("from ._ctg_preamble import _variadic_function\n")
         self.file.write("\n# End preamble\n")
 
     def _write_external_files(self):
@@ -255,24 +254,28 @@ _register_library(
     
     def print_function(self, function):
         assert self.options.library, "Binary symbol requires library"
+        
         self.srcinfo(function.src)
+        if function.variadic:
+            self.file.write(f"# Variadic function '{function.c_name()}'\n")
         needs_guard = self._needs_guard(function)
         pad = " "*4 if needs_guard else ""
+        
         if needs_guard:
             self.file.write(
                 "if hasattr({L}, '{CN}'):\n".format(L=self.lib_access, CN=function.c_name())
             )
-        if function.variadic:
-            self._print_variadic_function(function, pad)
-        else:
-            self._print_fixed_function(function, pad)
-    
-    
-    def _print_fixed_function(self, function, pad):
+        
         self.file.write(indent(
-            '{PN} = {L}.{CN}\n'.format(L=self.lib_access, CN=function.c_name(), PN=function.py_name()) +
-            "{PN}.argtypes = [{ATS}]\n".format(PN=function.py_name(), ATS=", ".join([a.py_string() for a in function.argtypes])) +
-            "{PN}.restype = {RT}".format(PN=function.py_name(), RT=function.restype.py_string()),
+            "{PN} = {L}.{CN}\n".format(
+                L=self.lib_access, CN=function.c_name(), PN=function.py_name()
+            ) +
+            "{PN}.argtypes = [{ATS}]\n".format(
+                PN=function.py_name(), ATS=", ".join([a.py_string() for a in function.argtypes])
+            ) +
+            "{PN}.restype = {RT}".format(
+                PN=function.py_name(), RT=function.restype.py_string()
+            ),
             prefix=pad,
         ))
         if function.errcheck:
@@ -280,24 +283,7 @@ _register_library(
                 "\n" + pad + "{PN}.errcheck = {EC}".format(PN=function.py_name(), EC=function.errcheck.py_string())
             )
     
-    def _print_variadic_function(self, function, pad):
-        # TODO see if we can remove the _variadic_function wrapper and use just plain ctypes
-        self.file.write(indent(
-            '_func = {L}.{CN}\n'
-            "_restype = {RT}\n"
-            "_errcheck = {E}\n"
-            "_argtypes = [{ATS}]\n"
-            "{PN} = _variadic_function(_func,_restype,_argtypes,_errcheck)\n".format(
-                L=self.lib_access,
-                CN=function.c_name(),
-                RT=function.restype.py_string(),
-                E=function.errcheck.py_string(),
-                ATS=", ".join([a.py_string() for a in function.argtypes]),
-                PN=function.py_name(),
-            ),
-            prefix=pad,
-        ))
-
+    
     def print_variable(self, variable):
         assert self.options.library, "Binary symbol requires library"
         self.srcinfo(variable.src)
