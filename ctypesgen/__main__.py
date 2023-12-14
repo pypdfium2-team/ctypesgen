@@ -39,8 +39,8 @@ def find_symbols_in_modules(modnames, outpath):
     for modname in modnames:
         
         if modname.startswith("."):
-            # NOTE(geisserml) I've been unable to find another way than adding the output dir's parent to sys.path, considering that the module itself may contain relative imports.
-            # It seems like this is a limitation in the import system, though technically I imagine the output dir's path itself should be a sufficient anchor.
+            # The writer has been unable to find another way than adding the output dir's parent to sys.path, considering that the module itself may contain relative imports.
+            # It seems like this might be a limitation in python's import system, though technically one would imagine the output dir's path itself should be sufficient in theory.
             anchor_dir = outpath.parent
             with tmp_searchpath(anchor_dir.parent):
                 module = importlib.import_module(modname, anchor_dir.name)

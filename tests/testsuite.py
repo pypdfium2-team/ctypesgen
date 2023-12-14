@@ -2579,13 +2579,9 @@ class MacromanEncodeTest(unittest.TestCase):
         self.assertEqual(module.MYSTRING, expected)
 
 
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
+def main():
     set_logging_level(logging.CRITICAL)  # do not log anything
     unittest.main()
-
     return 0
 
 

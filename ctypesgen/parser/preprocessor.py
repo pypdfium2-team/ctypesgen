@@ -77,7 +77,7 @@ class PreprocessorParser(object):
         
         # Legacy behaviour is to implicitly undefine '__GNUC__'
         # Continue doing this, unless user explicitly requested to allow it.
-        # TODO(geisserml) allow for more flexible overrides of defaults
+        # TODO allow for more flexible overrides of defaults?
         self.default_undefs = []
         if not self.options.allow_gnu_c:
             self.default_undefs += ["__GNUC__"]

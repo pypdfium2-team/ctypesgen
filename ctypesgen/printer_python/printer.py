@@ -266,6 +266,8 @@ _register_library(
                 "if hasattr({L}, '{CN}'):\n".format(L=self.lib_access, CN=function.c_name())
             )
         
+        # NOTE An alternative to direct attribute access would be string notation {L}['{CN}']
+        # However, the writer is not aware of issues with dotted access, so leave it at for now that unless we hear otherwise.
         self.file.write(indent(
             "{PN} = {L}.{CN}\n".format(
                 L=self.lib_access, CN=function.c_name(), PN=function.py_name()
