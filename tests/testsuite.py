@@ -31,6 +31,7 @@ import math
 import unittest
 import logging
 from subprocess import Popen, PIPE
+from tempfile import NamedTemporaryFile
 
 from tests.ctypesgentest import (
     cleanup,
@@ -2527,7 +2528,7 @@ class NULLTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        header_str = "#define A_NULL_MACRO NULL"
+        header_str = "#define A_NULL_MACRO NULL\n"
         cls.module = generate(header_str)  # ["--all-headers"]
 
     @classmethod
@@ -2577,6 +2578,28 @@ class MacromanEncodeTest(unittest.TestCase):
         module = MacromanEncodeTest.module
         expected = b"\xef\xbf\xbd\\pHelper\xef\xbf\xbd".decode("utf-8")
         self.assertEqual(module.MYSTRING, expected)
+
+
+class VariadicFunctionTest(unittest.TestCase):
+    """ This tests calling variadic functions. """
+    
+    @classmethod
+    def setUpClass(cls):
+        header_str = "#include <stdio.h>\n"
+        cls.module = generate(header_str, ["-l", "c", "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
+    
+    def test_type_error_catch(self):
+        with self.assertRaises(ctypes.ArgumentError):
+            self.module.printf(123)
+    
+    def test_call(self):
+        tmp = NamedTemporaryFile()
+        c_file = self.module.fopen(tmp.name.encode(), b"w")
+        self.module.fprintf(c_file, b"Test variadic function: %s %d", b"Hello", 123)
+        self.module.fclose(c_file)
+        tmp.seek(0)
+        assert tmp.read() == b"Test variadic function: Hello 123"
+        tmp.close()
 
 
 def main():
