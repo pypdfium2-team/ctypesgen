@@ -143,33 +143,7 @@ def generate_common():
     
     ctypesgen_main(["-i", COMMON_DIR/"common.h", "--no-embed-preamble", "-o", COMMON_DIR/"common.py"])
     for file_name, shared in product(["a", "b"], [False, True]):
-        _generate_common(file_name, shared)
-
-
-def cleanup_common():
-    # Attention: currently not working on MS Windows.
-    # cleanup_common() tries to delete "common.dll" while it is still loaded
-    # by ctypes. See unittest for further details.
-    shutil.rmtree(COMMON_DIR)
-
-
-def _compile_common(common_lib):
-    subprocess.run(["gcc", "-c", COMMON_DIR/"a.c", "-o", COMMON_DIR/"a.o"])
-    subprocess.run(["gcc", "-c", COMMON_DIR/"b.c", "-o", COMMON_DIR/"b.o"])
-    subprocess.run(["gcc", "-shared", "-o", COMMON_DIR/common_lib, COMMON_DIR/"a.o", COMMON_DIR/"b.o"])
-
-
-def _generate_common(file_name, shared):
-    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
-    if shared:
-        file_name += "_shared"
-        args += ["-m", ".common", "--no-embed-preamble"]
-    else:
-        # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
-        args += ["--symbol-rules", "yes=mystruct"]
-        file_name += "_unshared"
-    args += ["-o", COMMON_DIR/f"{file_name}.py"]
-    ctypesgen_main(args)
+        _generate_with_common(file_name, shared)
 
 
 def _create_common_files():
@@ -206,3 +180,29 @@ void bar(struct mystruct *m) { }
     for (name, source) in names.items():
         with (COMMON_DIR/name).open("w") as f:
             f.write(source)
+
+
+def _compile_common(common_lib):
+    subprocess.run(["gcc", "-c", COMMON_DIR/"a.c", "-o", COMMON_DIR/"a.o"])
+    subprocess.run(["gcc", "-c", COMMON_DIR/"b.c", "-o", COMMON_DIR/"b.o"])
+    subprocess.run(["gcc", "-shared", "-o", COMMON_DIR/common_lib, COMMON_DIR/"a.o", COMMON_DIR/"b.o"])
+
+
+def _generate_with_common(file_name, shared):
+    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
+    if shared:
+        file_name += "_shared"
+        args += ["-m", ".common", "--no-embed-preamble"]
+    else:
+        # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
+        args += ["--symbol-rules", "yes=mystruct"]
+        file_name += "_unshared"
+    args += ["-o", COMMON_DIR/f"{file_name}.py"]
+    ctypesgen_main(args)
+
+
+def cleanup_common():
+    # Attention: currently not working on MS Windows.
+    # cleanup_common() tries to delete "common.dll" while it is still loaded
+    # by ctypes. See unittest for further details.
+    shutil.rmtree(COMMON_DIR)
