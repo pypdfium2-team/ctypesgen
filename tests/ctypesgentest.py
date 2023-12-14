@@ -32,22 +32,19 @@ def module_from_code(name, python_code):
 
 def generate(header_str, args=[], lang="py"):
     
-    tmp_header = tempfile.NamedTemporaryFile()
-    tmp_header.write(header_str.encode())
-    tmp_header.seek(0)
-    tmp_out = tempfile.NamedTemporaryFile()
-    ctypesgen_main(["-i", tmp_header.name, "-o", tmp_out.name, "--output-language", lang, *args])
+    tmp_in = TEST_DIR/"tmp_in.h"
+    tmp_in.write_text(header_str)
+    tmp_out = TEST_DIR/"tmp_out.py"
+    ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
+    content = tmp_out.read_text()
     
-    tmp_header_name = tmp_header.name
-    tmp_header.close()
-    tmp_out.seek(0)
-    content = tmp_out.read().decode()
-    tmp_out.close()
+    tmp_in.unlink()
+    tmp_out.unlink()
     
     if lang.startswith("py"):
         return module_from_code("tmp_module", content)
     elif lang == "json":
-        return json.loads(content), tmp_header_name
+        return json.loads(content), str(tmp_in)
     else:
         assert False
 

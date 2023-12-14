@@ -45,6 +45,13 @@ from tests.ctypesgentest import (
 )
 
 
+if sys.platform.startswith("win32"):
+    # pick something from %windir%\system32\msvc*dll that includes stdlib
+    STDLIB_NAME = "msvcrt"
+else:
+    STDLIB_NAME = "c"
+
+
 def compare_json(test_instance, json, json_ans, verbose=False):
     json_helper = JsonHelper()
     json_helper.prepare(json)
@@ -103,12 +110,7 @@ class StdlibTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = "#include <stdlib.h>\n"
-        if sys.platform == "win32":
-            # pick something from %windir%\system32\msvc*dll that include stdlib
-            library = "msvcrt"
-        else:
-            library = "c"  # libc
-        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
+        cls.module = generate(header_str, ["-l", STDLIB_NAME, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -2038,13 +2040,11 @@ class MathTest(unittest.TestCase):
 #include <math.h>
 #define sin_plus_y(x,y) (sin(x) + (y))
 """
-        if sys.platform == "win32":
-            # pick something from %windir%\system32\msvc*dll that include stdlib
-            library = "msvcrt"
-        elif sys.platform.startswith("linux"):
+        if sys.platform.startswith("linux"):
             library = "m"  # libm
         else:
-            library = "c"  # libc
+            library = STDLIB_NAME
+        
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
         # Also exclude unused members starting with __ to avoid garbage in the output.
         # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
@@ -2550,7 +2550,7 @@ class MacromanEncodeTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.mac_roman_file = "temp_mac.h"
+        cls.mac_roman_file = TEST_DIR/"temp_mac.h"
         mac_header_str = b"""
         #define kICHelper                       "\xa9\\pHelper\xa5"
 
@@ -2559,8 +2559,8 @@ class MacromanEncodeTest(unittest.TestCase):
         with open(cls.mac_roman_file, "wb") as mac_file:
             mac_file.write(mac_header_str)
 
-        header_str = """
-        #include "temp_mac.h"
+        header_str = f"""
+        #include "{cls.mac_roman_file}"
 
         #define MYSTRING kICHelper
 
@@ -2586,20 +2586,20 @@ class VariadicFunctionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = "#include <stdio.h>\n"
-        cls.module = generate(header_str, ["-l", "c", "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
+        cls.module = generate(header_str, ["-l", STDLIB_NAME, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
     
     def test_type_error_catch(self):
         with self.assertRaises(ctypes.ArgumentError):
             self.module.printf(123)
     
     def test_call(self):
-        tmp = NamedTemporaryFile()
-        c_file = self.module.fopen(tmp.name.encode(), b"w")
+        tmp = TEST_DIR/"tmp_testdata.txt"
+        tmp.touch()
+        c_file = self.module.fopen(str(tmp).encode(), b"w")
         self.module.fprintf(c_file, b"Test variadic function: %s %d", b"Hello", 123)
         self.module.fclose(c_file)
-        tmp.seek(0)
-        assert tmp.read() == b"Test variadic function: Hello 123"
-        tmp.close()
+        assert tmp.read_bytes() == b"Test variadic function: Hello 123"
+        tmp.unlink()
 
 
 def main():
