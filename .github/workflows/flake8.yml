@@ -1,9 +1,10 @@
 name: Python Flake8 Code Quality
 
-# on:
-#   - push
-#   - pull_request
-#   - fork
+on:
+  - workflow_dispatch
+  # - push
+  # - pull_request
+  # - fork
 
 jobs:
   flake8:
