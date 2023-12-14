@@ -56,7 +56,10 @@ class PreprocessorLexer(lex.Lexer):
 
 class PreprocessorParser(object):
     def __init__(self, options, cparser):
-        self.defines = [
+        self.options = options
+        self.cparser = cparser  # An instance of CParser
+        
+        self.default_defs = [
             "__extension__=",
             "__const=const",
             "__asm__(x)=",
@@ -67,62 +70,57 @@ class PreprocessorParser(object):
         # On macOS, explicitly add these defines to keep from getting syntax
         # errors in the macOS standard headers.
         if IS_MAC:
-            self.defines += [
+            self.default_defs += [
                 "_Nullable=",
                 "_Nonnull=",
             ]
+        
+        # Legacy behaviour is to implicitly undefine '__GNUC__'
+        # Continue doing this, unless user explicitly requested to allow it.
+        # TODO(geisserml) allow for more flexible overrides of defaults
+        self.default_undefs = []
+        if not self.options.allow_gnu_c:
+            self.default_undefs += ["__GNUC__"]
+        
+        # This fixes Issue #6 where OS X 10.6+ adds a C extension that breaks
+        # the parser. Blocks shouldn't be needed for ctypesgen support anyway.
+        if IS_MAC:
+            self.default_undefs += ["__BLOCKS__"]
 
         self.matches = []
         self.output = []
-        optimize = options.optimize_lexer if hasattr(options, "optimize_lexer") else False
         self.lexer = lex.lex(
             cls=PreprocessorLexer,
-            optimize=optimize,
+            optimize=options.optimize_lexer,
             lextab="lextab",
             outputdir=os.path.dirname(__file__),
             module=pplexer,
         )
 
-        self.options = options
-        self.cparser = cparser  # An instance of CParser
 
     def parse(self, filename):
         """Parse a file and save its output"""
 
-        cmd = self.options.cpp
-
-        # Legacy behaviour is to implicitly undefine '__GNUC__'
-        # Continue doing this, unless user explicitly requested to allow it.
-        if self.options.allow_gnu_c:
-            # New behaviour. No implicit override.
-            # (currently NOT enabled by default yet)
-            pass
-        else:
-            # Legacy behaviour. Add an implicit override.
-            # (currently the default)
-            cmd += " -U __GNUC__"
-
-        cmd += " -dD"
-
-        for undefine in self.options.cpp_undefines:
-            cmd += " -U%s" % undefine
-
-        # This fixes Issue #6 where OS X 10.6+ adds a C extension that breaks
-        # the parser.  Blocks shouldn't be needed for ctypesgen support anyway.
-        if IS_MAC:
-            cmd += " -U __BLOCKS__"
-
+        cmd = self.options.cpp + ["-dD"]
         for path in self.options.include_search_paths:
-            cmd += ' -I"%s"' % path
-        for define in self.defines + self.options.cpp_defines:
-            cmd += ' "-D%s"' % define
-        cmd += ' "' + filename + '"'
-
+            cmd += ["-I", path]
+        
+        # apply in this order so given params always override defaults
+        for u in self.default_undefs:
+            cmd += ["-U", u]
+        for d in self.default_defs:
+            cmd += ["-D", d]
+        # note: the input order of given undefs/defs is not currently honored due to argparse gathering in two separate lists, i.e. we rely on the caller not to pass a matching undefine after a define (this would be redundant, anyway)
+        for u in self.options.cpp_undefines:
+            cmd += ["-U", u]
+        for d in self.options.cpp_defines:
+            cmd += ["-D", d]
+        
+        cmd += [filename]
         self.cparser.handle_status(cmd)
 
         pp = subprocess.Popen(
             cmd,
-            shell=True,
             universal_newlines=False,  # binary
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

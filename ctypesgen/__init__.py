@@ -56,6 +56,7 @@ __all__ = [
 from . import parser
 from . import processor
 from . import printer_python
+from . import printer_json
 from . import version
 
 # Modules describing internal format
@@ -65,12 +66,6 @@ from . import expressions
 
 # Helper modules
 from . import messages
-from . import options
-
-try:
-    from . import printer_json
-except ImportError:
-    pass
 
 __version__ = version.VERSION.partition("-")[-1]
 VERSION = __version__

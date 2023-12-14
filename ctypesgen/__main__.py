@@ -4,6 +4,8 @@ Command-line interface for ctypesgen
 
 import re
 import sys
+import shlex
+import shutil
 import importlib
 import contextlib
 import argparse
@@ -11,7 +13,6 @@ from pathlib import Path
 
 from ctypesgen import (
     messages as msgs,
-    options as core_options,
     parser as core_parser,
     processor,
     version,
@@ -165,19 +166,15 @@ def main(given_argv=sys.argv[1:]):
         "--no-embed-preamble",
         action="store_false",
         dest="embed_preamble",
-        help="Do not embed preamble and loader in output file. "
-        "Defining --output as a file and --output-language to "
-        "Python is a prerequisite.",
+        help="Do not embed preamble and loader in output file. Defining --output as a file and --output-language to Python is a prerequisite.",
     )
 
     # Parser options
     parser.add_argument(
-        # NOTE(geisserml) "cpp" is ambiguous - in this context, it does not refer to c++, but to the C pre-processor
+        # note: "cpp" is slightly ambiguous - in this context, it does not refer to c++, but to the C pre-processor
         "--cpp",
         dest="cpp",
-        default="gcc -E",
-        help="The command to invoke the c preprocessor, including any "
-        "necessary options (default: gcc -E)",
+        help="The command to invoke the C preprocessor, including any necessary options. By default, gcc or clang will be selected as available. Example: to always use clang, pass --cpp \"clang -E\". (In a shell env, note the quotes for the arguments to end up in the right parser. Nested quotes in the command are also honored.)",
     )
     parser.add_argument(
         "--allow-gnu-c",
@@ -216,9 +213,8 @@ def main(given_argv=sys.argv[1:]):
     )
     parser.add_argument(
         "--optimize-lexer",
-        dest="optimize_lexer",
         action="store_true",
-        help="Run the lexer in optimized mode.  This mode requires write "
+        help="Run the lexer in optimized mode. This mode requires write "
         "access to lextab.py file stored within the ctypesgen package.",
     )
 
@@ -289,6 +285,7 @@ def main(given_argv=sys.argv[1:]):
     # Printer options
     parser.add_argument(
         "--insert-files",
+        dest="inserted_files",
         nargs="+",
         action="extend",
         default=[],
@@ -353,8 +350,17 @@ def main(given_argv=sys.argv[1:]):
         help="Run ctypesgen with specified debug level (also applies to yacc parser)",
     )
     
-    parser.set_defaults(**core_options.default_values)
     args = parser.parse_args(given_argv)
+    if args.cpp:
+        # split while preserving quotes
+        args.cpp = shlex.split(args.cpp)
+    else:
+        if shutil.which("gcc"):
+            args.cpp = ["gcc", "-E"]
+        elif shutil.which("clang"):
+            args.cpp = ["clang", "-E"]
+        else:
+            raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
     
     # important: must not use +=, this would mutate the original object, which is problematic when calling ctypesgen natively from the python API
     args.compile_libdirs = args.compile_libdirs + args.universal_libdirs

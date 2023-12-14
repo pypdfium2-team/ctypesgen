@@ -13,9 +13,8 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for a draft overview of
 
 ### System Dependencies
 
-ctypesgen depends on the presence of an external C pre-processor, by default GCC.
-You may specify an alternative pre-processor command using the `--cpp` option.
-However, we are only testing with GCC at this time – others may or may not work.
+ctypesgen depends on the presence of an external C pre-processor, by default `gcc` or `clang`, as available.
+Alternatively, you may specify a custom pre-processor command using the `--cpp` option (e.g. `--cpp "clang -E"` to always use clang).
 
 ### Tips & Tricks
 
