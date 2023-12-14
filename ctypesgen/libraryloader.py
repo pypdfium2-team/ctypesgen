@@ -16,8 +16,7 @@ def _find_library(name, dirs, search_sys, reldir=None):
     if reldir is None:
         try:
             reldir = pathlib.Path(__file__).parent
-        except NameError as e:
-            assert e.name == "__file__"
+        except NameError:
             reldir = None
     
     for dir in dirs:
