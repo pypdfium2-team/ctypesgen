@@ -357,6 +357,8 @@ def main(given_argv=sys.argv[1:]):
     else:
         if shutil.which("gcc"):
             args.cpp = ["gcc", "-E"]
+        elif shutil.which("cpp"):
+            args.cpp = ["cpp"]
         elif shutil.which("clang"):
             args.cpp = ["clang", "-E"]
         else:
