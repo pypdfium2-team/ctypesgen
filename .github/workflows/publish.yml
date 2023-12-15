@@ -4,6 +4,10 @@ name: Publish Python distributions to PyPI
 #   release:
 #     types: [published]
 
+# XXX temporary trigger no-op to avoid syntax errors
+on:
+  - workflow_dispatch
+
 jobs:
   build-n-publish:
     name: Build and publish Python distributions to PyPI

@@ -1,12 +1,11 @@
 import os
 import sys
-import glob
 import json
+import atexit
 import types
 import subprocess
 import shutil
 from itertools import product
-import tempfile
 from pathlib import Path
 
 import ctypesgen.__main__
@@ -15,6 +14,22 @@ from ctypesgen import messages, VERSION
 
 TEST_DIR = Path(__file__).resolve().parent
 COMMON_DIR = TEST_DIR/"common"
+TMP_DIR = TEST_DIR/"tmp"
+COUNTER = 0
+CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
+
+
+def init_tmpdir():
+    if TMP_DIR.exists():
+        shutil.rmtree(TMP_DIR)
+    TMP_DIR.mkdir()
+
+def cleanup_tmpdir():
+    if CLEANUP_OK:
+        shutil.rmtree(TMP_DIR)
+
+init_tmpdir()
+atexit.register(cleanup_tmpdir)
 
 
 def ctypesgen_main(args):
@@ -32,14 +47,22 @@ def module_from_code(name, python_code):
 
 def generate(header_str, args=[], lang="py"):
     
-    tmp_in = TEST_DIR/"tmp_in.h"
-    tmp_in.write_text(header_str)
-    tmp_out = TEST_DIR/"tmp_out.py"
-    ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
-    content = tmp_out.read_text()
+    # use custom tempfiles scoping so we may retain data for inspection
+    # also note that python stdlib tempfiles don't play well with windows
     
-    tmp_in.unlink()
-    tmp_out.unlink()
+    global COUNTER
+    COUNTER += 1
+    
+    tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
+    tmp_in.write_text(header_str)
+    try:
+        tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.py"
+        ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
+        content = tmp_out.read_text()
+    finally:
+        if CLEANUP_OK:
+            tmp_in.unlink()
+            tmp_out.unlink()
     
     if lang.startswith("py"):
         return module_from_code("tmp_module", content)
@@ -47,12 +70,6 @@ def generate(header_str, args=[], lang="py"):
         return json.loads(content), str(tmp_in)
     else:
         assert False
-
-
-def cleanup(filepattern="temp.*"):
-    fnames = glob.glob(filepattern)
-    for fname in fnames:
-        os.unlink(fname)
 
 
 def set_logging_level(log_level):
@@ -109,9 +126,9 @@ class JsonHelper:
                 elif key == "tag" and isinstance(value, str):
                     if value == tag:
                         json[key] = new_tag
-                elif key == "src" and isinstance(value, list):
-                    if value and "temp.h" in value[0]:
-                        value[0] = "/some-path/temp.h"
+                elif sys.platform == "win32" and key == "src" and isinstance(value, list) and value:
+                    # for whatever reason, on windows ctypesgen's json output contains double slashes in paths, whereas the expectation contains only single slashes, so normalize the thing
+                    value[0] = value[0].replace("\\\\", "\\")
                 else:
                     self._replace_anon_tag(value, tag, new_tag)
 
@@ -168,11 +185,9 @@ void bar(struct mystruct *m);
 void bar(struct mystruct *m) { }
 """
 
-    try:
-        COMMON_DIR.mkdir()
-    except FileExistsError:
+    if COMMON_DIR.exists():
         shutil.rmtree(COMMON_DIR)
-        COMMON_DIR.mkdir()
+    COMMON_DIR.mkdir()
 
     for (name, source) in names.items():
         with (COMMON_DIR/name).open("w") as f:
@@ -202,4 +217,5 @@ def cleanup_common():
     # Attention: currently not working on MS Windows.
     # cleanup_common() tries to delete "common.dll" while it is still loaded
     # by ctypes. See unittest for further details.
-    shutil.rmtree(COMMON_DIR)
+    if CLEANUP_OK:
+        shutil.rmtree(COMMON_DIR)
