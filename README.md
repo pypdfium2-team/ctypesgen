@@ -20,10 +20,12 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 
 * If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
   If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share the template using `--no-embed-preamble`. Relative modules will be expected to be present in the output directory at compile time.
+  Note, this strategy can also be used to bind to same-library headers separately; however, you'll need to resolve the dependency tree on your own.
 * To provide extra dependency headers that are not present in the system, you can set the `CPATH` or `C_INCLUDE_PATH` env vars for the C pre-processor. It may also be possible to use this for "cross-compilation" of bindings, or to spoof an optional foreign symbol using `typedef void* SYMBOL;` (`c_void_p`).
 * If building with `--no-macro-guards` and you encounter broken macros, you may use `--symbol-rules` (see below) or replace them manually. This can be necessary on C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python. In particular, you are likely to run into this with `--all-headers`.
 
 #### Notes on symbol inclusion
+
 * ctypesgen works with the following symbol rules:
   - `yes`: The symbol is eagerly included.
   - `if_needed`: The symbol is included if other included symbols depend on it (e.g. a type used in a function signature).
@@ -31,18 +33,19 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 * Roughly speaking, symbols from caller-given headers get assigned the include rule `yes`, and any others `if_needed`. When building with `--all-headers`, all symbols default to `yes` regardless of their origin.
 * `--no-macros` sets the include rule of all macro objects to `never`.
 * Finally, the `--symbol-rules` option is applied, which can be used to assign symbol rules by regex fullmatch expressions, providing callers with powerful means of control over symbol inclusion.
-* Note that you should be very careful with `never` because of the potential for accidental exclusion of dependants. As a rule of thumb, you'll usually want to use `if_needed` rather than `never`.
+* To filter out undesired symbols, you'll usually want to use `if_needed` rather than `never` to avoid accidental exclusion of dependants. Use `never` only where this side effect is actually wanted, e.g. to exclude a broken symbol.
 
 ### Known Limitations
 
 * The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, and none other than `cdecl` or `stdcall`, because ctypes itself does not.
-
-### Bugs
-
-Rapid, need-driven development can be prone to oversights or unintentional breakage. Please inform us if you think a change introduces logical issues.
+* We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
 
 ### Fork rationale
 
 Trying to get through changes upstream is tedious, with unclear outcome, and often not applicable due to mismatched intents (e.g. regarding backwards compatibility). Also consider that isolating commits in separate branches is not feasible anymore as merge conflicts arise (e.g. due to code cleanups and interfering changes).
 
 Contrast this to a fork, which allows us to keep focused and effect improvements quickly, so as to invest pypdfium2 developer time rationally.
+
+### Bugs
+
+Oversights or unintentional breakage can happen at times. Feel free to file an bug report if you think a change introduces logical issues.
