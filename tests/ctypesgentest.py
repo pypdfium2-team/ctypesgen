@@ -56,7 +56,7 @@ def generate(header_str, args=[], lang="py"):
     tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
     tmp_in.write_text(header_str)
     try:
-        tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.py"
+        tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.{lang}"
         ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
         content = tmp_out.read_text()
     finally:
