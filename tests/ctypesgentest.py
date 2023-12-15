@@ -214,8 +214,5 @@ def _generate_with_common(file_name, shared):
 
 
 def cleanup_common():
-    # Attention: currently not working on MS Windows.
-    # cleanup_common() tries to delete "common.dll" while it is still loaded
-    # by ctypes. See unittest for further details.
     if CLEANUP_OK:
         shutil.rmtree(COMMON_DIR)

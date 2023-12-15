@@ -6,6 +6,7 @@ ctypesgen.processor.pipeline calls the operations module.
 
 import re
 import os
+import sys
 import ctypes
 import keyword
 from pathlib import Path
@@ -235,6 +236,19 @@ def fix_conflicting_names(data, opts):
                     )
 
 
+import _ctypes as ctypes_backend
+
+def free_library(lib_handle):
+    # https://github.com/python/cpython/issues/58802
+    # On windows, we have to free libraries explicitly so the backing file may be deleted afterwards.
+    # While we're at it, also free libraries on other platforms for consistency.
+    status_message(f"Freeing library handle {lib_handle} ...")
+    if sys.platform.startswith("win32"):
+        ctypes_backend.FreeLibrary(lib_handle)
+    else:
+        ctypes_backend.dlclose(lib_handle)
+
+
 def check_symbols(data, opts):
     
     if opts.no_load_library:
@@ -258,8 +272,13 @@ def check_symbols(data, opts):
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
-    # don't bother checking symbols that will definitely be excluded
-    missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
+    try:
+        # don't bother checking symbols that will definitely be excluded
+        missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
+    finally:
+        free_library(library._handle)
+        del library
+    
     if missing_symbols:
         if opts.include_missing_symbols:
             warning_message(
