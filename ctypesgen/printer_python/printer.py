@@ -256,34 +256,31 @@ _register_library(
         assert self.options.library, "Binary symbol requires library"
         
         self.srcinfo(function.src)
-        if function.variadic:
-            self.file.write(f"# Variadic function '{function.c_name()}'\n")
-        needs_guard = self._needs_guard(function)
-        pad = " "*4 if needs_guard else ""
-        
-        if needs_guard:
-            self.file.write(
-                "if hasattr({L}, '{CN}'):\n".format(L=self.lib_access, CN=function.c_name())
-            )
         
         # NOTE An alternative to direct attribute access would be string notation {L}['{CN}']
         # However, the writer is not aware of issues with dotted access, so leave it at for now that unless we hear otherwise.
-        self.file.write(indent(
-            "{PN} = {L}.{CN}\n".format(
-                L=self.lib_access, CN=function.c_name(), PN=function.py_name()
-            ) +
-            "{PN}.argtypes = [{ATS}]\n".format(
-                PN=function.py_name(), ATS=", ".join([a.py_string() for a in function.argtypes])
-            ) +
-            "{PN}.restype = {RT}".format(
-                PN=function.py_name(), RT=function.restype.py_string()
-            ),
-            prefix=pad,
-        ))
+        template = """\
+{PN} = {L}.{CN}
+{PN}.argtypes = [{ATS}]
+{PN}.restype = {RT}\
+"""
+        fields = dict(
+            L=self.lib_access,
+            CN=function.c_name(),
+            PN=function.py_name(),
+            ATS=", ".join([a.py_string() for a in function.argtypes]),
+            RT=function.restype.py_string(),
+        )
         if function.errcheck:
-            self.file.write(
-                "\n" + pad + "{PN}.errcheck = {EC}".format(PN=function.py_name(), EC=function.errcheck.py_string())
-            )
+            template += "\n{PN}.errcheck = {EC}"
+            fields["EC"] = function.errcheck.py_string()
+        
+        if self._needs_guard(function):
+            template = "if hasattr({L}, '{CN}'):\n" + indent(template, prefix=" "*4)
+        if function.variadic:
+            template = "# Variadic function '{CN}'\n" + template
+        
+        self.file.write(template.format(**fields))
     
     
     def print_variable(self, variable):
