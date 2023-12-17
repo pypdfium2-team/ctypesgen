@@ -37,8 +37,12 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 
 ### Known Limitations
 
+*Somewhat intentional design limitations of this fork.*
 * The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, and none other than `cdecl` or `stdcall`, because ctypes itself does not.
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
+
+*Real issues inherited from upstream that we are unhappy about, but may be tough to fix.*
+* Conflicting names are detected, but not actually resolved recursively: any dependent symbols currently get excluded from the output.
 
 ### Fork rationale
 

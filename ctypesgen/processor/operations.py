@@ -118,37 +118,39 @@ def fix_conflicting_names(data, opts):
         + data.macros
     )
     
-    for description in descriptions:
-        if description.py_name() in important_names:
-            conflict_name = important_names[description.py_name()]
+    # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them. Confound it!
+    
+    for desc in descriptions:
+        if desc.py_name() in important_names:
+            conflict_name = important_names[desc.py_name()]
 
-            original_name = description.casual_name()
-            while description.py_name() in important_names:
-                if isinstance(description, (StructDescription, EnumDescription)):
-                    description.tag += "_"
+            original_name = desc.casual_name()
+            while desc.py_name() in important_names:
+                if isinstance(desc, (StructDescription, EnumDescription)):
+                    desc.tag += "_"
                 else:
-                    description.name = "_" + description.name
+                    desc.name = "_" + desc.name
 
-            if not description.dependents:
-                description.warning(
+            if not desc.dependents:
+                desc.warning(
                     "%s has been renamed to %s due to a name "
-                    "conflict with %s." % (original_name, description.casual_name(), conflict_name),
+                    "conflict with %s." % (original_name, desc.casual_name(), conflict_name),
                     cls="rename",
                 )
             else:
-                description.warning(
+                desc.warning(
                     "%s has been renamed to %s due to a name "
                     "conflict with %s. Other objects depend on %s - those "
                     "objects will be skipped."
-                    % (original_name, description.casual_name(), conflict_name, original_name),
+                    % (original_name, desc.casual_name(), conflict_name, original_name),
                     cls="rename",
                 )
 
-                for dependent in description.dependents:
+                for dependent in desc.dependents:
                     dependent.include_rule = "never"
 
-            if description.include_rule == "yes":
-                important_names[description.py_name()] = description.casual_name()
+            if desc.include_rule == "yes":
+                important_names[desc.py_name()] = desc.casual_name()
 
     # Names of struct members don't conflict with much, but they can conflict
     # with Python keywords.
