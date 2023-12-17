@@ -57,7 +57,7 @@ def process(data, options):
     remove_macros(data, options)
     filter_by_regex_rules(data, options)
     remove_NULL(data, options)
-    if options.output_language == "python":
+    if options.output_language.startswith("py"):
         # this function is python specific
         fix_conflicting_names(data, options)
     

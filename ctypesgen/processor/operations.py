@@ -89,7 +89,24 @@ def fix_conflicting_names(data, opts):
     """If any descriptions from the C code would overwrite Python builtins or
     other important names, fix_conflicting_names() adds underscores to resolve
     the name conflict."""
-
+    
+    status_message("Looking for conflicting names...")
+    
+    our_names = {"_libs", "_libs_info"}
+    # probably includes a bit more than we actually use ...
+    our_names |= {x for x in dir(ctypes) if not x.startswith("_")}
+    
+    # This dictionary maps names to a string representing where the name came from.
+    important_names = {}
+    for name in our_names:
+        important_names[name] = "a name from ctypes or ctypesgen"
+    for name in dir(__builtins__):
+        important_names[name] = "a Python builtin"
+    for name in opts.imported_symbols:
+        important_names[name] = "a name from an included Python module"
+    for name in keyword.kwlist:
+        important_names[name] = "a Python keyword"
+    
     # This is the order of priority for names
     descriptions = (
         data.functions
@@ -100,79 +117,7 @@ def fix_conflicting_names(data, opts):
         + data.constants
         + data.macros
     )
-
-    # This dictionary maps names to a string representing where the name
-    # came from.
-    important_names = {}
-
-    occupied_names = set()
-    occupied_names = occupied_names.union(
-        # ctypesgen names
-        [
-            "_libs",
-            "_libs_info",
-            # the following names are only accessed before the symbols list, so we don't strictly care about them being overridden
-            # "sys",
-            # "warnings",
-            # "pathlib",
-            # "_find_library",
-            # "_register_library",
-        ]
-    )
-    occupied_names = occupied_names.union(
-        # ctypes names, required for symbol prints
-        [
-            "ctypes",
-            "addressof",
-            "ArgumentError",
-            "cast",
-            "CFUNCTYPE",
-            "pointer",
-            "POINTER",
-            "Union",
-            "sizeof",
-            "Structure",
-            "c_buffer",
-            "c_byte",
-            "c_char",
-            "c_char_p",
-            "c_double",
-            "c_float",
-            "c_int",
-            "c_int16",
-            "c_int32",
-            "c_int64",
-            "c_int8",
-            "c_long",
-            "c_longlong",
-            "c_ptrdiff_t",
-            "c_short",
-            "c_size_t",
-            "c_ubyte",
-            "c_uint",
-            "c_uint16",
-            "c_uint32",
-            "c_uint64",
-            "c_uint8",
-            "c_ulong",
-            "c_ulonglong",
-            "c_ushort",
-            "c_void",
-            "c_void_p",
-            "c_voidp",
-            "c_wchar",
-            "c_wchar_p",
-        ]
-    )
-    for name in occupied_names:
-        important_names[name] = "a name needed by ctypes or ctypesgen"
-    for name in dir(__builtins__):
-        important_names[name] = "a Python builtin"
-    for name in opts.imported_symbols:
-        important_names[name] = "a name from an included Python module"
-    for name in keyword.kwlist:
-        important_names[name] = "a Python keyword"
-
+    
     for description in descriptions:
         if description.py_name() in important_names:
             conflict_name = important_names[description.py_name()]
