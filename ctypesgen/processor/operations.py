@@ -210,7 +210,7 @@ def check_symbols(data, opts):
             name = opts.library,
             dllclass = getattr(ctypes, opts.dllclass),
             dirs = opts.compile_libdirs,
-            search_sys = opts.allow_system_search,
+            search_sys = opts.search_sys,
             reldir = Path.cwd(),
         )
         library = libraryloader._libs[opts.library]
@@ -227,21 +227,15 @@ def check_symbols(data, opts):
         del library
     
     if missing_symbols:
-        if opts.include_missing_symbols:
-            warning_message(
-                "Some symbols could not be found. Possible causes include:\n"
-                "- Private members (use --exclude-symbols or --no-missing-symbols to handle)\n"
-                "- Binary/headers mismatch (ABI unsafe, should be avoided by caller)\n",
-                cls="other"
-            )
-            if not opts.guard_symbols:
-                status_message("Missing symbols will be guarded selectively despite --no-symbol-guards")
-        status_message(
-            f"Missing symbols (len {len(missing_symbols)}):\n{missing_symbols}\n"
-            f"Included? - {opts.include_missing_symbols}"
+        warning_message(
+            f"{len(missing_symbols)} symbols could not be found. Possible causes include:\n"
+            "- Private members (use --symbol-rules to exclude)\n"
+            "- Binary/headers mismatch (ABI unsafe, should be avoided by caller)\n"
+            f"{missing_symbols}",
+            cls="other"
         )
         
-        for s in missing_symbols:
-            s.is_missing = True
-            if not opts.include_missing_symbols:
+        if not opts.guard_symbols:
+            warning_message("Missing symbols will be excluded due to --no-symbol-guards")
+            for s in missing_symbols:
                 s.include_rule = "never"

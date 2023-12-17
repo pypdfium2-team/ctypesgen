@@ -187,6 +187,7 @@ class CommonHeaderTest(unittest.TestCase):
         from .common import common
         from .common import a_shared as a
         from .common import b_shared as b
+        from .common import _ctg_loader as common_loader
         
         try:
             self.assertTrue(common.mystruct is a.mystruct is b.mystruct)
@@ -195,7 +196,7 @@ class CommonHeaderTest(unittest.TestCase):
             a.foo(m)
         finally:
             # on behalf of windows, we have to free libraries explicitly so the backing file may be deleted afterwards
-            free_library(common._libs["common"]._handle)
+            free_library(common_loader._libs["common"]._handle)
 
 
 class StdBoolTest(unittest.TestCase):
