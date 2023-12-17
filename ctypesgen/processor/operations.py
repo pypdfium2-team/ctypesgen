@@ -130,25 +130,15 @@ def fix_conflicting_names(data, opts):
                     desc.tag += "_"
                 else:
                     desc.name = "_" + desc.name
-
-            if not desc.dependents:
-                desc.warning(
-                    "%s has been renamed to %s due to a name "
-                    "conflict with %s." % (original_name, desc.casual_name(), conflict_name),
-                    cls="rename",
-                )
-            else:
-                desc.warning(
-                    "%s has been renamed to %s due to a name "
-                    "conflict with %s. Other objects depend on %s - those "
-                    "objects will be skipped."
-                    % (original_name, desc.casual_name(), conflict_name, original_name),
-                    cls="rename",
-                )
-
+            
+            message = "%s has been renamed to %s due to a name conflict with %s." % \
+                      (original_name, desc.casual_name(), conflict_name)
+            if desc.dependents:
+                message += " Dependant objects will be excluded (FIXME)."
                 for dependent in desc.dependents:
                     dependent.include_rule = "never"
-
+            desc.warning(message)
+            
             if desc.include_rule == "yes":
                 important_names[desc.py_name()] = desc.casual_name()
 
@@ -156,31 +146,30 @@ def fix_conflicting_names(data, opts):
     # with Python keywords.
 
     for struct in data.structs:
-        if not struct.opaque:
-            for i, (name, type) in enumerate(struct.members):
-                if name in keyword.kwlist:
-                    struct.members[i] = ("_" + name, type)
-                    struct.warning(
-                        'Member "%s" of %s has been renamed to '
-                        '"%s" because it has the same name as a Python '
-                        "keyword." % (name, struct.casual_name(), "_" + name),
-                        cls="rename",
-                    )
+        if struct.opaque: continue  # no members
+        for i, (name, type) in enumerate(struct.members):
+            if name in keyword.kwlist:
+                struct.members[i] = ("_" + name, type)
+                struct.warning(
+                    "Member '%s' of %s has been renamed to '%s' because it has the same name "
+                    "as a Python keyword." % (name, struct.casual_name(), "_" + name),
+                    cls="rename",
+                )
 
     # Macro arguments may be have names that conflict with Python keywords.
-    # In a perfect world, this would simply rename the parameter instead
-    # of throwing an error message.
+    # TODO actually rename parameter
 
     for macro in data.macros:
-        if macro.params:
-            for param in macro.params:
-                if param in keyword.kwlist:
-                    macro.error(
-                        'One of the parameters to %s, "%s" has the '
-                        "same name as a Python keyword. %s will be skipped."
-                        % (macro.casual_name(), param, macro.casual_name()),
-                        cls="name-conflict",
-                    )
+        if not macro.params: continue  # may be None
+        for param in macro.params:
+            if param in keyword.kwlist:
+                macro.error(
+                    "One of the params to %s, '%s' has the same name as a Python keyword. "
+                    "%s will be excluded." % (macro.casual_name(), param, macro.casual_name()),
+                    cls="name-conflict",
+                )
+                macro.include_rule = "never"
+                break  # params loop
 
 
 import _ctypes as ctypes_backend
