@@ -530,13 +530,7 @@ class StructuresTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """
-        NOTE:  Very possibly, if you change this header string, you need to
-        change the line numbers in the JSON output test result below
-        (in test_struct_json).
-        """
         header_str = """
-
 struct foo
 {
         int a;
@@ -945,7 +939,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {},
-                    "src": [self.tmp_header_path, 21],
+                    "src": [self.tmp_header_path, None],
                     "tag": "anon_1",
                     "variety": "struct",
                 },
@@ -1110,7 +1104,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {"packed": True},
-                    "src": [self.tmp_header_path, 30],
+                    "src": [self.tmp_header_path, None],
                     "tag": "anon_2",
                     "variety": "struct",
                 },
@@ -1275,7 +1269,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {"packed": True, "aligned": [4]},
-                    "src": [self.tmp_header_path, 40],
+                    "src": [self.tmp_header_path, None],
                     "tag": "anon_3",
                     "variety": "struct",
                 },
@@ -1487,7 +1481,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {},
-                    "src": [self.tmp_header_path, 77],
+                    "src": [self.tmp_header_path, None],
                     "tag": "anon_4",
                     "variety": "struct",
                 },
@@ -1550,7 +1544,7 @@ typedef struct {
                         ],
                     ],
                     "opaque": False,
-                    "src": [self.tmp_header_path, 81],
+                    "src": [self.tmp_header_path, None],
                     "tag": "anon_5",
                     "variety": "struct",
                 },
@@ -1588,7 +1582,7 @@ typedef struct {
                             ],
                         ],
                         "opaque": False,
-                        "src": [self.tmp_header_path, 81],
+                        "src": [self.tmp_header_path, None],
                         "tag": "anon_5",
                         "variety": "struct",
                     },
@@ -1677,7 +1671,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {},
-                    "src": [self.tmp_header_path, 3],
+                    "src": [self.tmp_header_path, None],
                     "tag": "foo",
                     "variety": "struct",
                 },
@@ -1763,7 +1757,7 @@ typedef struct {
                     ],
                     "opaque": False,
                     "attrib": {"packed": True},
-                    "src": [self.tmp_header_path, 12],
+                    "src": [self.tmp_header_path, None],
                     "tag": "packed_foo",
                     "variety": "struct",
                 },
@@ -1849,7 +1843,7 @@ typedef struct {
                         ],
                     ],
                     "opaque": False,
-                    "src": [self.tmp_header_path, 56],
+                    "src": [self.tmp_header_path, None],
                     "tag": "pragma_packed_foo2",
                     "variety": "struct",
                 },
@@ -1935,7 +1929,7 @@ typedef struct {
                         ],
                     ],
                     "opaque": False,
-                    "src": [self.tmp_header_path, 66],
+                    "src": [self.tmp_header_path, None],
                     "tag": "foo3",
                     "variety": "struct",
                 },
@@ -2078,11 +2072,11 @@ class EnumTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = """
-        typedef enum {
-            TEST_1 = 0,
-            TEST_2
-        } test_status_t;
-        """
+typedef enum {
+    TEST_1 = 0,
+    TEST_2
+} test_status_t;
+"""
         cls.module = generate(header_str)
         cls.json, cls.tmp_header_path = generate(header_str, lang="json")
 
@@ -2172,7 +2166,7 @@ class EnumTest(unittest.TestCase):
                     ],
                     "errors": [],
                     "opaque": False,
-                    "src": [self.tmp_header_path, 2],
+                    "src": [self.tmp_header_path, None],
                     "tag": "anon_1",
                 },
                 "name": "test_status_t",
@@ -2187,14 +2181,14 @@ class PrototypeTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = """
-        int bar2(int a);
-        int bar(int);
-        void foo(void);
-        void foo2(void) __attribute__((stdcall));
-        void * __attribute__((stdcall)) foo3(void);
-        void * __attribute__((stdcall)) * foo4(void);
-        void foo5(void) __attribute__((__stdcall__));
-        """
+int bar2(int a);
+int bar(int);
+void foo(void);
+void foo2(void) __attribute__((stdcall));
+void * __attribute__((stdcall)) foo3(void);
+void * __attribute__((stdcall)) * foo4(void);
+void foo5(void) __attribute__((__stdcall__));
+"""
         cls.json, _ = generate(header_str, lang="json")
 
     @classmethod
@@ -2341,12 +2335,12 @@ class LongDoubleTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = """
-        struct foo
-        {
-            long double is_bar;
-            int a;
-        };
-        """
+struct foo
+{
+    long double is_bar;
+    int a;
+};
+"""
         cls.module = generate(header_str)  # ["--all-headers"]
 
     @classmethod

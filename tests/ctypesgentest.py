@@ -54,7 +54,7 @@ def generate(header_str, args=[], lang="py"):
     COUNTER += 1
     
     tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
-    tmp_in.write_text(header_str)
+    tmp_in.write_text(header_str.strip() + "\n")
     try:
         tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.{lang}"
         ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
@@ -126,9 +126,12 @@ class JsonHelper:
                 elif key == "tag" and isinstance(value, str):
                     if value == tag:
                         json[key] = new_tag
-                elif sys.platform == "win32" and key == "src" and isinstance(value, list) and value:
-                    # for whatever reason, on windows ctypesgen's json output contains double slashes in paths, whereas the expectation contains only single slashes, so normalize the thing
-                    value[0] = value[0].replace("\\\\", "\\")
+                elif key == "src" and isinstance(value, list) and value:
+                    # for whatever reason, on windows ctypesgen's json output contains double slashes in paths, whereas the expectation contains only single slashes, so normalize the output
+                    if sys.platform == "win32":
+                        value[0] = value[0].replace("\\\\", "\\")
+                    # # ignore the line number so changing headers does not cause erroneous test fails
+                    value[1] = None
                 else:
                     self._replace_anon_tag(value, tag, new_tag)
 
