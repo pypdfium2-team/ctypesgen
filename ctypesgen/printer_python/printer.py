@@ -14,6 +14,11 @@ DEFAULTHEADER_PATH = THIS_DIR/"defaultheader.py"
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 
+def _stream_copy_file(src_path, dst_fh):
+    with open(src_path, "r") as src_fh:
+        shutil.copyfileobj(src_fh, dst_fh)
+
+
 # TODO(geisserml) think out a proper concept for line breaks
 
 class WrapperPrinter:
@@ -98,8 +103,7 @@ class WrapperPrinter:
     def print_loader(self):
         if self.options.embed_preamble:
             self.file.write("# Begin loader template\n\n")
-            with LIBRARYLOADER_PATH.open("r") as loader_file:
-                shutil.copyfileobj(loader_file, self.file)
+            _stream_copy_file(LIBRARYLOADER_PATH, self.file)
             self.file.write("\n# End loader template\n")
         else:
             self.file.write("from ._ctg_loader import _libs\n")
@@ -158,8 +162,7 @@ _register_library(
     def print_preamble(self):
         self.file.write("# Begin preamble\n\n")
         if self.options.embed_preamble:
-            with open(PREAMBLE_PATH, "r") as fsrc:
-                shutil.copyfileobj(fsrc, self.file)
+            _stream_copy_file(PREAMBLE_PATH, self.file)
         else:
             self.file.write("from ._ctg_preamble import *\n")
         self.file.write("\n# End preamble\n")
@@ -339,6 +342,5 @@ _register_library(
     
     def insert_file(self, filepath):
         self.file.write(f"# Begin '{filepath}'\n\n")
-        with open(filepath, "r") as fh:
-            shutil.copyfileobj(fh, self.file)
+        _stream_copy_file(filepath, self.file)
         self.file.write(f"\n# End '{filepath}'\n")
