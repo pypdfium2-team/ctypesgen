@@ -262,8 +262,8 @@ class CtypesFunction(CtypesType):
         super(CtypesFunction, self).__init__()
         self.restype = restype
         self.errcheck = CtypesNoErrorCheck()
-
-        # QUESTION(geisserml) is this still correct?
+        
+        # QUESTION(geisserml) is this correct? What's the problem with treating it as an int?
         # Don't allow POINTER(None) (c_void_p) as a restype... causes errors
         # when ctypes automagically returns it as an int.
         # Instead, convert to POINTER(c_void).  c_void is not a ctypes type,
@@ -274,7 +274,6 @@ class CtypesFunction(CtypesType):
             and self.restype.destination.name == "void"
         ):
             # use POINTER(c_ubyte) as restype but cast to c_void_p using errcheck
-            # NOTE(geisserml) an example for this code path is pdfium's FPDFBitmap_GetBuffer()
             self.restype = CtypesPointer(CtypesSpecial("c_ubyte"), ())
             self.errcheck = CtypesPointerCast(CtypesSpecial("c_void_p"))
 
@@ -289,7 +288,7 @@ class CtypesFunction(CtypesType):
         super(CtypesFunction, self).visit(visitor)
 
     def py_string(self, ignore_can_be_ctype=None):
-        return "CFUNCTYPE(%s, %s)" % (
+        return "CFUNCTYPE(PRIMITIVE(%s), %s)" % (
             self.restype.py_string(),
             ", ".join([a.py_string() for a in self.argtypes]),
         )

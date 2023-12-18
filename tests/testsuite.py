@@ -758,7 +758,7 @@ void foo5(void) __attribute__((__stdcall__));
 
 
 class LongDoubleTest(unittest.TestCase):
-    "Test correct parsing and generation of 'long double' type"
+    """Test correct parsing and generation of 'long double' type"""
 
     @classmethod
     def setUpClass(cls):
@@ -828,29 +828,46 @@ class MainTest(unittest.TestCase):
         self.assertIn("error: unrecognized arguments: --this-does-not-exist", e.decode())
 
 
-class UncheckedTest(unittest.TestCase):
-    """Test correct handling of the construct below"""
-
+class FunctionPrototypeTest(unittest.TestCase):
+    """Test usability of function prototypes."""
+    
     @classmethod
     def setUpClass(cls):
         header_str = """
-        typedef int (*some_type_of_answer)(void*);
-        """
+typedef int (*FP_Primitive)(void* my_value);
+
+typedef struct {
+    int a;
+} MYSTRUCT;
+typedef MYSTRUCT* (*FP_Custom)(MYSTRUCT* my_struct);
+"""
         cls.module = generate(header_str)
 
-    def test_unchecked_prototype(self):
-        module = UncheckedTest.module
-        A = module.some_type_of_answer()
-        self.assertEqual(A.restype, ctypes.c_int)
-        self.assertEqual(A.argtypes, (ctypes.c_void_p,))
-
+    def test_primitive(self):
+        """Test passthrough with primitive types."""
+        F = self.module.FP_Primitive(lambda x: x)
+        self.assertEqual(F.argtypes, (ctypes.c_void_p,))
+        self.assertEqual(F.restype, ctypes.c_int)
+        # ctypes autoconverts int -> c_void_p and c_int -> int
+        self.assertEqual(F(100), 100)
+    
+    def test_custom(self):
+        mod = self.module
+        F = mod.FP_Custom(lambda x: ctypes.addressof(x.contents))
+        self.assertEqual(F.argtypes, (ctypes.POINTER(mod.MYSTRUCT),))
+        # The custom type is transfomred into a primitive type (c_void_p) by ctypesgen, because ctypes does not support custom return types on callbacks.
+        self.assertEqual(F.restype, ctypes.c_void_p)
+        struct = mod.MYSTRUCT(a=10)
+        struct_back = mod.MYSTRUCT.from_address( F(struct) )
+        self.assertEqual(struct.a, struct_back.a)
+    
     @classmethod
     def tearDownClass(cls):
         del cls.module
 
 
 class ConstantsTest(unittest.TestCase):
-    "Test correct parsing and generation of NULL"
+    """Test correct parsing and generation of NULL"""
 
     @classmethod
     def setUpClass(cls):
@@ -973,7 +990,8 @@ class MacromanEncodeTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.module
-        os.remove(cls.mac_roman_file)
+        if CLEANUP_OK:
+            os.remove(cls.mac_roman_file)
 
     def test_macroman_encoding_source(self):
         module = MacromanEncodeTest.module

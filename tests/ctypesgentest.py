@@ -47,11 +47,11 @@ def module_from_code(name, python_code):
 
 def generate(header_str, args=[], lang="py"):
     
-    # Use custom tempfiles scoping so we may retain data for inspection
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
     # - The default file encoding seems to be cp1252, which is problematic with special chars (such as the banana in the constants test). Need to specify UTF-8 explicitly. PEP 686 should hopefully improve this.
     
+    # Use custom tempfiles scoping so we may retain data for inspection
     global COUNTER
     COUNTER += 1
     
