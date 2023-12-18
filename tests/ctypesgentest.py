@@ -47,18 +47,20 @@ def module_from_code(name, python_code):
 
 def generate(header_str, args=[], lang="py"):
     
-    # use custom tempfiles scoping so we may retain data for inspection
-    # also note that python stdlib tempfiles don't play well with windows
+    # Use custom tempfiles scoping so we may retain data for inspection
+    # Windows notes:
+    # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
+    # - The default file encoding seems to be cp1252, which is problematic with special chars (such as the banana in the constants test). Need to specify UTF-8 explicitly. PEP 686 should hopefully improve this.
     
     global COUNTER
     COUNTER += 1
     
     tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
-    tmp_in.write_text(header_str.strip() + "\n")
+    tmp_in.write_text(header_str.strip() + "\n", encoding="utf-8")
     try:
         tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.{lang}"
         ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
-        content = tmp_out.read_text()
+        content = tmp_out.read_text(encoding="utf-8")
     finally:
         if CLEANUP_OK:
             tmp_in.unlink()
