@@ -37,7 +37,7 @@ def find_dependencies(data, opts):
         if name in nametable:
             requirement = nametable[name]
             if requirement:
-                desc.add_requirements([requirement])
+                desc.add_requirements(requirement)
             return True
         else:
             return False
@@ -54,8 +54,8 @@ def find_dependencies(data, opts):
         if requirement is None:
             return
 
-        desc.add_requirements([requirement])
-        requirement.add_requirements([desc])
+        desc.add_requirements(requirement)
+        requirement.add_requirements(desc)
         return requirement
 
     def find_dependencies_for(desc, kind):

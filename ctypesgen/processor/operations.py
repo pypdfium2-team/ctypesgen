@@ -31,7 +31,7 @@ def automatically_typedef_structs(data, options):
     for struct in data.structs:
         if not struct.ctype.anonymous:  # Don't alias anonymous structs
             typedef = TypedefDescription(struct.tag, struct.ctype, src=struct.src)
-            typedef.add_requirements(set([struct]))
+            typedef.add_requirements(struct)
 
             data.typedefs.append(typedef)
             data.all.insert(data.all.index(struct) + 1, typedef)

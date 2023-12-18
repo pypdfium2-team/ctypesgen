@@ -54,8 +54,8 @@ class Description(object):
         self.errors = []
         self.warnings = []
 
-    def add_requirements(self, reqs):
-        self.requirements = self.requirements.union(reqs)
+    def add_requirements(self, *reqs):
+        self.requirements |= set(reqs)
         for req in reqs:
             req.dependents.add(self)
 
