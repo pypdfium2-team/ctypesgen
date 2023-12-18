@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 from textwrap import indent
+from contextlib import contextmanager
 
 from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
 from ctypesgen.expressions import ExpressionNode
@@ -14,9 +15,15 @@ DEFAULTHEADER_PATH = THIS_DIR/"defaultheader.py"
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 
-def _stream_copy_file(src_path, dst_fh):
-    with open(src_path, "r") as src_fh:
-        shutil.copyfileobj(src_fh, dst_fh)
+def ParagraphCtxFactory(file):
+    @contextmanager
+    def paragraph_ctx(txt):
+        file.write(f"# -- Begin {txt} --\n\n")
+        try:
+            yield
+        finally:
+            file.write(f"\n# -- End {txt} --\n")
+    return paragraph_ctx
 
 
 # TODO(geisserml) think out a proper concept for line breaks
@@ -29,8 +36,7 @@ class WrapperPrinter:
         
         try:
             self.options = options
-            # TODO remove .lib_access, spell out in functions?
-            self.lib_access = f"_libs['{self.options.library}']"
+            self.paragraph_ctx = ParagraphCtxFactory(self.file)
             
             if not self.options.embed_preamble:
                 self.EXT_PREAMBLE = outpath.parent / "_ctg_preamble.py"
@@ -54,7 +60,8 @@ class WrapperPrinter:
             else:
                 warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             
-            self.print_group(self.options.modules, "modules", self.print_module)
+            self.print_group(self.options.modules, self.print_module, "modules")
+            self.file.write("\n")
             
             method_table = {
                 "function": self.print_function,
@@ -74,11 +81,15 @@ class WrapperPrinter:
                     self.file.write("\n")
             
             self.file.write("\n")
-            self.print_group(self.options.inserted_files, "inserted files", self.insert_file)
+            self.print_group(self.options.inserted_files, self.insert_file, "inserted files")
         
         finally:
             self.file.close()
     
+    
+    def _embed_file(self, fp, desc):
+        with self.paragraph_ctx(desc), open(fp, "r") as src_fh:
+            shutil.copyfileobj(src_fh, self.file)
     
     # sort descending by length to avoid interference
     _PRIVATE_PATHS_TABLE = [(str(p), s) for p, s in [(Path.cwd(), "."), (Path.home(), "~")]]
@@ -102,16 +113,14 @@ class WrapperPrinter:
     
     def print_loader(self):
         if self.options.embed_preamble:
-            self.file.write("# Begin loader template\n\n")
-            _stream_copy_file(LIBRARYLOADER_PATH, self.file)
-            self.file.write("\n# End loader template\n")
+            self._embed_file(LIBRARYLOADER_PATH, "loader template")
         else:
             self.file.write("from ._ctg_loader import _libs\n")
     
     
     def print_library(self, opts):
         name_define = f"name = '{self.options.library}'"
-        content = f"""
+        content = f"""\
 _register_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
@@ -128,20 +137,17 @@ _register_library(
             else:
                 # we need to share libraries in a common file so we can build same-library headers separately while loading the library only once
                 status_message(f"Adding library loader to shared file.")
-                self.EXT_LOADER.write_text(f"{loader_txt}\n{content}")
+                self.EXT_LOADER.write_text(f"{loader_txt}\n\n{content}")
     
     
-    def print_group(self, list, name, function):
+    def print_group(self, list, function, name):
         if list:
-            self.file.write("# Begin %s\n" % name)
-            for obj in list:
-                function(obj)
-            self.file.write("\n")
-            self.file.write("# %d %s\n" % (len(list), name))
-            self.file.write("# End %s\n" % name)
+            with self.paragraph_ctx(name):
+                for obj in list:
+                    function(obj)
+                self.file.write(f"\n# {len(list)} {name}\n")
         else:
-            self.file.write("# No %s\n" % name)
-        self.file.write("\n")
+            self.file.write(f"# -- No {name} --\n")
     
     
     def srcinfo(self, src, wants_nl=True):
@@ -160,12 +166,10 @@ _register_library(
     
     
     def print_preamble(self):
-        self.file.write("# Begin preamble\n\n")
         if self.options.embed_preamble:
-            _stream_copy_file(PREAMBLE_PATH, self.file)
+            self._embed_file(PREAMBLE_PATH, "preamble")
         else:
             self.file.write("from ._ctg_preamble import *\n")
-        self.file.write("\n# End preamble\n")
     
     
     def _write_external_files(self):
@@ -277,12 +281,12 @@ _register_library(
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
-{PN} = {L}['{CN}']
+{PN} = _libs['{L}']['{CN}']
 {PN}.argtypes = [{ATS}]
 {PN}.restype = {RT}\
 """
         fields = dict(
-            L=self.lib_access,
+            L=self.options.library,
             CN=function.c_name(),
             PN=function.py_name(),
             ATS=", ".join([a.py_string() for a in function.argtypes]),
@@ -293,7 +297,7 @@ _register_library(
             fields["EC"] = function.errcheck.py_string()
         
         if self.options.guard_symbols:
-            template = "if hasattr({L}, '{CN}'):\n" + indent(template, prefix=" "*4)
+            template = "if hasattr(_libs['{L}'], '{CN}'):\n" + indent(template, prefix=" "*4)
         if function.variadic:
             template = "# Variadic function '{CN}'\n" + template
         
@@ -303,10 +307,10 @@ _register_library(
     def print_variable(self, variable):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
         self.srcinfo(variable.src)
-        entry = '{PN} = ({PS}).in_dll({L}, "{CN}")'.format(
+        entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
-            L=self.lib_access,
+            L=self.options.library,
             CN=variable.c_name(),
         )
         if self.options.guard_symbols:
@@ -341,6 +345,4 @@ _register_library(
     
     
     def insert_file(self, filepath):
-        self.file.write(f"# Begin '{filepath}'\n\n")
-        _stream_copy_file(filepath, self.file)
-        self.file.write(f"\n# End '{filepath}'\n")
+        self._embed_file(filepath, f"inserted file '{filepath}'")

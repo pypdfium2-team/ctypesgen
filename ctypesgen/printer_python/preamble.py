@@ -2,7 +2,6 @@
 # - add c_ptrdiff_t only on as-needed basis
 # - Avoid ctypes glob import (pollutes namespace)
 
-
 import ctypes
 from ctypes import *  # noqa: F401, F403
 
