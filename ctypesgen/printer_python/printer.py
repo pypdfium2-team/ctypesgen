@@ -87,6 +87,7 @@ class WrapperPrinter:
     
     
     def print_info(self, argv):
+        # TODO(py38) consider shlex.join()
         argv_str = ' '.join([f'"{a}"' if ' ' in a else a for a in argv])
         argv_str = self._strip_private_paths(argv_str)
         self.file.write(
@@ -121,6 +122,7 @@ _register_library(
             if name_define in loader_txt:
                 status_message(f"Library already loaded in shared file, won't rewrite.")
             else:
+                # we need to share libraries in a common file so we can build same-library headers separately while loading the library only once
                 status_message(f"Adding library loader to shared file.")
                 self.EXT_LOADER.write_text(f"{loader_txt}\n{content}")
     
@@ -268,13 +270,11 @@ _register_library(
     
     def print_function(self, function):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
-        
         self.srcinfo(function.src)
         
-        # NOTE An alternative to direct attribute access would be string notation {L}['{CN}']
-        # However, the writer is not aware of issues with dotted access, so leave it at for now that unless we hear otherwise.
+        # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
-{PN} = {L}.{CN}
+{PN} = {L}['{CN}']
 {PN}.argtypes = [{ATS}]
 {PN}.restype = {RT}\
 """
