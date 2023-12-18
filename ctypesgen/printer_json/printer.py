@@ -47,7 +47,7 @@ class WrapperPrinter:
             "function": self.print_function,
             "macro": self.print_macro,
             "struct": self.print_struct,
-            "struct-body": self.print_struct_members,
+            "struct_fields": self.print_struct_fields,
             "typedef": self.print_typedef,
             "variable": self.print_variable,
             "enum": self.print_enum,
@@ -94,7 +94,7 @@ class WrapperPrinter:
                 res["fields"].append(field)
         return res
 
-    def print_struct_members(self, struct):
+    def print_struct_fields(self, struct):
         pass
 
     def print_enum(self, enum):
@@ -116,7 +116,6 @@ class WrapperPrinter:
             "return": todict(function.restype),
             "attrib": function.attrib,
         }
-        # FIXME source library mandatory?
         if self.options.library:
             res["source"] = self.options.library
         return res

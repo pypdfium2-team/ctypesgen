@@ -196,7 +196,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 struct.members = ctypestruct.members
                 struct.ctype = ctypestruct
                 struct.src = ctypestruct.src
-                self.output_order.append(("struct-body", struct))
+                self.output_order.append(("struct_fields", struct))
                 del self.already_seen_opaque_structs[name]
 
             else:
@@ -212,7 +212,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 self.structs.append(struct)
                 self.all.append(struct)
                 self.output_order.append(("struct", struct))
-                self.output_order.append(("struct-body", struct))
+                self.output_order.append(("struct_fields", struct))
 
             self.already_seen_structs.add(name)
 

@@ -62,24 +62,9 @@ class WrapperPrinter:
             self.print_group(self.options.modules, self.print_module, "modules")
             self.file.write("\n")
             
-            # TODO Consider replacing table with dynamic impl such as:
-            # getattr(self, "print_" + kind.replace("-", "_"))(desc)
-            # Note that this would require name alignment.
-            method_table = {
-                "function": self.print_function,
-                "struct": self.print_struct,
-                "struct-body": self.print_struct_fields,
-                "enum": self.print_enum,
-                "typedef": self.print_typedef,
-                "constant": self.print_constant,
-                "variable": self.print_variable,
-                "macro": self.print_macro,
-                "undef": self.print_undef,
-            }
-            
             for kind, desc in data.output_order:
                 if desc.included:
-                    method_table[kind](desc)
+                    getattr(self, f"print_{kind}")(desc)
                     self.file.write("\n")
             
             self.file.write("\n")
