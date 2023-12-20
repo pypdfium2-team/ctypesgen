@@ -41,13 +41,14 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 * Rare calling conventions other than `cdecl` or `stdcall` are not supported.
 * Non-primitive return types in callbacks are not supported. An affected prototype wouldn't allow for the creation of a function instance, but not break the output as a whole.
 
-*This fork (somewhat intentional)*
+*pypdfium2-ctypesgen*
 * The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, because it does not match the API layer of ctypes.
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
+* There may be style issues regarding newline placement on output generation. We're afraid it's not so easy to get this right, given the many possible combinations of options.
 
-*Inherited from upstream - real concerns, but likely difficult to fix*
-* Conflicting names are detected, but not actually resolved recursively: any dependent symbols would currently get excluded from the output.
-  However, the scope of this issue should be somewhat limited, for structs and enums are prefixed as such and then aliased to their C name, and functions try to use the direct (prefixed) definition.
+*ctypesgen*
+* Conflicting names are detected, but not actually resolved recursively: any dependant symbols would currently get excluded from the output.
+  However, the scope of this issue should be somewhat limited, for structs and enums are prefixed as such and then aliased to their real name, and functions try to use the direct (prefixed) definition.
   E.g. if you have a struct called `class`, the direct definition would be `struct_class`, and a function `foo(class* obj)` should be translated to `foo.argtypes = [POINTER(struct_class)]`.
 
 ### Fork rationale
