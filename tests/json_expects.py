@@ -1604,7 +1604,14 @@ def get_ans_function_prototypes():
             "name": "foo3",
             "return": {
                 "Klass": "CtypesPointer",
-                "destination": {"Klass": "CtypesSpecial", "errors": [], "name": "c_ubyte"},
+                "destination": {
+                    "Klass": "CtypesSimple",
+                    "errors": [],
+                    "longs": 0,
+                    "name":
+                    "void",
+                    "signed": True,
+                },
                 "errors": [],
                 "qualifiers": [],
             },

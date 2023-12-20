@@ -262,21 +262,6 @@ class CtypesFunction(CtypesType):
         super(CtypesFunction, self).__init__()
         self.restype = restype
         self.errcheck = CtypesNoErrorCheck()
-        
-        # QUESTION(geisserml) is this correct? What's the problem with treating it as an int?
-        # Don't allow POINTER(None) (c_void_p) as a restype... causes errors
-        # when ctypes automagically returns it as an int.
-        # Instead, convert to POINTER(c_void).  c_void is not a ctypes type,
-        # you can make it any arbitrary type.
-        if (
-            type(self.restype) == CtypesPointer
-            and type(self.restype.destination) == CtypesSimple
-            and self.restype.destination.name == "void"
-        ):
-            # use POINTER(c_ubyte) as restype but cast to c_void_p using errcheck
-            self.restype = CtypesPointer(CtypesSpecial("c_ubyte"), ())
-            self.errcheck = CtypesPointerCast(CtypesSpecial("c_void_p"))
-
         self.argtypes = [remove_function_pointer(p) for p in parameters]
         self.variadic = variadic
         self.attrib = attrib
