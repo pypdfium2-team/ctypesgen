@@ -22,10 +22,3 @@ def _get_ptrdiff_t():
     return c_ptrdiff_t
 
 c_ptrdiff_t = _get_ptrdiff_t()
-
-
-def PRIMITIVE(type):
-    if hasattr(type, "_type_") and isinstance(type._type_, str) and type._type_ != "P":
-        return type
-    else:
-        return ctypes.c_void_p

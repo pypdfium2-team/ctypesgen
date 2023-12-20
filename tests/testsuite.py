@@ -734,7 +734,7 @@ typedef enum {
         json_expects.compare_json(self, EnumTest.json, json_ans, True)
 
 
-class PrototypeTest(unittest.TestCase):
+class ParsePrototypesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = """
@@ -754,7 +754,54 @@ void foo5(void) __attribute__((__stdcall__));
 
     def test_function_prototypes_json(self):
         json_ans = json_expects.get_ans_function_prototypes()
-        json_expects.compare_json(self, PrototypeTest.json, json_ans, True)
+        json_expects.compare_json(self, self.json, json_ans, True)
+
+
+class CallPrototypesTest(unittest.TestCase):
+    """Test usability of function prototypes."""
+    
+    @classmethod
+    def setUpClass(cls):
+        header_str = """
+typedef int (*FP_Primitive)(void* my_value);
+
+typedef struct {
+    int a;
+} MyStructT;
+typedef int (*FP_CustomArgtype)(MyStructT* my_struct);
+typedef MyStructT (*FP_CustomRestype)(void);
+"""
+        cls.module = generate(header_str)
+
+    def test_primitive(self):
+        """Test passthrough of primitive value."""
+        F = self.module.FP_Primitive(lambda x: x)
+        self.assertEqual(F.argtypes, (ctypes.c_void_p,))
+        self.assertEqual(F.restype, ctypes.c_int)
+        # ctypes autoconverts int -> c_void_p and c_int -> int
+        self.assertEqual(F(100), 100)
+    
+    def test_custom_argtype(self):
+        """Test non-primitive argtype (struct pointer)."""
+        F = self.module.FP_CustomArgtype(lambda s: s.contents.a)
+        self.assertEqual(F.argtypes, (ctypes.POINTER(self.module.MyStructT),))
+        self.assertEqual(F.restype, ctypes.c_int)
+        struct = self.module.MyStructT(a=10)
+        self.assertEqual(F(struct), 10)
+    
+    def test_custom_restype(self):  # xfail
+        """
+        Test non-primitive restype. Fails because not supported by ctypes.
+        
+        ctypesgen prior to pypdfium2-team changes had a c_void_p bypass to somewhat allow custom pointer types by letting the callback return addressof(...), but we don't really return pointers from callbacks for object lifetime reasons, and relying on C to dereference a memory address is problematic, because pointers don't necessarily have to be implemented as memory address.
+        In any case, we cannot return objects by value from callbacks if ctypes doesn't support it.
+        """
+        with self.assertRaises(TypeError, msg="invalid result type for callback function"):
+            F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT(a=10))
+    
+    @classmethod
+    def tearDownClass(cls):
+        del cls.module
 
 
 class LongDoubleTest(unittest.TestCase):
@@ -826,44 +873,6 @@ class MainTest(unittest.TestCase):
         self.assertEqual(o.decode(), "")
         self.assertTrue(e.decode().splitlines()[0].startswith("usage: run.py"))
         self.assertIn("error: unrecognized arguments: --this-does-not-exist", e.decode())
-
-
-class FunctionPrototypeTest(unittest.TestCase):
-    """Test usability of function prototypes."""
-    
-    @classmethod
-    def setUpClass(cls):
-        header_str = """
-typedef int (*FP_Primitive)(void* my_value);
-
-typedef struct {
-    int a;
-} MYSTRUCT;
-typedef MYSTRUCT* (*FP_Custom)(MYSTRUCT* my_struct);
-"""
-        cls.module = generate(header_str)
-
-    def test_primitive(self):
-        """Test passthrough with primitive types."""
-        F = self.module.FP_Primitive(lambda x: x)
-        self.assertEqual(F.argtypes, (ctypes.c_void_p,))
-        self.assertEqual(F.restype, ctypes.c_int)
-        # ctypes autoconverts int -> c_void_p and c_int -> int
-        self.assertEqual(F(100), 100)
-    
-    def test_custom(self):
-        mod = self.module
-        F = mod.FP_Custom(lambda x: ctypes.addressof(x.contents))
-        self.assertEqual(F.argtypes, (ctypes.POINTER(mod.MYSTRUCT),))
-        # The custom type is transfomred into a primitive type (c_void_p) by ctypesgen, because ctypes does not support custom return types on callbacks.
-        self.assertEqual(F.restype, ctypes.c_void_p)
-        struct = mod.MYSTRUCT(a=10)
-        struct_back = mod.MYSTRUCT.from_address( F(struct) )
-        self.assertEqual(struct.a, struct_back.a)
-    
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
 
 class ConstantsTest(unittest.TestCase):
