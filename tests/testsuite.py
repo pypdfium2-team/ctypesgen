@@ -46,6 +46,7 @@ from tests.ctypesgentest import (
 from tests import json_expects
 
 
+# ctypes docs say: "On Windows, find_library() searches along the system search path, and returns the full pathname, but since there is no predefined naming scheme a call like find_library("c") will fail and return None."
 if sys.platform.startswith("win32"):
     # pick something from %windir%\system32\msvc*dll that includes stdlib
     STDLIB_NAME = "msvcrt"
@@ -80,9 +81,8 @@ class StdlibTest(unittest.TestCase):
 
         if sys.platform == "win32":
             # Check a variable that is already set
-            env_var_name = (
-                "USERNAME"  # this is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
-            )
+            # USERNAME is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
+            env_var_name = "USERNAME"
             expect_result = os.environ[env_var_name]
             self.assertTrue(expect_result, "this should not be None or empty")
             # reason for using an existing OS variable is that unless the
@@ -122,7 +122,7 @@ class CommonHeaderTest(unittest.TestCase):
     def tearDownClass(cls):
         cleanup_common()
     
-    # NOTE `common` is a meta-module hosted by the test class, and {a,b}{shared,unshared} are the actual python files in question
+    # NOTE `common` is a meta-module hosted by the test class, and {a,b}_{shared,unshared} are the actual python files in question
     
     def test_unshared(self):
         from .common import a_unshared as a
@@ -978,7 +978,7 @@ class MacromanEncodeTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.mac_roman_file = TEST_DIR/"temp_mac.h"
+        cls.mac_roman_file = TMP_DIR/"mac_roman.h"
         mac_header_str = b"""
         #define kICHelper                       "\xa9\\pHelper\xa5"
 
