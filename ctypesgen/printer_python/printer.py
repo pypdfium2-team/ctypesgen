@@ -237,7 +237,6 @@ _register_library(
         
         self.file.write(pad + f"__slots__ = {[n for n, _ in struct.members]}")
     
-    
     def print_struct_fields(self, struct):
         # Fields are defined indepedent of the actual class to handle things like self-references, cyclic struct references and forward declarations
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
@@ -257,10 +256,8 @@ _register_library(
         # NOTE Values of enumerator are output as constants
         self.file.write("enum_%s = c_int" % enum.tag)
     
-    
     def print_constant(self, constant):
         self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
-    
     
     def print_typedef(self, typedef):
         self.file.write("%s = %s" % (typedef.name, typedef.ctype.py_string()))
@@ -286,13 +283,11 @@ _register_library(
         else:
             self._print_func_macro(macro)
     
-    
     def _print_simple_macro(self, macro):
         entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
-    
     
     def _print_func_macro(self, macro):
         self.file.write(
@@ -301,7 +296,6 @@ _register_library(
                 MN=macro.name, MP=", ".join(macro.params), ME=macro.expr.py_string(True)
             )
         )
-    
     
     def print_undef(self, undef):
         name = undef.macro.py_string(False)
