@@ -55,7 +55,20 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 
 Trying to get through changes upstream is tedious, with unclear outcome, and often not applicable due to mismatched intents (e.g. regarding backwards compatibility). Also consider that isolating commits in separate branches is not feasible anymore as merge conflicts arise (e.g. due to code cleanups and interfering changes).
 
-Contrast this to a fork, which allows us to keep focused and effect improvements quickly, so as to invest pypdfium2 developer time rationally.
+Contrast this to a fork, which allows us to keep focused and effect improvements quickly, so as to invest developer time rationally.
+
+However, we would be glad if our work could eventually be merged back upstream once change set has matured, if upstream can arrange themselves with the radical changes.
+See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
+
+### Syncing with upstream
+
+- First, sync the fork's master branch using GitHub's web interface.
+- View changes on [GitHub's compare page](https://github.com/pypdfium2-team/ctypesgen/compare/pypdfium2...master).
+- Pull and merge locally.
+
+Last time we had to do this, `git merge origin/master -Xours` did a good job.
+Changes to files we haven't really modified can usually just be pulled in as-is.
+However, you will have to manually look through changes to files we have modified extensively, and pick what you consider worthwhile on a case by case basis.
 
 ### Bugs
 
