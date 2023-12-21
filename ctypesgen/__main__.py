@@ -292,12 +292,6 @@ def main(given_argv=sys.argv[1:]):
         choices=("CDLL", "WinDLL", "OleDLL", "PyDLL"),
         help="The ctypes library class to use. 'CDLL' corresponds to the 'cdecl' calling convention, 'WinDLL' to windows-only 'stdcall'. We do not currently support libraries with mixed calling convention.",
     )
-    # TODO turn into more flexible option that allows e.g. for header info only without line
-    parser.add_argument(
-        "--no-srcinfo",
-        action="store_true",
-        help="Skip comments stating where members are defined (header, line)."
-    )
     parser.add_argument(
         "--no-symbol-guards",
         dest="guard_symbols",

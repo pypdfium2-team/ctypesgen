@@ -50,11 +50,17 @@ class WrapperPrinter:
                         self.print_module(mod)
                 self.file.write("\n")
             
-            # TODO(geisserml) wrap in paragraph_ctx, think out a proper concept for newlines
-            for kind, desc in data.output_order:
-                if desc.included:
+            with self.paragraph_ctx("library members"):
+                pad = ""
+                for kind, desc in data.output_order:
+                    if not desc.included:
+                        continue
+                    self.file.write(pad)
+                    if kind != "struct_fields":
+                        self.srcinfo(desc.src)
                     getattr(self, f"print_{kind}")(desc)
-                    self.file.write("\n")
+                    pad = "\n\n"
+                self.file.write("\n")
             
             if self.options.inserted_files:
                 self.file.write("\n")
@@ -84,19 +90,15 @@ class WrapperPrinter:
         return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
     
     
-    def srcinfo(self, src, wants_nl=True):
-        
-        if self.options.no_srcinfo or src is None:
-            if wants_nl:
-                self.file.write("\n")
+    def srcinfo(self, src):
+        if not src:
             return
-        
         filepath, lineno = src
         if filepath in ("<built-in>", "<command line>"):
-            self.file.write("\n# %s\n" % filepath)
+            self.file.write("# %s\n" % filepath)
         else:
             filepath = self._strip_private_paths(str(filepath))
-            self.file.write("\n# %s: %s\n" % (filepath, lineno))
+            self.file.write("# %s: %s\n" % (filepath, lineno))
     
     
     def print_info(self, argv):
@@ -112,7 +114,6 @@ class WrapperPrinter:
             self.file.write("\n")
             if opts.library:
                 self._embed_file(LIBRARYLOADER_PATH, "loader template")
-            self.file.write("\n")
         else:
             self.EXT_PREAMBLE = outpath.parent / "_ctg_preamble.py"
             self.EXT_LOADER = outpath.parent / "_ctg_loader.py"
@@ -137,7 +138,8 @@ _register_library(
 )
 """
         if opts.embed_preamble:
-            with self.paragraph_ctx(f"load library {opts.library}"):
+            self.file.write("\n")
+            with self.paragraph_ctx(f"load library '{opts.library}'"):
                 self.file.write(content)
             self.file.write("\n")
         else:
@@ -156,7 +158,6 @@ _register_library(
     
     def print_function(self, function):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
-        self.srcinfo(function.src)
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
@@ -184,7 +185,6 @@ _register_library(
     
     
     def print_struct(self, struct):
-        self.srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
         
         self.file.write(f"class {struct.variety}_{struct.tag} ({base}):\n")
@@ -245,24 +245,20 @@ _register_library(
     
     
     def print_enum(self, enum):
-        self.srcinfo(enum.src, wants_nl=False)
         # NOTE Values of enumerator are output as constants
         self.file.write("enum_%s = c_int" % enum.tag)
     
     
     def print_constant(self, constant):
-        self.srcinfo(constant.src, wants_nl=False)
         self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
     
     
     def print_typedef(self, typedef):
-        self.srcinfo(typedef.src, wants_nl=False)
         self.file.write("%s = %s" % (typedef.name, typedef.ctype.py_string()))
     
     
     def print_variable(self, variable):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
-        self.srcinfo(variable.src)
         entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
@@ -283,7 +279,6 @@ _register_library(
     
     
     def _print_simple_macro(self, macro):
-        self.srcinfo(macro.src, wants_nl=self.options.guard_macros)
         entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
@@ -291,7 +286,6 @@ _register_library(
     
     
     def _print_func_macro(self, macro):
-        self.srcinfo(macro.src)
         self.file.write(
             "def {MN}({MP}):\n"
             "    return {ME}".format(
@@ -301,7 +295,6 @@ _register_library(
     
     
     def print_undef(self, undef):
-        self.srcinfo(undef.src)
         name = undef.macro.py_string(False)
         self.file.write(f"# undef {name}\n")
         entry = f"del {name}"
