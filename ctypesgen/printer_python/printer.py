@@ -46,7 +46,7 @@ class WrapperPrinter:
             self.paragraph_ctx = ParagraphCtxFactory(self.file)
             
             self.print_info(argv)
-            self.file.write("\n\n")  # 1 empty line
+            self.file.write("\n\n")
             self.print_templates(self.options, outpath)
             
             if self.options.library:
@@ -56,33 +56,42 @@ class WrapperPrinter:
                 warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             
             if self.options.modules:
-                self.file.write("\n\n\n# Linked modules")  # 2 empty lines
+                self.file.write("\n\n\n# Linked modules")
                 for mod in self.options.modules:
                     self.file.write("\n")
                     self.print_module(mod)
             
-            self.file.write("\n\n\n")  # 2 empty lines
+            self.file.write("\n\n\n")
             with self.paragraph_ctx("header members"):
                 for kind, desc in data.output_order:
                     if not desc.included:
                         continue
-                    # leave 1 empty line before the new member while keeping srcinfo and member packed
                     self.file.write("\n")
-                    if kind != "struct_fields" and desc.src:
-                        self.file.write("\n")
-                        self._srcinfo(desc.src)
+                    self._handle_srcinfo(kind, desc)
                     self.file.write("\n")
                     getattr(self, f"print_{kind}")(desc)
                 self.file.write("\n")
             
             for fp in self.options.inserted_files:
-                self.file.write("\n\n\n")  # 2 empty lines
+                self.file.write("\n\n\n")
                 self.insert_file(fp)
             
             self.file.write("\n")
         
         finally:
             self.file.close()
+    
+    
+    # this is outsourced on behalf of root parser readability
+    def _handle_srcinfo(self, kind, desc):
+        if not desc.src or kind == "struct_fields":
+            return
+        filepath, lineno = desc.src
+        if filepath in ("<built-in>", "<command line>"):
+            self.file.write("\n# %s" % filepath)
+        else:
+            filepath = self._strip_private_paths(str(filepath))
+            self.file.write("\n# %s: %s" % (filepath, lineno))
     
     
     # sort descending by length to avoid interference
@@ -103,15 +112,6 @@ class WrapperPrinter:
     def _try_except_wrap(self, entry):
         pad = " "*4
         return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
-    
-    
-    def _srcinfo(self, src):
-        filepath, lineno = src
-        if filepath in ("<built-in>", "<command line>"):
-            self.file.write("# %s" % filepath)
-        else:
-            filepath = self._strip_private_paths(str(filepath))
-            self.file.write("# %s: %s" % (filepath, lineno))
     
     
     def print_info(self, argv):
@@ -151,7 +151,7 @@ _register_library(
 )\
 """
         if opts.embed_preamble:
-            self.file.write(f"\n\n\n{content}")  # 2 empty lines
+            self.file.write(f"\n\n\n{content}")
         else:
             loader_txt = self.EXT_LOADER.read_text()
             if name_define in loader_txt:
