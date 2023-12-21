@@ -312,7 +312,7 @@ _register_library(
         entry = f"\ndel {name}"
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
-        self.file.write(entry)
+        self.file.write("\n"+entry)
     
     
     def insert_file(self, filepath):
