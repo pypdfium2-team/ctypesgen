@@ -58,10 +58,9 @@ class WrapperPrinter:
                 warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             
             if self.options.modules:
-                self.file.write("\n")
-                with self.paragraph_ctx("linked modules"):
-                    for mod in self.options.modules:
-                        self.print_module(mod)
+                self.file.write("\n\n# Linked modules")
+                for mod in self.options.modules:
+                    self.print_module(mod)
             
             self.file.write("\n\n")
             with self.paragraph_ctx("header members"):
