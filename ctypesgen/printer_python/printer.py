@@ -8,14 +8,6 @@ from ctypesgen.expressions import ExpressionNode
 from ctypesgen.messages import warning_message, status_message
 
 
-# Newlines policy for the python printer:
-#
-# - Under no circumstances shall any entry end with \n. Instead, use leading \n in separator fashion.
-# - Note that the body of Paragraph Contexts may end with a newline for a padding before the End marker. This does not violate the rule, because the resulting paragraph (with markers) will *not* end with \n.
-# - As a rule of thumb, avoid initial \n's in sub-methods. Instead, try to leave the connection work to the root parser, which is more flexible (imagine what would happen if it were conditional what goes in the first line). However, exceptions may be made where it makes sense.
-# - The file as a whole shall have a trailing \n.
-
-
 THIS_DIR = Path(__file__).resolve().parent
 CTYPESGEN_DIR = THIS_DIR.parent
 PREAMBLE_PATH = THIS_DIR/"preamble.py"
@@ -66,9 +58,7 @@ class WrapperPrinter:
                 for kind, desc in data.output_order:
                     if not desc.included:
                         continue
-                    self.file.write("\n")
-                    self._handle_srcinfo(kind, desc)
-                    self.file.write("\n")
+                    self.file.write("\n\n")
                     getattr(self, f"print_{kind}")(desc)
                 self.file.write("\n")
             
@@ -82,16 +72,15 @@ class WrapperPrinter:
             self.file.close()
     
     
-    # this is outsourced on behalf of root parser readability
-    def _handle_srcinfo(self, kind, desc):
-        if not desc.src or kind == "struct_fields":
+    def _srcinfo(self, src):
+        if not src:
             return
-        filepath, lineno = desc.src
+        filepath, lineno = src
         if filepath in ("<built-in>", "<command line>"):
-            self.file.write("\n# %s" % filepath)
+            self.file.write(f"# {filepath}\n")
         else:
             filepath = self._strip_private_paths(str(filepath))
-            self.file.write("\n# %s: %s" % (filepath, lineno))
+            self.file.write(f"# {filepath}: {lineno}\n")
     
     
     # sort descending by length to avoid interference
@@ -168,6 +157,7 @@ _register_library(
     
     def print_function(self, function):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
+        self._srcinfo(function.src)
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
@@ -195,6 +185,7 @@ _register_library(
     
     
     def print_struct(self, struct):
+        self._srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
         self.file.write(f"class {struct.variety}_{struct.tag} ({base}):")
         pad = "\n" + " "*4
@@ -253,18 +244,22 @@ _register_library(
     
     
     def print_enum(self, enum):
-        # NOTE Values of enumerator are output as constants
+        # NOTE values of enumerator are output as constants
+        self._srcinfo(enum.src)
         self.file.write("enum_%s = c_int" % enum.tag)
     
     def print_constant(self, constant):
+        self._srcinfo(constant.src)
         self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
     
     def print_typedef(self, typedef):
+        self._srcinfo(typedef.src)
         self.file.write("%s = %s" % (typedef.name, typedef.ctype.py_string()))
     
     
     def print_variable(self, variable):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
+        self._srcinfo(variable.src)
         entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
@@ -278,6 +273,7 @@ _register_library(
     
     def print_macro(self, macro):
         # important: must check precisely against None because params may be an empty list for a func macro
+        self._srcinfo(macro.src)
         if macro.params is None:
             self._print_simple_macro(macro)
         else:
@@ -298,6 +294,7 @@ _register_library(
         )
     
     def print_undef(self, undef):
+        self._srcinfo(undef.src)
         name = undef.macro.py_string(False)
         self.file.write(f"# undef {name}")
         entry = f"\ndel {name}"
