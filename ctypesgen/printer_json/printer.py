@@ -95,6 +95,7 @@ class WrapperPrinter:
         return res
 
     def print_struct_fields(self, struct):
+        # FIXME loses info about forward declarations?
         pass
 
     def print_enum(self, enum):

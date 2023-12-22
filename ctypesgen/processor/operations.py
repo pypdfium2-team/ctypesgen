@@ -119,7 +119,7 @@ def fix_conflicting_names(data, opts):
     )
     
     # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them. Confound it!
-    # Yet, the scope of this issue should hopefully be limited thanks to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
+    # Yet, the scope of this issue might be somewhat limited due to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
     
     for desc in descriptions:
         if desc.py_name() in important_names:

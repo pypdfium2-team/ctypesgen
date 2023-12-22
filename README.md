@@ -44,7 +44,7 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 *pypdfium2-ctypesgen*
 * The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, because it does not match the API layer of ctypes.
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
-* There may be style issues regarding newline placement on output generation. We're afraid it's not so easy to get this right, given the many possible combinations of options.
+* There might be style issues regarding newline placement on output generation. We're afraid it's not so easy to get this pretty under all circumstances, given the many possible combinations of options.
 
 *ctypesgen*
 * Conflicting names are detected, but not actually resolved recursively: any dependant symbols would currently get excluded from the output.
@@ -57,7 +57,7 @@ Trying to get through changes upstream is tedious, with unclear outcome, and oft
 
 Contrast this to a fork, which allows us to keep focused and effect improvements quickly, so as to invest developer time rationally.
 
-However, we would be glad if our work could eventually be merged back upstream once change set has matured, if upstream can arrange themselves with the radical changes.
+However, we would be glad if our work could eventually be merged back upstream once the change set has matured, if upstream can arrange themselves with the radical changes.
 See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
 
 ### Syncing with upstream
@@ -69,6 +69,8 @@ See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
 Last time we had to do this, `git merge origin/master -Xours` did a good job.
 Changes to files we haven't really modified can usually just be pulled in as-is.
 However, you will have to manually look through changes to files we have modified extensively, and pick what you consider worthwhile on a case by case basis.
+
+Note, it is important to verify the resulting merge commit for correctness - automatic merge strategies might produce mistakes!
 
 ### Bugs
 
