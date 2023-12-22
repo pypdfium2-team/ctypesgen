@@ -8,6 +8,17 @@ from ctypesgen.expressions import ExpressionNode
 from ctypesgen.messages import warning_message, status_message
 
 
+# Important - Newline guidelines for the python printer:
+# - Use \n only as separator between two known present strings.
+# - In writing, the general rule is to use leading \n associated to the item that needs the padding.
+# - Blocks written by sub-methods should have neither leading nor trailing \n.
+#   Instead, it is most flexible to leave the connection work to the printer's root method.
+#
+# Note a few special cases:
+# - You may "forward-declare" a trailing \n in methods that are optional and placed directly ahead of a known present block that does not have a leading \n, i.e. the trailing \n acts as separator in accordance with the rule above. This is the case with srcinfo().
+# - Where newlines depend on a local conditional, they may be handled by the sub-method if tied to a specific place in the control flow. This is the case with print_library(), which only writes to the main file if embed_preamble is True, and does not need a separator otherwise.
+
+
 THIS_DIR = Path(__file__).resolve().parent
 CTYPESGEN_DIR = THIS_DIR.parent
 PREAMBLE_PATH = THIS_DIR/"preamble.py"
@@ -18,15 +29,16 @@ LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 def ParagraphCtxFactory(file):
     @contextmanager
     def paragraph_ctx(txt):
-        file.write(f"\n# -- Begin {txt} --\n\n")
+        file.write(f"# -- Begin {txt} --")
         try:
             yield
         finally:
-            file.write(f"\n# -- End {txt} --\n")
+            file.write(f"\n# -- End {txt} --")
     return paragraph_ctx
 
 
 class WrapperPrinter:
+    
     def __init__(self, outpath, options, data, argv):
         outpath = Path(outpath).resolve()
         status_message(f"Writing to {outpath}.")
@@ -37,6 +49,7 @@ class WrapperPrinter:
             self.paragraph_ctx = ParagraphCtxFactory(self.file)
             
             self.print_info(argv)
+            self.file.write("\n\n")
             self.print_templates(self.options, outpath)
             
             if self.options.library:
@@ -45,30 +58,39 @@ class WrapperPrinter:
                 warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             
             if self.options.modules:
-                with self.paragraph_ctx("linked modules"):
-                    for mod in self.options.modules:
-                        self.print_module(mod)
-                self.file.write("\n")
+                self.file.write("\n\n\n# Linked modules")
+                for mod in self.options.modules:
+                    self.file.write("\n")
+                    self.print_module(mod)
             
-            with self.paragraph_ctx("library members"):
-                pad = ""
+            self.file.write("\n\n\n")
+            with self.paragraph_ctx("header members"):
                 for kind, desc in data.output_order:
                     if not desc.included:
                         continue
-                    self.file.write(pad)
-                    if kind != "struct_fields":
-                        self.srcinfo(desc.src)
+                    self.file.write("\n\n")
                     getattr(self, f"print_{kind}")(desc)
-                    pad = "\n\n"
                 self.file.write("\n")
             
-            if self.options.inserted_files:
-                self.file.write("\n")
             for fp in self.options.inserted_files:
+                self.file.write("\n\n\n")
                 self.insert_file(fp)
+            
+            self.file.write("\n")
         
         finally:
             self.file.close()
+    
+    
+    def _srcinfo(self, src):
+        if not src:  # FIXME might be unreached?
+            return
+        filepath, lineno = src
+        if filepath in ("<built-in>", "<command line>"):
+            self.file.write(f"# {filepath}\n")
+        else:
+            filepath = self._strip_private_paths(str(filepath))
+            self.file.write(f"# {filepath}: {lineno}\n")
     
     
     # sort descending by length to avoid interference
@@ -83,6 +105,7 @@ class WrapperPrinter:
     
     def _embed_file(self, fp, desc):
         with self.paragraph_ctx(desc), open(fp, "r") as src_fh:
+            self.file.write("\n\n")
             shutil.copyfileobj(src_fh, self.file)
     
     def _try_except_wrap(self, entry):
@@ -90,29 +113,18 @@ class WrapperPrinter:
         return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
     
     
-    def srcinfo(self, src):
-        if not src:
-            return
-        filepath, lineno = src
-        if filepath in ("<built-in>", "<command line>"):
-            self.file.write("# %s\n" % filepath)
-        else:
-            filepath = self._strip_private_paths(str(filepath))
-            self.file.write("# %s: %s\n" % (filepath, lineno))
-    
-    
     def print_info(self, argv):
         # TODO(py38) consider shlex.join()
         argv_str = ' '.join([f'"{a}"' if ' ' in a else a for a in argv])
         argv_str = self._strip_private_paths(argv_str)
-        self.file.write(f"# Auto-generated by: ctypesgen {argv_str}\n")
+        self.file.write(f"# Auto-generated by: ctypesgen {argv_str}")
     
     
     def print_templates(self, opts, outpath):
         if opts.embed_preamble:
             self._embed_file(PREAMBLE_PATH, "preamble")
-            self.file.write("\n")
             if opts.library:
+                self.file.write("\n\n\n")
                 self._embed_file(LIBRARYLOADER_PATH, "loader template")
         else:
             self.EXT_PREAMBLE = outpath.parent / "_ctg_preamble.py"
@@ -121,27 +133,25 @@ class WrapperPrinter:
                 shutil.copyfile(PREAMBLE_PATH, self.EXT_PREAMBLE)
             if not self.EXT_LOADER.exists():
                 shutil.copyfile(LIBRARYLOADER_PATH, self.EXT_LOADER)
-            self.file.write("\nfrom ._ctg_preamble import *\n")
+            self.file.write("from ._ctg_preamble import *")
             if opts.library:
-                self.file.write("from ._ctg_loader import _libs\n")
-            self.file.write("\n")
+                self.file.write("\nfrom ._ctg_loader import _libs")
     
     
     def print_library(self, opts):
         name_define = f"name = '{opts.library}'"
         content = f"""\
+# Load library '{opts.library}'
+
 _register_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
     dirs = {opts.runtime_libdirs},
     search_sys = {opts.search_sys},
-)
+)\
 """
         if opts.embed_preamble:
-            self.file.write("\n")
-            with self.paragraph_ctx(f"load library '{opts.library}'"):
-                self.file.write(content)
-            self.file.write("\n")
+            self.file.write(f"\n\n\n{content}")
         else:
             loader_txt = self.EXT_LOADER.read_text()
             if name_define in loader_txt:
@@ -149,15 +159,16 @@ _register_library(
             else:
                 # we need to share libraries in a common file so we can build same-library headers separately while loading the library only once
                 status_message(f"Adding library loader to shared file.")
-                self.EXT_LOADER.write_text(f"{loader_txt}\n\n{content}")
+                self.EXT_LOADER.write_text(f"{loader_txt}\n\n{content}\n")
     
     
     def print_module(self, module):
-        self.file.write("from %s import *\n" % module)
+        self.file.write(f"from {module} import *")
     
     
     def print_function(self, function):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
+        self._srcinfo(function.src)
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
@@ -185,35 +196,34 @@ _register_library(
     
     
     def print_struct(self, struct):
+        self._srcinfo(struct.src)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
-        
-        self.file.write(f"class {struct.variety}_{struct.tag} ({base}):\n")
-        tab = " "*4
+        self.file.write(f"class {struct.variety}_{struct.tag} ({base}):")
+        pad = "\n" + " "*4
         
         if struct.opaque:
-            self.file.write(tab + "pass")
+            self.file.write(pad + "pass")
             return
-
+        
         # is this supposed to be packed?
         if struct.attrib.get("packed", False):
             aligned = struct.attrib.get("aligned", [1])
             assert len(aligned) == 1, "cgrammar gave more than one arg for aligned attribute"
             aligned = aligned[0]
             if isinstance(aligned, ExpressionNode):
-                # TODO: for non-constant expression nodes, this will fail:
+                # FIXME for non-constant expression nodes, this will fail
                 aligned = aligned.evaluate(None)
-            self.file.write(tab + f"_pack_ = {aligned}\n")
-
+            self.file.write(pad + f"_pack_ = {aligned}")
+        
         # handle unnamed fields.
         unnamed_fields = []
         names = set([x[0] for x in struct.members])
-        anon_prefix = "unnamed_"
         n = 1
         for mi in range(len(struct.members)):
             mem = list(struct.members[mi])
             if mem[0] is None:
                 while True:
-                    name = "%s%i" % (anon_prefix, n)
+                    name = f"unnamed_{n}"
                     n += 1
                     if name not in names:
                         break
@@ -224,41 +234,42 @@ _register_library(
                 struct.members[mi] = mem
         
         if len(unnamed_fields) > 0:
-            self.file.write(tab + f"_anonymous_ = {unnamed_fields}\n")
-
-        self.file.write(tab + f"__slots__ = {[n for n, _ in struct.members]}")
-    
+            self.file.write(pad + f"_anonymous_ = {unnamed_fields}")
+        
+        self.file.write(pad + f"__slots__ = {[n for n, _ in struct.members]}")
     
     def print_struct_fields(self, struct):
         # Fields are defined indepedent of the actual class to handle things like self-references, cyclic struct references and forward declarations
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
-        self.file.write("%s_%s._fields_ = [\n" % (struct.variety, struct.tag))
+        self.file.write("%s_%s._fields_ = [" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
                 self.file.write(
-                    "    ('%s', %s, %s),\n"
+                    "\n    ('%s', %s, %s),"
                     % (name, ctype.py_string(), ctype.bitfield.py_string(False))
                 )
             else:
-                self.file.write("    ('%s', %s),\n" % (name, ctype.py_string()))
-        self.file.write("]")
+                self.file.write("\n    ('%s', %s)," % (name, ctype.py_string()))
+        self.file.write("\n]")
     
     
     def print_enum(self, enum):
-        # NOTE Values of enumerator are output as constants
-        self.file.write("enum_%s = c_int" % enum.tag)
-    
+        # NOTE values of enumerator are output as constants
+        self._srcinfo(enum.src)
+        self.file.write(f"enum_{enum.tag} = c_int")
     
     def print_constant(self, constant):
-        self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
-    
+        self._srcinfo(constant.src)
+        self.file.write(f"{constant.name} = {constant.value.py_string(False)}")
     
     def print_typedef(self, typedef):
-        self.file.write("%s = %s" % (typedef.name, typedef.ctype.py_string()))
+        self._srcinfo(typedef.src)
+        self.file.write(f"{typedef.name} = {typedef.ctype.py_string()}")
     
     
     def print_variable(self, variable):
         assert self.options.library, "Binary symbol requires --library LIBNAME"
+        self._srcinfo(variable.src)
         entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
@@ -272,32 +283,29 @@ _register_library(
     
     def print_macro(self, macro):
         # important: must check precisely against None because params may be an empty list for a func macro
+        self._srcinfo(macro.src)
         if macro.params is None:
             self._print_simple_macro(macro)
         else:
             self._print_func_macro(macro)
     
-    
     def _print_simple_macro(self, macro):
-        entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
+        entry = f"{macro.name} = {macro.expr.py_string(True)}"
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
     
-    
     def _print_func_macro(self, macro):
         self.file.write(
-            "def {MN}({MP}):\n"
-            "    return {ME}".format(
-                MN=macro.name, MP=", ".join(macro.params), ME=macro.expr.py_string(True)
-            )
+            f"def {macro.name}({', '.join(macro.params)}):"
+            f"\n    return {macro.expr.py_string(True)}"
         )
     
-    
     def print_undef(self, undef):
+        self._srcinfo(undef.src)
         name = undef.macro.py_string(False)
-        self.file.write(f"# undef {name}\n")
-        entry = f"del {name}"
+        self.file.write(f"# undef {name}")
+        entry = f"\ndel {name}"
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
