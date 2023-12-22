@@ -8,6 +8,17 @@ from ctypesgen.expressions import ExpressionNode
 from ctypesgen.messages import warning_message, status_message
 
 
+# Important - Newline guidelines for the python printer:
+# - Use \n only as separator between two known present strings.
+# - In writing, the general rule is to use leading \n associated to the item that needs the padding.
+# - Blocks written by sub-methods should have neither leading nor trailing \n.
+#   Instead, it is most flexible to leave the connection work to the printer's root method.
+#
+# Note a few special cases:
+# - You may "forward-declare" a trailing \n in methods that are optional and placed directly ahead of a known present block that does not have a leading \n, i.e. the trailing \n acts as separator in accordance with the rule above. This is the case with srcinfo().
+# - Where newlines depend on a local conditional, they may be handled by the sub-method if tied to a specific place in the control flow. This is the case with print_library(), which only writes to the main file if embed_preamble is True, and does not need a separator otherwise.
+
+
 THIS_DIR = Path(__file__).resolve().parent
 CTYPESGEN_DIR = THIS_DIR.parent
 PREAMBLE_PATH = THIS_DIR/"preamble.py"
@@ -42,7 +53,6 @@ class WrapperPrinter:
             self.print_templates(self.options, outpath)
             
             if self.options.library:
-                # print_library() handles newlines internally, because it does not write to this file at all if embed_preamble is False
                 self.print_library(self.options)
             else:
                 warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
@@ -73,7 +83,7 @@ class WrapperPrinter:
     
     
     def _srcinfo(self, src):
-        if not src:
+        if not src:  # FIXME might be unreached?
             return
         filepath, lineno = src
         if filepath in ("<built-in>", "<command line>"):
@@ -132,6 +142,7 @@ class WrapperPrinter:
         name_define = f"name = '{opts.library}'"
         content = f"""\
 # Load library '{opts.library}'
+
 _register_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
@@ -152,7 +163,7 @@ _register_library(
     
     
     def print_module(self, module):
-        self.file.write("from %s import *" % module)
+        self.file.write(f"from {module} import *")
     
     
     def print_function(self, function):
@@ -200,20 +211,19 @@ _register_library(
             assert len(aligned) == 1, "cgrammar gave more than one arg for aligned attribute"
             aligned = aligned[0]
             if isinstance(aligned, ExpressionNode):
-                # TODO: for non-constant expression nodes, this will fail:
+                # FIXME for non-constant expression nodes, this will fail
                 aligned = aligned.evaluate(None)
             self.file.write(pad + f"_pack_ = {aligned}")
         
         # handle unnamed fields.
         unnamed_fields = []
         names = set([x[0] for x in struct.members])
-        anon_prefix = "unnamed_"
         n = 1
         for mi in range(len(struct.members)):
             mem = list(struct.members[mi])
             if mem[0] is None:
                 while True:
-                    name = "%s%i" % (anon_prefix, n)
+                    name = f"unnamed_{n}"
                     n += 1
                     if name not in names:
                         break
@@ -246,15 +256,15 @@ _register_library(
     def print_enum(self, enum):
         # NOTE values of enumerator are output as constants
         self._srcinfo(enum.src)
-        self.file.write("enum_%s = c_int" % enum.tag)
+        self.file.write(f"enum_{enum.tag} = c_int")
     
     def print_constant(self, constant):
         self._srcinfo(constant.src)
-        self.file.write("%s = %s" % (constant.name, constant.value.py_string(False)))
+        self.file.write(f"{constant.name} = {constant.value.py_string(False)}")
     
     def print_typedef(self, typedef):
         self._srcinfo(typedef.src)
-        self.file.write("%s = %s" % (typedef.name, typedef.ctype.py_string()))
+        self.file.write(f"{typedef.name} = {typedef.ctype.py_string()}")
     
     
     def print_variable(self, variable):
@@ -280,17 +290,15 @@ _register_library(
             self._print_func_macro(macro)
     
     def _print_simple_macro(self, macro):
-        entry = "{MN} = {ME}".format(MN=macro.name, ME=macro.expr.py_string(True))
+        entry = f"{macro.name} = {macro.expr.py_string(True)}"
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
     
     def _print_func_macro(self, macro):
         self.file.write(
-            "def {MN}({MP}):"
-            "\n    return {ME}".format(
-                MN=macro.name, MP=", ".join(macro.params), ME=macro.expr.py_string(True)
-            )
+            f"def {macro.name}({', '.join(macro.params)}):"
+            f"\n    return {macro.expr.py_string(True)}"
         )
     
     def print_undef(self, undef):
