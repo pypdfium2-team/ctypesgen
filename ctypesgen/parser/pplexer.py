@@ -7,8 +7,6 @@ Reference is C99 with additions from C11 and C2x:
 * http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2731.pdf
 """
 
-__docformat__ = "restructuredtext"
-
 from ctypesgen.parser.lex import TOKEN
 from ctypesgen.parser import cgrammar
 

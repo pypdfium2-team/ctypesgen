@@ -17,8 +17,6 @@ representing an array of four integers could be created using:
 str(ctype) would evaluate to "c_int * 4".
 """
 
-__docformat__ = "restructuredtext"
-
 ctypes_type_map = {
     # typename   signed  longs
     ("void", True, 0): "None",

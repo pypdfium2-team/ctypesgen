@@ -5,8 +5,6 @@ To use, subclass CParser and override its handle_* methods.  Then instantiate
 the class with a string to parse.
 """
 
-__docformat__ = "restructuredtext"
-
 import os.path
 import sys
 

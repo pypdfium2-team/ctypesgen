@@ -6,8 +6,6 @@ produced by CParser into CtypesType instances and breaks the parser's general
 declarations into function, variable, typedef, constant, and type descriptions.
 """
 
-__docformat__ = "restructuredtext"
-
 __all__ = ["CtypesParser"]
 
 from ctypesgen.ctypedescs import (

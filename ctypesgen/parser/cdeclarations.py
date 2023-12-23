@@ -4,8 +4,6 @@ declarations in this format, and ctypesparser reformats them into a format that
 is not C-specific. The other modules don't need to touch these.
 """
 
-__docformat__ = "restructuredtext"
-
 # --------------------------------------------------------------------------
 # C Object Model
 # --------------------------------------------------------------------------

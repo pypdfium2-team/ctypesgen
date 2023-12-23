@@ -15,8 +15,6 @@ Parts of C2X (C23) is included:
   * http://www.open-std.org/jtc1/sc22/wg14/www/docs/n2731.pdf
 """
 
-__docformat__ = "restructuredtext"
-
 if __name__ == "__main__":
     # NOTE if this file is modified, run to generate a new parsetab.py
     #   E.g.:

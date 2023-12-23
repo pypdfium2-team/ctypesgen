@@ -6,8 +6,6 @@ Reference is C99:
 
 """
 
-__docformat__ = "restructuredtext"
-
 import os
 import re
 import sys
