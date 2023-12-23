@@ -77,7 +77,7 @@ ctypes_type_map_python_builtin = {
 
 
 # This protocol is used for walking type trees.
-class CtypesTypeVisitor(object):
+class CtypesTypeVisitor:
     def visit_struct(self, struct):
         pass
 
@@ -135,7 +135,7 @@ def remove_function_pointer(t):
         return t
 
 
-class CtypesType(object):
+class CtypesType:
     def __init__(self):
         super(CtypesType, self).__init__()
         self.errors = []
@@ -239,7 +239,7 @@ class CtypesArray(CtypesType):
             return "%s * int(%s)" % (self.base.py_string(), self.count.py_string(False))
 
 
-class CtypesNoErrorCheck(object):
+class CtypesNoErrorCheck:
     def py_string(self, ignore_can_be_ctype=None):
         return "None"
 
@@ -249,7 +249,7 @@ class CtypesNoErrorCheck(object):
     __nonzero__ = __bool__
 
 
-class CtypesPointerCast(object):
+class CtypesPointerCast:
     def __init__(self, target):
         self.target = target
 

@@ -7,7 +7,7 @@ lists of Description objects.
 """
 
 
-class DescriptionCollection(object):
+class DescriptionCollection:
     """Represents a collection of Descriptions."""
 
     def __init__(
@@ -24,7 +24,7 @@ class DescriptionCollection(object):
         self.output_order = output_order
 
 
-class Description(object):
+class Description:
     """Represents a constant, typedef, struct, function, variable, enum,
     or macro description. Description is an abstract base class."""
 

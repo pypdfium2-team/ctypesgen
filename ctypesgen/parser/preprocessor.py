@@ -54,7 +54,7 @@ class PreprocessorLexer(lex.Lexer):
 # --------------------------------------------------------------------------
 
 
-class PreprocessorParser(object):
+class PreprocessorParser:
     def __init__(self, options, cparser):
         self.options = options
         self.cparser = cparser  # An instance of CParser
