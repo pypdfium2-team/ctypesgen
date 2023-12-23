@@ -33,10 +33,10 @@ import math
 import unittest
 from subprocess import Popen, PIPE
 
+from ctypesgen import VERSION
 from ctypesgen.processor.operations import free_library
 from tests.ctypesgentest import (
     cleanup_common,
-    ctypesgen_version,
     generate,
     generate_common,
     TEST_DIR,
@@ -855,7 +855,7 @@ class MainTest(unittest.TestCase):
         """Test version string returned by script interface"""
         o, e, c = self._exec(["--version"])
         self.assertEqual(c, 0)
-        self.assertEqual(o.decode().strip(), ctypesgen_version())
+        self.assertEqual(o.decode().strip(), VERSION)
         self.assertEqual(e.decode(), "")
 
     def test_help(self):
@@ -1000,7 +1000,7 @@ class MacromanEncodeTest(unittest.TestCase):
     def tearDownClass(cls):
         del cls.module
         if CLEANUP_OK:
-            os.remove(cls.mac_roman_file)
+            cls.mac_roman_file.unlink()
 
     def test_macroman_encoding_source(self):
         module = MacromanEncodeTest.module

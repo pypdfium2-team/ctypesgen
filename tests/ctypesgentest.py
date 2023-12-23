@@ -9,7 +9,6 @@ from itertools import product
 from pathlib import Path
 
 import ctypesgen.__main__
-from ctypesgen import messages, VERSION
 
 
 TEST_DIR = Path(__file__).resolve().parent
@@ -19,17 +18,17 @@ COUNTER = 0
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
 
 
-def init_tmpdir():
+def _remove_tmpdir():
     if TMP_DIR.exists():
         shutil.rmtree(TMP_DIR)
+
+def _init_tmpdir():
+    _remove_tmpdir()
     TMP_DIR.mkdir()
 
-def cleanup_tmpdir():
-    if CLEANUP_OK:
-        shutil.rmtree(TMP_DIR)
-
-init_tmpdir()
-atexit.register(cleanup_tmpdir)
+_init_tmpdir()
+if CLEANUP_OK:
+    atexit.register(_remove_tmpdir)
 
 
 def ctypesgen_main(args):
@@ -52,6 +51,7 @@ def generate(header_str, args=[], lang="py"):
     # - The default file encoding seems to be cp1252, which is problematic with special chars (such as the banana in the constants test). Need to specify UTF-8 explicitly. PEP 686 should hopefully improve this.
     
     # Use custom tempfiles scoping so we may retain data for inspection
+    # FIXME can cause confusion with partial test suite runs - static naming by test case would be better, also more descriptive
     global COUNTER
     COUNTER += 1
     
@@ -72,14 +72,6 @@ def generate(header_str, args=[], lang="py"):
         return json.loads(content), str(tmp_in)
     else:
         assert False
-
-
-def set_logging_level(log_level):
-    messages.log.setLevel(log_level)
-
-
-def ctypesgen_version():
-    return VERSION
 
 
 # -- Functions facilitating tests of use of cross inclusion --
