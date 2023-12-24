@@ -74,4 +74,4 @@ Note, it is important to verify the resulting merge commit for correctness - aut
 
 ### Bugs
 
-Oversights or unintentional breakage can happen at times. Feel free to file an bug report if you think a change introduces logical issues.
+Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues.
