@@ -6,6 +6,7 @@ calling DataCollectingParser.data().
 """
 
 import os
+from pathlib import Path
 from tempfile import mkstemp
 
 from ctypesgen.ctypedescs import CtypesEnum, CtypesType, CtypesTypeVisitor
@@ -71,9 +72,9 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         fd, fname = mkstemp(suffix=".h")
         with os.fdopen(fd, "w") as f:
             for header in self.options.other_headers:
-                f.write("#include <%s>\n" % header)
+                f.write(f"#include <{header}>\n")
             for header in self.headers:
-                f.write('#include "%s"\n' % os.path.abspath(header))
+                f.write(f'#include "{Path(header).resolve()}"\n')
             f.flush()
         try:
             super(DataCollectingParser, self).parse(fname, self.options.debug_level)
@@ -95,7 +96,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         else:
             original_string = "#define %s %s" % (name, " ".join(value))
         macro = MacroDescription(name, params, None, src=(filename, lineno))
-        macro.error('Could not parse macro "%s"' % original_string, cls="macro")
+        macro.error(f"Could not parse macro '{original_string}'", cls="macro")
         macro.original_string = original_string
         self.macros.append(macro)
         self.all.append(macro)
@@ -163,7 +164,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         # append the fields body to the outputs, and remove the opaque
         # struct from the record
 
-        name = "%s %s" % (ctypestruct.variety, ctypestruct.tag)
+        name = f"{ctypestruct.variety} {ctypestruct.tag}"
 
         if name in self.already_seen_structs:
             return
@@ -286,8 +287,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
             if params:
                 macro = MacroDescription(name, "", src)
                 macro.error(
-                    "%s has parameters but evaluates to a type. "
-                    "Ctypesgen does not support it." % macro.casual_name(),
+                    f"{macro.casual_name()} has parameters but evaluates to a type. Ctypesgen does not support it.",
                     cls="macro",
                 )
                 self.macros.append(macro)

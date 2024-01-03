@@ -86,21 +86,10 @@ class WrapperPrinter:
             self.file.close()
     
     
-    def _srcinfo(self, src):
-        if not src:  # FIXME might be unreached?
-            return
-        filepath, lineno = src
-        if filepath in ("<built-in>", "<command line>"):
-            self.file.write(f"# {filepath}\n")
-        else:
-            filepath = self._strip_private_path(str(filepath))
-            self.file.write(f"# {filepath}: {lineno}\n")
-    
-    
-    # sort descending by length to avoid interference
     PRIVATE_PATHS_TABLE = [(str(Path.home()), "~")]
     if Path.cwd() != Path("/"):  # don't strip unix root
         PRIVATE_PATHS_TABLE += [(str(Path.cwd()), ".")]
+    # sort descending by length to avoid interference
     PRIVATE_PATHS_TABLE.sort(key=lambda x: len(x[0]), reverse=True)
     
     @classmethod
@@ -118,6 +107,16 @@ class WrapperPrinter:
     def _try_except_wrap(self, entry):
         pad = " "*4
         return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
+    
+    def _srcinfo(self, src):
+        if not src:  # FIXME might be unreached?
+            return
+        filepath, lineno = src
+        if filepath in ("<built-in>", "<command line>"):
+            self.file.write(f"# {filepath}\n")
+        else:
+            filepath = self._strip_private_path(str(filepath))
+            self.file.write(f"# {filepath}: {lineno}\n")
     
     
     def print_info(self, argv):

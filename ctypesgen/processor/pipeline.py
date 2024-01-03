@@ -42,7 +42,7 @@ from ctypesgen.processor.operations import (
     filter_by_regex_rules,
     check_symbols,
     fix_conflicting_names,
-    remove_descriptions_in_system_headers,
+    mask_external_members,
     remove_macros,
     remove_NULL,
 )
@@ -53,7 +53,7 @@ def process(data, options):
     
     find_dependencies(data, options)
     automatically_typedef_structs(data, options)
-    remove_descriptions_in_system_headers(data, options)
+    mask_external_members(data, options)
     remove_macros(data, options)
     filter_by_regex_rules(data, options)
     remove_NULL(data, options)

@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import subprocess
+from pathlib import Path
 
 from ctypesgen.parser import pplexer, lex
 from ctypesgen.parser.lex import LexError
@@ -159,7 +160,7 @@ class PreprocessorParser:
             search = first_token_reg.match(line)
             hash_token = search.group(1) if search else None
 
-            if (not hash_token) or hash_token == "pragma":
+            if not hash_token or hash_token == "pragma":
                 source_lines.append(line)
                 define_lines.append("\n")
 
@@ -174,15 +175,9 @@ class PreprocessorParser:
 
         text = "".join(source_lines + define_lines)
 
-        if self.options.save_preprocessed_headers:
-            self.cparser.handle_status(
-                "Saving preprocessed headers to %s." % self.options.save_preprocessed_headers
-            )
-            try:
-                with open(self.options.save_preprocessed_headers, "w") as f:
-                    f.write(text)
-            except IOError:
-                self.cparser.handle_error("Couldn't save headers.")
+        if self.options.preproc_savepath:
+            self.cparser.handle_status(f"Saving preprocessor output to {self.options.preproc_savepath}.")
+            Path(self.options.preproc_savepath).write_text(text)
 
         self.lexer.input(text)
         self.output = []

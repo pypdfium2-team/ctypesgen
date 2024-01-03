@@ -66,7 +66,7 @@ class Description:
         self.warnings.append((msg, cls))
 
     def __repr__(self):
-        return "<Description: %s>" % self.casual_name()
+        return f"<Description: {self.casual_name()}>"
 
     def casual_name(self):
         """Return a name to show the user."""
@@ -89,7 +89,7 @@ class ConstantDescription(Description):
         self.value = value
 
     def casual_name(self):
-        return 'Constant "%s"' % self.name
+        return f"Constant '{self.name}'"
 
     def py_name(self):
         return self.name
@@ -107,7 +107,7 @@ class TypedefDescription(Description):
         self.ctype = ctype  # The base type as a ctypedescs.CtypeType object
 
     def casual_name(self):
-        return 'Typedef "%s"' % self.name
+        return f"Typedef '{self.name}'"
 
     def py_name(self):
         return self.name
@@ -134,13 +134,13 @@ class StructDescription(Description):
         self.ctype = ctype
 
     def casual_name(self):
-        return '%s "%s"' % (self.variety.capitalize(), self.tag)
+        return f"{self.variety.capitalize()} '{self.tag}'"
 
     def py_name(self):
-        return "%s_%s" % (self.variety, self.tag)
+        return f"{self.variety}_{self.tag}"
 
     def c_name(self):
-        return "%s %s" % (self.variety, self.tag)
+        return f"{self.variety} {self.tag}"
 
 
 class EnumDescription(Description):
@@ -156,13 +156,13 @@ class EnumDescription(Description):
         self.ctype = ctype
 
     def casual_name(self):
-        return 'Enum "%s"' % self.tag
+        return f"Enum '{self.tag}'"
 
     def py_name(self):
-        return "enum_%s" % self.tag
+        return f"enum_{self.tag}"
 
     def c_name(self):
-        return "enum %s" % self.tag
+        return f"enum {self.tag}"
 
 
 class FunctionDescription(Description):
@@ -186,7 +186,7 @@ class FunctionDescription(Description):
         self.attrib = attrib
 
     def casual_name(self):
-        return 'Function "%s"' % self.name
+        return f"Function '{self.name}'"
 
     def py_name(self):
         return self.name
@@ -208,7 +208,7 @@ class VariableDescription(Description):
         self.ctype = ctype
 
     def casual_name(self):
-        return 'Variable "%s"' % self.name
+        return f"Variable '{self.name}'"
 
     def py_name(self):
         return self.name
@@ -227,7 +227,7 @@ class MacroDescription(Description):
         self.expr = expr  # ExpressionNode for the macro's body
 
     def casual_name(self):
-        return 'Macro "%s"' % self.name
+        return f"Macro '{self.name}'"
 
     def py_name(self):
         return self.name
@@ -246,10 +246,10 @@ class UndefDescription(Description):
         self.macro = macro
 
     def casual_name(self):
-        return 'Undef "%s"' % self.macro.name
+        return f"Undef '{self.macro.name}'"
 
     def py_name(self):
-        return "#undef:%s" % self.macro.name
+        return f"#undef:{self.macro.name}"
 
     def c_name(self):
-        return "#undef %s" % self.macro.name
+        return f"#undef {self.macro.name}"

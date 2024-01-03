@@ -204,9 +204,9 @@ def main(given_argv=sys.argv[1:]):
         help="Instruct the preprocessor to undefine the specified macro via commandline",
     )
     parser.add_argument(
-        "--save-preprocessed-headers",
+        "--preproc-savepath",
         metavar="FILENAME",
-        help="Save the preprocessed headers to the specified FILENAME",
+        help="Save preprocessor output to the specified FILENAME",
     )
     parser.add_argument(
         "--optimize-lexer",
@@ -351,10 +351,7 @@ def main(given_argv=sys.argv[1:]):
     # Figure out what names will be defined by imported Python modules
     args.imported_symbols = find_symbols_in_modules(args.modules, Path(args.output).resolve())
     
-    printer = {
-        "py": printer_python, "json": printer_json
-    }[args.output_language].WrapperPrinter
-    
+    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
     descriptions = core_parser.parse(args.headers, args)
     processor.process(descriptions, args)
     printer(args.output, args, descriptions, given_argv)

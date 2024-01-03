@@ -144,12 +144,9 @@ class CtypesParser(CParser):
                 name = " ".join(typ.specifiers)
                 if typename in [x[0] for x in self.type_map.keys()]:
                     # It's an unsupported variant of a builtin type
-                    error = 'Ctypes does not support the type "%s".' % name
+                    error = f"Ctypes does not support the type '{name}'."
                 else:
-                    error = (
-                        "Ctypes does not support adding additional "
-                        'specifiers to typedefs, such as "%s"' % name
-                    )
+                    error = f"Ctypes does not support adding additional specifiers to typedefs, such as '{name}'"
                 t = CtypesTypedef(name)
                 t.error(error, cls="unsupported-type")
 

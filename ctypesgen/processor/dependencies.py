@@ -101,17 +101,17 @@ def find_dependencies(data, opts):
             if kind == "struct" and desc.variety == cstruct.variety and desc.tag == cstruct.tag:
                 continue
             if not depend(desc, struct_names, (cstruct.variety, cstruct.tag)):
-                unresolvables.append('%s "%s"' % (cstruct.variety, cstruct.tag))
+                unresolvables.append(f"{cstruct.variety} '{cstruct.tag}'")
 
         for cenum in cenums:
             if kind == "enum" and desc.tag == cenum.tag:
                 continue
             if not depend(desc, enum_names, cenum.tag):
-                unresolvables.append('enum "%s"' % cenum.tag)
+                unresolvables.append(f"enum '{cenum.tag}'")
 
         for ctypedef in ctypedefs:
             if not depend(desc, typedef_names, ctypedef):
-                unresolvables.append('typedef "%s"' % ctypedef)
+                unresolvables.append(f"typedef '{ctypedef}'")
 
         for ident in identifiers:
             if isinstance(desc, MacroDescription) and desc.params and ident in desc.params:
@@ -122,16 +122,16 @@ def find_dependencies(data, opts):
                 if ident == desc.macro.name:
                     macro_desc = co_depend(desc, ident_names, ident)
                 if macro_desc is None or not isinstance(macro_desc, MacroDescription):
-                    unresolvables.append('identifier "%s"' % ident)
+                    unresolvables.append(f"identifier '{ident}'")
 
             elif not depend(desc, ident_names, ident):
-                unresolvables.append('identifier "%s"' % ident)
+                unresolvables.append(f"identifier '{ident}'")
 
         for u in unresolvables:
-            errors.append(("%s depends on an unknown %s." % (desc.casual_name(), u), None))
+            errors.append((f"{desc.casual_name()} depends on an unknown {u}.", None))
 
         for err, cls in errors:
-            err += " %s will not be output" % desc.casual_name()
+            err += f" {desc.casual_name()} will not be output"
             desc.error(err, cls=cls)
 
     def add_to_lookup_table(desc, kind):

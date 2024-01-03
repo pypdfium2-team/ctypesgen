@@ -139,7 +139,7 @@ class CtypesType:
         self.errors = []
 
     def __repr__(self):
-        return '<Ctype (%s) "%s">' % (type(self).__name__, self.py_string())
+        return f"<Ctype ({type(self).__name__}) '{self.py_string()}'>"
 
     def error(self, message, cls=None):
         self.errors.append((message, cls))
@@ -252,7 +252,7 @@ class CtypesPointerCast:
         self.target = target
 
     def py_string(self, ignore_can_be_ctype=None):
-        return "lambda v,*a : cast(v, {})".format(self.target.py_string())
+        return f"lambda v,*a : cast(v, {self.target.py_string()})"
 
 
 class CtypesFunction(CtypesType):
@@ -279,16 +279,13 @@ class CtypesFunction(CtypesType):
 
 last_tagnum = 0
 
-
 def anonymous_struct_tagnum():
     global last_tagnum
     last_tagnum += 1
     return last_tagnum
 
-
 def fmt_anonymous_struct_tag(num):
-    return "anon_%d" % num
-
+    return f"anon_{num}"
 
 def anonymous_struct_tag():
     return fmt_anonymous_struct_tag(anonymous_struct_tagnum())
@@ -301,7 +298,9 @@ class CtypesStruct(CtypesType):
         self.attrib = attrib
         self.variety = variety  # "struct" or "union"
         self.members = members
-
+        self.opaque = True if self.members is None else False
+        self.src = src
+        
         if type(self.tag) == int or not self.tag:
             if type(self.tag) == int:
                 self.tag = fmt_anonymous_struct_tag(self.tag)
@@ -310,13 +309,7 @@ class CtypesStruct(CtypesType):
             self.anonymous = True
         else:
             self.anonymous = False
-
-        if self.members is None:
-            self.opaque = True
-        else:
-            self.opaque = False
-
-        self.src = src
+        
 
     def get_required_types(self):
         types = super(CtypesStruct, self).get_required_types()
@@ -337,16 +330,15 @@ class CtypesStruct(CtypesType):
             return set([m[1] for m in self.members])
 
     def py_string(self, ignore_can_be_ctype=None):
-        return "%s_%s" % (self.variety, self.tag)
+        return f"{self.variety}_{self.tag}"
 
 
 last_tagnum = 0
 
-
 def anonymous_enum_tag():
     global last_tagnum
     last_tagnum += 1
-    return "anon_%d" % last_tagnum
+    return f"anon_{last_tagnum}"
 
 
 class CtypesEnum(CtypesType):
@@ -373,4 +365,4 @@ class CtypesEnum(CtypesType):
         super(CtypesEnum, self).visit(visitor)
 
     def py_string(self, ignore_can_be_ctype=None):
-        return "enum_%s" % self.tag
+        return f"enum_{self.tag}"

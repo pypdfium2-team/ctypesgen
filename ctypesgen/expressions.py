@@ -33,15 +33,15 @@ class EvaluationContext:
     """Interface for evaluating expression nodes."""
 
     def evaluate_identifier(self, name):
-        warnings.warn("Attempt to evaluate identifier '%s' failed" % name)
+        warnings.warn(f"Attempt to evaluate identifier '{name}' failed")
         return 0
 
     def evaluate_sizeof(self, object):
-        warnings.warn("Attempt to evaluate sizeof object '%s' failed" % str(object))
+        warnings.warn(f"Attempt to evaluate sizeof object '{str(object)}' failed")
         return 0
 
     def evaluate_parameter(self, name):
-        warnings.warn("Attempt to evaluate parameter '%s' failed" % name)
+        warnings.warn(f"Attempt to evaluate parameter '{name}' failed")
         return 0
 
 
@@ -57,7 +57,7 @@ class ExpressionNode:
             string = repr(self.py_string(True))
         except ValueError:
             string = "<error in expression node>"
-        return "<%s: %s>" % (type(self).__name__, string)
+        return f"<{type(self).__name__}: {string}>"
 
     def visit(self, visitor):
         for error, cls in self.errors:
@@ -135,7 +135,7 @@ class UnaryExpressionNode(ExpressionNode):
         if self.op:
             return self.op(self.child.evaluate(context))
         else:
-            raise ValueError("The C operator '%s' can't be evaluated right now" % self.name)
+            raise ValueError(f"The C operator '{self.name}' can't be evaluated right now")
 
     def py_string(self, can_be_ctype):
         return self.format % self.child.py_string(self.child_can_be_ctype and can_be_ctype)
@@ -182,7 +182,7 @@ class BinaryExpressionNode(ExpressionNode):
         if self.op:
             return self.op(self.left.evaluate(context), self.right.evaluate(context))
         else:
-            raise ValueError("The C operator '%s' can't be evaluated right now" % self.name)
+            raise ValueError(f"The C operator '{self.name}' can't be evaluated right now")
 
     def py_string(self, can_be_ctype):
         return self.format % (

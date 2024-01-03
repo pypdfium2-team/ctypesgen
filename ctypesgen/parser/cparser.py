@@ -113,10 +113,10 @@ class CParser:
         If `debug` is True, parsing state is dumped to stdout.
         """
 
-        self.handle_status("Preprocessing %s" % filename)
+        self.handle_status(f"Preprocessing {filename}")
         self.preprocessor_parser.parse(filename)
         self.lexer.input(self.preprocessor_parser.output)
-        self.handle_status("Parsing %s" % filename)
+        self.handle_status(f"Parsing {filename}")
         self.parser.parse(lexer=self.lexer, debug=debug, tracking=True)
 
     # ----------------------------------------------------------------------
@@ -130,7 +130,7 @@ class CParser:
         The parser will try to recover from errors by synchronising at the
         next semicolon.
         """
-        sys.stderr.write("%s:%s %s\n" % (filename, lineno, message))
+        print(f"{filename}:{lineno} {message}", file=sys.stderr)
 
     def handle_pp_error(self, message):
         """The C preprocessor emitted an error.
@@ -138,14 +138,14 @@ class CParser:
         The default implementation prints the error to stderr. If processing
         can continue, it will.
         """
-        sys.stderr.write("Preprocessor: {}\n".format(message))
+        print(f"Preprocessor: {message}", file=sys.stderr)
 
     def handle_status(self, message):
         """Progress information.
 
         The default implementationg prints message to stderr.
         """
-        sys.stderr.write("{}\n".format(message))
+        print(f"{message}", file=sys.stderr)
 
     def handle_define(self, name, params, value, filename, lineno):
         """#define `name` `value`
@@ -207,10 +207,10 @@ class DebugCParser(CParser):
     """
 
     def handle_define(self, name, value, filename, lineno):
-        print("#define name=%r, value=%r" % (name, value))
+        print(f"#define name={name!r}, value={value!r}")
 
     def handle_define_constant(self, name, value, filename, lineno):
-        print("#define constant name=%r, value=%r" % (name, value))
+        print(f"#define constant name={name!r}, value={value!r}")
 
     def handle_declaration(self, declaration, filename, lineno):
         print(declaration)

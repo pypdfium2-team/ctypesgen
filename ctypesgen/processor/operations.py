@@ -5,7 +5,6 @@ ctypesgen.processor.pipeline calls the operations module.
 """
 
 import re
-import os
 import sys
 import ctypes
 import keyword
@@ -22,11 +21,10 @@ from ctypesgen.messages import warning_message, status_message
 
 # Processor functions
 
-
 def automatically_typedef_structs(data, options):
     """automatically_typedef_structs() aliases "struct_<tag>" to "<tag>" for
     every struct and union."""
-    # XXX Check if it has already been aliased in the C code.
+    # FIXME Check if it has already been aliased in the C code.
 
     for struct in data.structs:
         if not struct.ctype.anonymous:  # Don't alias anonymous structs
@@ -41,30 +39,30 @@ def automatically_typedef_structs(data, options):
 def remove_NULL(data, options):
     """remove_NULL() removes any NULL definitions from the C headers because
     ctypesgen supplies its own NULL definition."""
-
+    
     for macro in data.macros:
         if macro.name == "NULL":
             macro.include_rule = "never"
 
 
-def remove_descriptions_in_system_headers(data, opts):
-    """remove_descriptions_in_system_headers() removes descriptions if they came
-    from files outside of the header files specified from the command line."""
+def mask_external_members(data, opts):
+    """mask_external_members() removes descriptions if they came from files
+    outside of the header files specified from the command line."""
+    
+    # FIXME(geisserml) shouldn't we rather honor the full path?
+    known_headers = [Path(x).name for x in opts.headers]
 
-    known_headers = [os.path.basename(x) for x in opts.headers]
-
-    for description in data.all:
-        if description.src is not None:
-            if description.src[0] == "<command line>":
-                description.include_rule = "if_needed"
-            elif description.src[0] == "<built-in>":
+    for desc in data.all:
+        if desc.src is not None:
+            if desc.src[0] == "<command line>":
+                # FIXME(geisserml) I don't understand the intent behind this clause. When does <command line> occur?
+                desc.include_rule = "if_needed"
+            elif desc.src[0] == "<built-in>":
                 if not opts.builtin_symbols:
-                    description.include_rule = "if_needed"
-            elif os.path.basename(description.src[0]) not in known_headers:
+                    desc.include_rule = "if_needed"
+            elif Path(desc.src[0]).name not in known_headers:
                 if not opts.all_headers:
-                    # If something else requires this, include it even though
-                    # it is in a system header file.
-                    description.include_rule = "if_needed"
+                    desc.include_rule = "if_needed"
 
 
 def remove_macros(data, opts):
@@ -118,8 +116,9 @@ def fix_conflicting_names(data, opts):
         + data.macros
     )
     
-    # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them. Confound it!
-    # Yet, the scope of this issue might be somewhat limited due to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
+    # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them.
+    # However, I'm not sure why the rename is problem, as the dependants presumably store a reference to the mutable object, and dest strings should be evaluated lazyly ... ?
+    # That said, the scope of this issue should be somewhat limited due to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
     
     for desc in descriptions:
         if desc.py_name() in important_names:
@@ -130,10 +129,9 @@ def fix_conflicting_names(data, opts):
                 if isinstance(desc, (StructDescription, EnumDescription)):
                     desc.tag += "_"
                 else:
-                    desc.name = "_" + desc.name
+                    desc.name = f"_{desc.name}"
             
-            message = "%s has been renamed to %s due to a name conflict with %s." % \
-                      (original_name, desc.casual_name(), conflict_name)
+            message = f"{original_name} has been renamed to {desc.casual_name()} due to a name conflict with {conflict_name}."
             if desc.dependents:
                 message += " Dependant objects will be excluded (FIXME)."
                 for dependent in desc.dependents:
@@ -150,10 +148,9 @@ def fix_conflicting_names(data, opts):
         if struct.opaque: continue  # no members
         for i, (name, type) in enumerate(struct.members):
             if name in keyword.kwlist:
-                struct.members[i] = ("_" + name, type)
+                struct.members[i] = (f"_{name}", type)
                 struct.warning(
-                    "Member '%s' of %s has been renamed to '%s' because it has the same name "
-                    "as a Python keyword." % (name, struct.casual_name(), "_" + name),
+                    f"Member '{name}' of {struct.casual_name()} has been renamed to '_{name}' because it has the same name as a Python keyword.",
                     cls="rename",
                 )
 
@@ -165,8 +162,7 @@ def fix_conflicting_names(data, opts):
         for param in macro.params:
             if param in keyword.kwlist:
                 macro.error(
-                    "One of the params to %s, '%s' has the same name as a Python keyword. "
-                    "%s will be excluded." % (macro.casual_name(), param, macro.casual_name()),
+                    f"One of the params to {macro.casual_name()}, '{param}', has the same name as a Python keyword. {macro.casual_name()} will be excluded.",
                     cls="name-conflict",
                 )
                 macro.include_rule = "never"
