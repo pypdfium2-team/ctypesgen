@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Simple test suite using unittest.
 Originally written by clach04 (Chris Clark).
 
@@ -55,21 +54,16 @@ if sys.platform.startswith("win32"):
     # pick something from %windir%\system32\msvc*dll that includes stdlib
     STDLIB_NAME = "msvcrt"
 else:
-    STDLIB_NAME = "c"
+    STDLIB_NAME = "c"  # libc
 
-
-def compute_packed(modulo, fields):
-    packs = [
-        (
-            modulo * int(ctypes.sizeof(f) / modulo)
-            + modulo * (1 if (ctypes.sizeof(f) % modulo) else 0)
-        )
-        for f in fields
-    ]
-    return sum(packs)
+if sys.platform.startswith("linux"):
+    MATHLIB_NAME = "m"  # libm
+else:
+    MATHLIB_NAME = STDLIB_NAME
 
 
 class StdlibTest(unittest.TestCase):
+    
     @classmethod
     def setUpClass(cls):
         header_str = "#include <stdlib.h>\n"
@@ -81,8 +75,6 @@ class StdlibTest(unittest.TestCase):
 
     def test_getenv_returns_string(self):
         """ Test string return """
-        module = StdlibTest.module
-
         if sys.platform == "win32":
             # Check a variable that is already set
             # USERNAME is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
@@ -99,25 +91,83 @@ class StdlibTest(unittest.TestCase):
             os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
             expect_result = "WORLD"
 
-        result_ptr = module.getenv(env_var_name.encode("utf-8"))
+        result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
         result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
         self.assertEqual(expect_result, result)
 
     def test_getenv_returns_null(self):
         """Related to issue 8. Test getenv of unset variable."""
-        module = StdlibTest.module
         env_var_name = "NOT SET"
         try:
             # ensure variable is not set, ignoring not set errors
             del os.environ[env_var_name]
         except KeyError:
             pass
-        result_ptr = module.getenv(env_var_name.encode("utf-8"))
+        result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
         result = ctypes.cast(result_ptr, ctypes.c_char_p).value
         self.assertEqual(result, None)
 
 
+class VariadicFunctionTest(unittest.TestCase):
+    """ This tests calling variadic functions. """
+    
+    @classmethod
+    def setUpClass(cls):
+        header_str = "#include <stdio.h>\n"
+        # FIXME duplication with StdlibTest
+        cls.module = generate(header_str, ["-l", STDLIB_NAME, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
+    
+    def test_type_error_catch(self):
+        with self.assertRaises(ctypes.ArgumentError):
+            # in case this slipped through as binary data, you would see chr(33) = '!' at the end
+            self.module.printf(33)
+    
+    def test_call(self):
+        tmp = TMP_DIR/f"out_{type(self).__name__}.txt"
+        tmp.touch()
+        try:
+            c_file = self.module.fopen(str(tmp).encode(), b"w")
+            self.module.fprintf(c_file, b"Test variadic function: %s %d", b"Hello", 123)
+            self.module.fclose(c_file)
+            assert tmp.read_bytes() == b"Test variadic function: Hello 123"
+        finally:
+            if CLEANUP_OK: tmp.unlink()
+
+
+class MathTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        header_str = """
+#include <math.h>
+#define sin_plus_y(x,y) (sin(x) + (y))
+"""
+        # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
+        # Also exclude unused members starting with __ to avoid garbage in the output.
+        # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
+        cls.module = generate(header_str, ["-l", MATHLIB_NAME, "--all-headers", "--symbol-rules", "never=NAN", r"if_needed=__\w+"])
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.module
+
+    def test_sin(self):
+        self.assertEqual(self.module.sin(2), math.sin(2))
+
+    def test_sqrt(self):
+        self.assertEqual(self.module.sqrt(4), 2)
+
+    def test_bad_args_string_not_number(self):
+        with self.assertRaises(ctypes.ArgumentError):
+            self.module.sin("foobar")
+
+    def test_subcall_sin(self):
+        """Test math with sin(x) in a macro"""
+        self.assertEqual(self.module.sin_plus_y(2, 1), math.sin(2) + 1)
+
+
 class CommonHeaderTest(unittest.TestCase):
+    
     @classmethod
     def setUpClass(cls):
         generate_common()
@@ -160,7 +210,7 @@ class CommonHeaderTest(unittest.TestCase):
 
 
 class StdBoolTest(unittest.TestCase):
-    "Test correct parsing and generation of bool type"
+    """Test correct parsing and generation of bool type"""
 
     @classmethod
     def setUpClass(cls):
@@ -181,13 +231,12 @@ struct foo
 
     def test_stdbool_type(self):
         """Test if bool is parsed correctly"""
-        module = StdBoolTest.module
-        struct_foo = module.struct_foo
+        struct_foo = self.module.struct_foo
         self.assertEqual(struct_foo._fields_, [("is_bar", ctypes.c_bool), ("a", ctypes.c_int)])
 
 
 class IntTypesTest(unittest.TestCase):
-    "Test correct parsing and generation of different integer types"
+    """Test correct parsing and generation of different integer types"""
 
     @classmethod
     def setUpClass(cls):
@@ -214,8 +263,7 @@ struct int_types {
 
     def test_int_types(self):
         """Test if different integer types are parsed correctly"""
-        module = IntTypesTest.module
-        struct_int_types = module.struct_int_types
+        struct_int_types = self.module.struct_int_types
         self.assertEqual(
             struct_int_types._fields_,
             [
@@ -235,7 +283,6 @@ struct int_types {
 
 
 class SimpleMacrosTest(unittest.TestCase):
-    """Based on simple_macros.py"""
 
     @classmethod
     def setUpClass(cls):
@@ -267,32 +314,21 @@ class SimpleMacrosTest(unittest.TestCase):
         del cls.module, cls.json
 
     def test_macro_constant_int(self):
-        """Tests from simple_macros.py"""
-        module, json = SimpleMacrosTest.module, self._json
-
-        self.assertEqual(module.A, 1)
-        self.assertEqual(json("A"), {"name": "A", "type": "macro", "value": "1"})
+        self.assertEqual(self.module.A, 1)
+        self.assertEqual(self._json("A"), {"name": "A", "type": "macro", "value": "1"})
 
     def test_macro_addition_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("B"),
+            self._json("B"),
             {"args": ["x", "y"], "body": "(x + y)", "name": "B", "type": "macro_function"},
         )
 
     def test_macro_addition(self):
-        """Tests from simple_macros.py"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.B(2, 2), 4)
+        self.assertEqual(self.module.B(2, 2), 4)
 
     def test_macro_ternary_json(self):
-        """Tests from simple_macros.py"""
-        json = self._json
-
         self.assertEqual(
-            json("C"),
+            self._json("C"),
             {
                 "args": ["a", "b", "c"],
                 "body": "a and b or c",
@@ -302,55 +338,35 @@ class SimpleMacrosTest(unittest.TestCase):
         )
 
     def test_macro_ternary_true(self):
-        """Tests from simple_macros.py"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.C(True, 1, 2), 1)
+        self.assertEqual(self.module.C(True, 1, 2), 1)
 
     def test_macro_ternary_false(self):
-        """Tests from simple_macros.py"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.C(False, 1, 2), 2)
+        self.assertEqual(self.module.C(False, 1, 2), 2)
 
     def test_macro_ternary_true_complex(self):
         """Test ?: with true, using values that can not be confused between True and 1"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.C(True, 99, 100), 99)
+        self.assertEqual(self.module.C(True, 99, 100), 99)
 
     def test_macro_ternary_false_complex(self):
         """Test ?: with false, using values that can not be confused between True and 1"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.C(False, 99, 100), 100)
+        self.assertEqual(self.module.C(False, 99, 100), 100)
 
     def test_macro_string_compose(self):
-        """Tests from simple_macros.py"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.funny("bunny"), "funnybunny")
+        self.assertEqual(self.module.funny("bunny"), "funnybunny")
 
     def test_macro_string_compose_json(self):
-        """Tests from simple_macros.py"""
-        json = self._json
-
         self.assertEqual(
-            json("funny"),
+            self._json("funny"),
             {"args": ["x"], "body": "('funny' + x)", "name": "funny", "type": "macro_function"},
         )
 
     def test_macro_math_multipler(self):
-        module = SimpleMacrosTest.module
-
         x, y = 2, 5
-        self.assertEqual(module.multipler_macro(x, y), x * y)
+        self.assertEqual(self.module.multipler_macro(x, y), x * y)
 
     def test_macro_math_multiplier_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("multipler_macro"),
+            self._json("multipler_macro"),
             {
                 "args": ["x", "y"],
                 "body": "(x * y)",
@@ -360,16 +376,12 @@ class SimpleMacrosTest(unittest.TestCase):
         )
 
     def test_macro_math_minus(self):
-        module = SimpleMacrosTest.module
-
         x, y = 2, 5
-        self.assertEqual(module.minus_macro(x, y), x - y)
+        self.assertEqual(self.module.minus_macro(x, y), x - y)
 
     def test_macro_math_minus_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("minus_macro"),
+            self._json("minus_macro"),
             {
                 "args": ["x", "y"],
                 "body": "(x - y)",
@@ -379,16 +391,12 @@ class SimpleMacrosTest(unittest.TestCase):
         )
 
     def test_macro_math_divide(self):
-        module = SimpleMacrosTest.module
-
         x, y = 2, 5
-        self.assertEqual(module.divide_macro(x, y), x / y)
+        self.assertEqual(self.module.divide_macro(x, y), x / y)
 
     def test_macro_math_divide_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("divide_macro"),
+            self._json("divide_macro"),
             {
                 "args": ["x", "y"],
                 "body": "(x / y)",
@@ -398,44 +406,32 @@ class SimpleMacrosTest(unittest.TestCase):
         )
 
     def test_macro_math_mod(self):
-        module = SimpleMacrosTest.module
-
         x, y = 2, 5
-        self.assertEqual(module.mod_macro(x, y), x % y)
+        self.assertEqual(self.module.mod_macro(x, y), x % y)
 
     def test_macro_math_mod_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("mod_macro"),
+            self._json("mod_macro"),
             {"args": ["x", "y"], "body": "(x % y)", "name": "mod_macro", "type": "macro_function"},
         )
 
     def test_macro_subcall_simple(self):
         """Test use of a constant valued macro within a macro"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.subcall_macro_simple(2), 1)
+        self.assertEqual(self.module.subcall_macro_simple(2), 1)
 
     def test_macro_subcall_simple_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("subcall_macro_simple"),
+            self._json("subcall_macro_simple"),
             {"args": ["x"], "body": "A", "name": "subcall_macro_simple", "type": "macro_function"},
         )
 
     def test_macro_subcall_simple_plus(self):
         """Test math with constant valued macro within a macro"""
-        module = SimpleMacrosTest.module
-
-        self.assertEqual(module.subcall_macro_simple_plus(2), 1 + 2)
+        self.assertEqual(self.module.subcall_macro_simple_plus(2), 1 + 2)
 
     def test_macro_subcall_simple_plus_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("subcall_macro_simple_plus"),
+            self._json("subcall_macro_simple_plus"),
             {
                 "args": ["x"],
                 "body": "(A + x)",
@@ -446,16 +442,12 @@ class SimpleMacrosTest(unittest.TestCase):
 
     def test_macro_subcall_minus(self):
         """Test use of macro function within a macro"""
-        module = SimpleMacrosTest.module
-
         x, y = 2, 5
-        self.assertEqual(module.subcall_macro_minus(x, y), x - y)
+        self.assertEqual(self.module.subcall_macro_minus(x, y), x - y)
 
     def test_macro_subcall_minus_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("subcall_macro_minus"),
+            self._json("subcall_macro_minus"),
             {
                 "args": ["x", "y"],
                 "body": "minus_macro(x, y)",
@@ -466,16 +458,12 @@ class SimpleMacrosTest(unittest.TestCase):
 
     def test_macro_subcall_minus_plus(self):
         """Test math with a macro function within a macro"""
-        module = SimpleMacrosTest.module
-
         x, y, z = 2, 5, 1
-        self.assertEqual(module.subcall_macro_minus_plus(x, y, z), (x - y) + z)
+        self.assertEqual(self.module.subcall_macro_minus_plus(x, y, z), (x - y) + z)
 
     def test_macro_subcall_minus_plus_json(self):
-        json = self._json
-
         self.assertEqual(
-            json("subcall_macro_minus_plus"),
+            self._json("subcall_macro_minus_plus"),
             {
                 "args": ["x", "y", "z"],
                 "body": "(minus_macro(x, y) + z)",
@@ -485,8 +473,18 @@ class SimpleMacrosTest(unittest.TestCase):
         )
 
 
+def compute_packed(modulo, fields):
+    packs = [
+        (
+            modulo * int(ctypes.sizeof(f) / modulo)
+            + modulo * (1 if (ctypes.sizeof(f) % modulo) else 0)
+        )
+        for f in fields
+    ]
+    return sum(packs)
+
+
 class StructuresTest(unittest.TestCase):
-    """Based on structures.py"""
 
     @classmethod
     def setUpClass(cls):
@@ -655,62 +653,6 @@ typedef struct {
         BAR0 = module.BAR0
         PBAR0 = module.PBAR0
         self.assertEqual(PBAR0._type_, BAR0)
-
-
-class MathTest(unittest.TestCase):
-    """Based on math_functions.py"""
-
-    @classmethod
-    def setUpClass(cls):
-        header_str = """
-#include <math.h>
-#define sin_plus_y(x,y) (sin(x) + (y))
-"""
-        if sys.platform.startswith("linux"):
-            library = "m"  # libm
-        else:
-            library = STDLIB_NAME
-        
-        # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
-        # Also exclude unused members starting with __ to avoid garbage in the output.
-        # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
-        cls.module = generate(header_str, ["-l", library, "--all-headers", "--symbol-rules", "never=NAN", r"if_needed=__\w+"])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
-
-    def test_sin(self):
-        """Based on math_functions.py"""
-        module = MathTest.module
-
-        self.assertEqual(module.sin(2), math.sin(2))
-
-    def test_sqrt(self):
-        """Based on math_functions.py"""
-        module = MathTest.module
-
-        self.assertEqual(module.sqrt(4), 2)
-
-        def local_test():
-            module.sin("foobar")
-
-        self.assertRaises(ctypes.ArgumentError, local_test)
-
-    def test_bad_args_string_not_number(self):
-        """Based on math_functions.py"""
-        module = MathTest.module
-
-        def local_test():
-            module.sin("foobar")
-
-        self.assertRaises(ctypes.ArgumentError, local_test)
-
-    def test_subcall_sin(self):
-        """Test math with sin(x) in a macro"""
-        module = MathTest.module
-
-        self.assertEqual(module.sin_plus_y(2, 1), math.sin(2) + 1)
 
 
 class EnumTest(unittest.TestCase):
@@ -1001,36 +943,9 @@ class MacromanEncodeTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.module
-        if CLEANUP_OK:
-            cls.mac_roman_file.unlink()
+        if CLEANUP_OK: cls.mac_roman_file.unlink()
 
     def test_macroman_encoding_source(self):
         module = MacromanEncodeTest.module
         expected = b"\xef\xbf\xbd\\pHelper\xef\xbf\xbd".decode("utf-8")
         self.assertEqual(module.MYSTRING, expected)
-
-
-class VariadicFunctionTest(unittest.TestCase):
-    """ This tests calling variadic functions. """
-    
-    @classmethod
-    def setUpClass(cls):
-        header_str = "#include <stdio.h>\n"
-        cls.module = generate(header_str, ["-l", STDLIB_NAME, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
-    
-    def test_type_error_catch(self):
-        with self.assertRaises(ctypes.ArgumentError):
-            # in case this slipped through as binary data, you would see chr(33) = '!' at the end
-            self.module.printf(33)
-    
-    def test_call(self):
-        tmp = TMP_DIR/f"out_{type(self).__name__}.txt"
-        tmp.touch()
-        try:
-            c_file = self.module.fopen(str(tmp).encode(), b"w")
-            self.module.fprintf(c_file, b"Test variadic function: %s %d", b"Hello", 123)
-            self.module.fclose(c_file)
-            assert tmp.read_bytes() == b"Test variadic function: Hello 123"
-        finally:
-            if CLEANUP_OK:
-                tmp.unlink()

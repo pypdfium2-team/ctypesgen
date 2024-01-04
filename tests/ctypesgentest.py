@@ -19,20 +19,18 @@ CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
 
 
 def _remove_tmpdir():
-    if TMP_DIR.exists():
-        shutil.rmtree(TMP_DIR)
+    if TMP_DIR.exists(): shutil.rmtree(TMP_DIR)
 
 def _init_tmpdir():
     _remove_tmpdir()
     TMP_DIR.mkdir()
 
 _init_tmpdir()
-if CLEANUP_OK:
-    atexit.register(_remove_tmpdir)
+if CLEANUP_OK: atexit.register(_remove_tmpdir)
+
 
 def ctypesgen_main(args):
     return ctypesgen.__main__.main([str(a) for a in args])
-
 
 def module_from_code(name, python_code):
     # exec'ed modules do not have __file__, but we could define it manually as an anchor point for relative paths (commented out because no test case needs this yet)
@@ -140,5 +138,4 @@ def _generate_with_common(file_name, shared):
 
 
 def cleanup_common():
-    if CLEANUP_OK:
-        shutil.rmtree(COMMON_DIR)
+    if CLEANUP_OK: shutil.rmtree(COMMON_DIR)
