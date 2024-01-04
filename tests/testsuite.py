@@ -805,8 +805,9 @@ class CommandParserTest(unittest.TestCase):
     def test_help(self):
         """Test showing help"""
         out, err, rc = self._run(["--help"])
+        # print(f"{rc}:\n{out}\n{err}")
         self.assertEqual(rc, 0)
-        self.assertTrue(out.splitlines()[0].startswith("usage: __main__.py"))
+        self.assertTrue(out.splitlines()[0].startswith("usage: ctypesgen"))
         self.assertGreater(len(out), 3000)  # it's long, so it'll be the generated help
         self.assertEqual(err, "")
 
@@ -815,7 +816,7 @@ class CommandParserTest(unittest.TestCase):
         out, err, rc = self._run(["-i", "_", "-l", "_", "-o", "_", "--this-does-not-exist"])
         self.assertEqual(rc, 2)
         self.assertEqual(out, "")
-        self.assertTrue(err.splitlines()[0].startswith("usage: __main__.py"))
+        self.assertTrue(err.splitlines()[0].startswith("usage: ctypesgen"))
         self.assertIn("error: unrecognized arguments: --this-does-not-exist", err)
 
 

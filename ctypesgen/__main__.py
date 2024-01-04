@@ -59,7 +59,7 @@ def find_symbols_in_modules(modnames, outpath):
 # TODO consider BooleanOptionalAction (with compat backport)
 def main(given_argv=sys.argv[1:]):
     
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(prog="ctypesgen")
     
     if sys.version_info < (3, 8):  # compat
         
