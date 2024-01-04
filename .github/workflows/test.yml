@@ -6,6 +6,10 @@ on:
   # - pull_request
   # - fork
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   setup-and-test:
     name: Python-${{ matrix.python }} ${{ matrix.os }}
@@ -44,5 +48,15 @@ jobs:
           pip install pytest
 
       - name: Run Test
-        run: |
-          pytest -v --showlocals tests/testsuite.py
+        run: pytest -v --showlocals tests/testsuite.py
+        env:
+          CLEANUP_OK: 0
+      
+      - name: Upload generated data
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: out_${{ matrix.os }}_py${{ matrix.python }}
+          path: |
+            tests/tmp/
+            tests/common/
