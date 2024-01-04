@@ -1608,8 +1608,7 @@ def get_ans_function_prototypes():
                     "Klass": "CtypesSimple",
                     "errors": [],
                     "longs": 0,
-                    "name":
-                    "void",
+                    "name": "void",
                     "signed": True,
                 },
                 "errors": [],
