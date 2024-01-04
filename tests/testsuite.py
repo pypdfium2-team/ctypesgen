@@ -217,8 +217,7 @@ class StdBoolTest(unittest.TestCase):
         header_str = """
 #include <stdbool.h>
 
-struct foo
-{
+struct foo {
     bool is_bar;
     int a;
 };
@@ -489,50 +488,45 @@ class StructuresTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = """
-struct foo
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+struct foo {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 };
 
-struct __attribute__((packed)) packed_foo
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+struct __attribute__((packed)) packed_foo {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 };
 
-typedef struct
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+typedef struct {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 } foo_t;
 
-typedef struct __attribute__((packed))
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+typedef struct __attribute__((packed)) {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 } packed_foo_t;
 
 #pragma pack(push, 4)
-typedef struct
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+typedef struct {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 } pragma_packed_foo_t;
 #pragma pack(pop)
 
@@ -542,34 +536,32 @@ typedef struct
 #pragma pack(push, thing3, 8)
 #pragma pack(push, thing4, 16)
 #pragma pack(pop, thing3)
-struct  pragma_packed_foo2
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+struct pragma_packed_foo2 {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 };
 #pragma pack(pop, thing1)
 
-struct  foo3
-{
-        int a;
-        char b;
-        int c;
-        int d : 15;
-        int   : 17;
+struct foo3 {
+    int a;
+    char b;
+    int c;
+    int d : 15;
+    int   : 17;
 };
 
 typedef int Int;
 
 typedef struct {
-        int Int;
+    int Int;
 } id_struct_t;
 
 typedef struct {
-  int a;
-  char b;
+    int a;
+    char b;
 } BAR0, *PBAR0;
 """
         cls.module = generate(header_str)
@@ -756,8 +748,7 @@ class LongDoubleTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         header_str = """
-struct foo
-{
+struct foo {
     long double is_bar;
     int a;
 };
@@ -841,13 +832,12 @@ class ConstantsTest(unittest.TestCase):
 #define F_CONST_5 0x1.FFFFFEp+127f
 #define F_CONST_6 0xAFAF.p35f
 
-struct foo
-{
-        int a;
-        char b;
-        int c: 0b10;
-        int d : 0xf;
-        int : 17;
+struct foo {
+    int a;
+    char b;
+    int c: 0b10;
+    int d : 0xf;
+    int : 17;
 };
 
 #define CHAR_CONST u'🍌'
