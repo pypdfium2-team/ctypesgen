@@ -310,8 +310,8 @@ _register_library(
     def print_undef(self, undef):
         self._srcinfo(undef.src)
         name = undef.macro.py_string(False)
-        self.file.write(f"# undef {name}")
-        entry = f"\ndel {name}"
+        self.file.write(f"# undef {name}\n")
+        entry = f"del {name}"
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
