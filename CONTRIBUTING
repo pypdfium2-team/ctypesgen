@@ -1,4 +1,0 @@
-The best way to document a bug is to create a new test which demonstrates it. You should do that by adding a new test to:
-    ctypesgen/test/testsuite.py
-
-All patches will have to pass unit tests. You can run the tests by calling "tox" with no options.
