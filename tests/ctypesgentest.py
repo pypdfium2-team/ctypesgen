@@ -30,7 +30,6 @@ _init_tmpdir()
 if CLEANUP_OK:
     atexit.register(_remove_tmpdir)
 
-
 def ctypesgen_main(args):
     return ctypesgen.__main__.main([str(a) for a in args])
 
