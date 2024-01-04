@@ -106,7 +106,7 @@ class WrapperPrinter:
     
     def _try_except_wrap(self, entry):
         pad = " "*4
-        return f"try:\n{indent(entry, pad)}\nexcept Exception:\n{pad}pass"
+        return f"try:\n{indent(entry, pad)}\nexcept:\n{pad}pass"
     
     def _srcinfo(self, src):
         if not src:  # FIXME might be unreached?
