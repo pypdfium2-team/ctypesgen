@@ -16,7 +16,7 @@ from ctypesgen.messages import warning_message, status_message
 # - The file as a whole shall have exactly one trailing \n, and no leading \n.
 #
 # Note a few special cases:
-# - You may "forward-declare" a trailing \n in methods that are optional and placed directly ahead of a known present block that does not have a leading \n, i.e. the trailing \n acts as separator in accordance with the rule above. This is the case with srcinfo().
+# - You may "forward-declare" a trailing \n in procedures that are placed directly ahead of a known present block that does not have a leading \n, i.e. the trailing \n acts as separator in accordance with the rule above. This is the case e.g. with srcinfo().
 # - Where newlines depend on a local conditional, they may be handled by the sub-method if tied to a specific place in the control flow. This is the case with print_library(), which only writes to the main file if embed_preamble is True, and does not need a separator otherwise.
 # - The body of Paragraph Contexts may end with a newline for a padding before the End marker. Note that this is not against the rule, because the resulting paragraph (with markers) will _not_ end with \n.
 #
