@@ -1,6 +1,3 @@
-/*
-** Trivial ctypesgen demo library
-**  from http://code.google.com/p/ctypesgen
-*/
+/* Trivial ctypesgen demo library */
 
 int trivial_add(int a, int b);

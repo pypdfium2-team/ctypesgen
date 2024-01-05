@@ -1,13 +1,11 @@
 /*
-** Trivial ctypesgen demo library consumer
-**  from http://code.google.com/p/ctypesgen
-**
-** This demoapp it self is not useful, it is a sanity check for the library.
-**
-**  Build static:   cc -o demoapp demoapp.c  demolib.c  demolib.h
-**
-*/
+Trivial ctypesgen demo library consumer.
 
+This demo app itself is not useful, it is just a sanity check for the library.
+
+Build static:
+    cc demoapp.c demolib.c demolib.h -o demoapp
+*/
 
 #include <stdlib.h>
 #include <stdio.h>

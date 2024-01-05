@@ -1,15 +1,10 @@
-/*
-** Trivial ctypesgen demo library
-**  from http://code.google.com/p/ctypesgen
+/* Trivial ctypesgen demo library
 
-Dumb manual build with:
-
-
+Build with:
+    gcc -fPIC -shared demolib.c -o demolib.so
+Or:
     gcc -fPIC -c demolib.c
-    gcc -shared -o demolib.so demolib.o
-
-    gcc -fPIC -shared -o demolib.so demolib.c
-
+    gcc -shared demolib.o -o demolib.so
 */
 
 #include "demolib.h"
