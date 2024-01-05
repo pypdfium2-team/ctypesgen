@@ -54,7 +54,7 @@ jobs:
       - name: Run Test
         run: pytest -v --showlocals tests/testsuite.py
         env:
-          CLEANUP_OK: 0
+          CLEANUP_OK: ${{ !inputs.upload_data && 1 || 0 }}
       
       - name: Upload generated data
         if: ${{ inputs.upload_data && !cancelled() }}
