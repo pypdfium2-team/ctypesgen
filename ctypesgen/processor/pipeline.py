@@ -58,7 +58,6 @@ def process(data, options):
     filter_by_regex_rules(data, options)
     remove_NULL(data, options)
     if options.output_language.startswith("py"):
-        # this function is python specific
         fix_conflicting_names(data, options)
     
     check_symbols(data, options)
@@ -80,13 +79,13 @@ def calculate_final_inclusion(data, opts):
         if desc.can_include is None:
             if desc.include_rule == "never":
                 desc.can_include = False
-            elif desc.include_rule == "yes" or desc.include_rule == "if_needed":
+            elif desc.include_rule in ("yes", "if_needed"):
                 desc.can_include = True
                 for req in desc.requirements:
                     if not can_include_desc(req):
                         desc.can_include = False
             else:
-                assert False, f"unknown include rule '{desc.include_rule}'"
+                assert False, f"unknown include rule {desc.include_rule!r}"
         return desc.can_include
 
     def do_include_desc(desc):
@@ -101,9 +100,8 @@ def calculate_final_inclusion(data, opts):
         desc.included = False
 
     for desc in data.all:
-        if desc.include_rule == "yes":
-            if can_include_desc(desc):
-                do_include_desc(desc)
+        if desc.include_rule == "yes" and can_include_desc(desc):
+            do_include_desc(desc)
 
 
 def print_errors_encountered(data, opts):
@@ -130,18 +128,13 @@ def print_errors_encountered(data, opts):
                     numerrs = len(desc.errors) - 1
                     numwarns = len(desc.warnings)
                     if numwarns:
-                        error_message(
-                            "%d more errors and %d more warnings "
-                            "for %s" % (numerrs, numwarns, desc.casual_name())
-                        )
+                        error_message(f"{numerrs} more errors and {numwarns} more warnings for {desc.casual_name()}")
                     else:
-                        error_message("%d more errors for %s " % (numerrs, desc.casual_name()))
+                        error_message(f"{numerrs} more errors for {desc.casual_name()}")
                 else:
                     warning1, cls1 = desc.warnings[0]
                     warning_message(warning1, cls1)
-                    warning_message(
-                        "%d more errors for %s" % (len(desc.warnings) - 1, desc.casual_name())
-                    )
+                    warning_message(f"{len(desc.warnings)-1} more errors for {desc.casual_name()}")
         if desc.errors:
             # process() will recalculate to take this into account
             desc.include_rule = "never"

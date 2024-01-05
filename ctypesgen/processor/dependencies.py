@@ -78,12 +78,11 @@ def find_dependencies(data, opts):
         elif kind == "variable":
             roots = [desc.ctype]
         elif kind == "macro":
-            if desc.expr:
-                roots = [desc.expr]
-            else:
-                roots = []
+            roots = [desc.expr] if desc.expr else []
         elif kind == "undef":
             roots = [desc.macro]
+        else:
+            assert False, f"unknown kind {kind!r}"
 
         cstructs, cenums, ctypedefs, errors, identifiers = [], [], [], [], []
 
@@ -137,18 +136,21 @@ def find_dependencies(data, opts):
     def add_to_lookup_table(desc, kind):
         """Add `desc` to the lookup table so that other descriptions that use
         it can find it."""
+        
         if kind == "struct":
-            if (desc.variety, desc.tag) not in struct_names:
-                struct_names[(desc.variety, desc.tag)] = desc
-        if kind == "enum":
-            if desc.tag not in enum_names:
-                enum_names[desc.tag] = desc
-        if kind == "typedef":
-            if desc.name not in typedef_names:
-                typedef_names[desc.name] = desc
-        if kind in ("function", "constant", "variable", "macro"):
-            if desc.name not in ident_names:
-                ident_names[desc.name] = desc
+            target, key = struct_names, (desc.variety, desc.tag)
+        elif kind == "enum":
+            target, key = enum_names, desc.tag
+        elif kind == "typedef":
+            target, key = typedef_names, desc.name
+        elif kind in ("function", "constant", "variable", "macro"):
+            target, key = ident_names, desc.name
+        else:
+            assert kind in ("undef", "struct_fields"), f"unknown kind {kind!r}"
+            return
+        
+        if key not in target:
+            target[key] = desc
 
     # Macros are handled differently from everything else because macros can
     # call other macros that are referenced after them in the input file, but

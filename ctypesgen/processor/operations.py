@@ -207,6 +207,7 @@ def check_symbols(data, opts):
     
     try:
         # don't bother checking symbols that will definitely be excluded
+        # TODO consider doing this in between the two calculate_final_inclusion() steps to also skip if_needed symbols that won't be part of the output.
         missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     finally:
         free_library(library._handle)
