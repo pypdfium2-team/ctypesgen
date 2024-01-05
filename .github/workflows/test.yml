@@ -1,7 +1,11 @@
 name: Test
 
 on:
-  - workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      upload_data:
+        default: false
+        type: boolean
   # - push
   # - pull_request
   # - fork
@@ -53,7 +57,7 @@ jobs:
           CLEANUP_OK: 0
       
       - name: Upload generated data
-        if: ${{ !cancelled() }}
+        if: ${{ inputs.upload_data && !cancelled() }}
         uses: actions/upload-artifact@v3
         with:
           name: out_${{ matrix.os }}_py${{ matrix.python }}
