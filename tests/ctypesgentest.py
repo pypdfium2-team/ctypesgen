@@ -113,7 +113,7 @@ void bar(struct mystruct *m) { }
         shutil.rmtree(COMMON_DIR)
     COMMON_DIR.mkdir()
 
-    for (name, source) in names.items():
+    for name, source in names.items():
         with (COMMON_DIR/name).open("w") as f:
             f.write(source)
 
@@ -131,6 +131,7 @@ def _generate_with_common(file_name, shared):
         args += ["-m", ".common", "--no-embed-preamble"]
     else:
         # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
+        # the alternative would be to eagerly include all members from common.h by adding it to the input headers, i.e. args += ["-i", COMMON_DIR/"common.h"]
         args += ["--symbol-rules", "yes=mystruct"]
         file_name += "_unshared"
     args += ["-o", COMMON_DIR/f"{file_name}.py"]

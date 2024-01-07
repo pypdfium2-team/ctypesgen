@@ -16,7 +16,7 @@ from ctypesgen.messages import warning_message, status_message
 # - The file as a whole shall have exactly one trailing \n, and no leading \n.
 #
 # Note a few special cases:
-# - You may "forward-declare" a trailing \n in procedures that are placed directly ahead of a known present block that does not have a leading \n, i.e. the trailing \n acts as separator in accordance with the rule above. This is the case e.g. with srcinfo().
+# - You may "forward-declare" a trailing \n ahead of a known present block that does not have a leading \n, i.e. the trailing \n acts as separator in accordance with the rule above. This is the case e.g. with srcinfo().
 # - Where newlines depend on a local conditional, they may be handled by the sub-method if tied to a specific place in the control flow. This is the case with print_library(), which only writes to the main file if embed_preamble is True, and does not need a separator otherwise.
 # - The body of Paragraph Contexts may end with a newline for a padding before the End marker. Note that this is not against the rule, because the resulting paragraph (with markers) will _not_ end with \n.
 #
@@ -64,21 +64,19 @@ class WrapperPrinter:
             if self.options.modules:
                 self.file.write("\n\n\n# Linked modules")
                 for mod in self.options.modules:
-                    self.file.write("\n")
-                    self.print_module(mod)
+                    self.file.write(f"\nfrom {mod} import *")
             
             self.file.write("\n\n\n")
             with self.paragraph_ctx("header members"):
                 for kind, desc in data.output_order:
-                    if not desc.included:
-                        continue
+                    if not desc.included: continue
                     self.file.write("\n\n")
                     getattr(self, f"print_{kind}")(desc)
                 self.file.write("\n")
             
             for fp in self.options.inserted_files:
                 self.file.write("\n\n\n")
-                self.insert_file(fp)
+                self._embed_file(fp, f"inserted file '{fp}'")
             
             self.file.write("\n")
         
@@ -161,15 +159,11 @@ _register_library(
         else:
             loader_txt = self.EXT_LOADER.read_text()
             if name_define in loader_txt:
-                status_message(f"Library already loaded in shared file, won't rewrite.")
+                status_message("Library already loaded in shared file, won't rewrite.")
             else:
                 # we need to share libraries in a common file to build same-library headers separately while loading the library only once
-                status_message(f"Adding library loader to shared file.")
+                status_message("Adding library loader to shared file.")
                 self.EXT_LOADER.write_text(f"{loader_txt}\n\n{content}\n")
-    
-    
-    def print_module(self, module):
-        self.file.write(f"from {module} import *")
     
     
     def print_function(self, function):
@@ -199,6 +193,20 @@ _register_library(
             template = "# Variadic function '{CN}'\n" + template
         
         self.file.write(template.format(**fields))
+    
+    
+    def print_variable(self, variable):
+        assert self.options.library, "Binary symbol requires --library LIBNAME"
+        self._srcinfo(variable.src)
+        entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
+            PN=variable.py_name(),
+            PS=variable.ctype.py_string(),
+            L=self.options.library,
+            CN=variable.c_name(),
+        )
+        if self.options.guard_symbols:
+            entry = self._try_except_wrap(entry)
+        self.file.write(entry)
     
     
     def print_struct(self, struct):
@@ -273,20 +281,6 @@ _register_library(
         self.file.write(f"{typedef.name} = {typedef.ctype.py_string()}")
     
     
-    def print_variable(self, variable):
-        assert self.options.library, "Binary symbol requires --library LIBNAME"
-        self._srcinfo(variable.src)
-        entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
-            PN=variable.py_name(),
-            PS=variable.ctype.py_string(),
-            L=self.options.library,
-            CN=variable.c_name(),
-        )
-        if self.options.guard_symbols:
-            entry = self._try_except_wrap(entry)
-        self.file.write(entry)
-    
-    
     def print_macro(self, macro):
         # important: must check precisely against None because params may be an empty list for a func macro
         self._srcinfo(macro.src)
@@ -307,6 +301,7 @@ _register_library(
             f"\n    return {macro.expr.py_string(True)}"
         )
     
+    
     def print_undef(self, undef):
         self._srcinfo(undef.src)
         name = undef.macro.py_string(False)
@@ -315,7 +310,3 @@ _register_library(
         if self.options.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
-    
-    
-    def insert_file(self, filepath):
-        self._embed_file(filepath, f"inserted file '{filepath}'")
