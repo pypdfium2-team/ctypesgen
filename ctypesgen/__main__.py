@@ -80,8 +80,8 @@ def main(given_argv=sys.argv[1:]):
 
     # Parameters
     parser.add_argument(
-        "-i", "--include",
-        "--headers",
+        # do not add --include for a migration period because this previously did what is now called --other-headers
+        "-i", "--headers",
         dest="headers",
         required=True,
         nargs="+",

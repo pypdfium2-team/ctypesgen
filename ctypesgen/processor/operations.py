@@ -117,7 +117,7 @@ def fix_conflicting_names(data, opts):
     )
     
     # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them.
-    # However, I'm not sure why the rename is problem, as the dependants presumably store a reference to the mutable object, and dest strings should be evaluated lazyly ... ?
+    # However, I'm not sure why the rename is a problem, as the dependants presumably store a reference to the mutable object, and dest strings should be evaluated lazyly ... ?
     # That said, the scope of this issue should be somewhat limited due to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
     
     for desc in descriptions:
