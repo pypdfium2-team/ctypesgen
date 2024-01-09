@@ -4,31 +4,51 @@ ctypesgen is a ctypes wrapper generator for Python.
 
 This is a fork with the objective to better suit the needs of pypdfium2, and address some of the technical debt and (in our opinion) design issues that have accumulated due to highly conservative maintenance.
 
-See also `--help` for usage, and upstream docs ([readme](https://github.com/ctypesgen/ctypesgen#readme), [wiki](https://github.com/ctypesgen/ctypesgen/wiki)), but note that this fork has diverged somewhat, so parts of it may not apply here anymore.
-
-See https://github.com/pypdfium2-team/ctypesgen/issues/1 for a draft overview of changes in this fork. Further, here are some notes on our development intents:
+Here are some notes on our development intents:
 * We do not mind API-breaking changes at this time.
-* We endeavor to use plain ctypes as much as possible and keep the template lean. Contrast this to upstream ctypesgen, which clogs up the bindings with custom wrappers.
-* For now, we only envisage to work with ctypesgen's higher-level parts (e.g. the printer). The parser backend may be out of our scope.
+* We endeavor to use plain ctypes as much as possible and keep the template lean.
+* For now, we only envisage to work with ctypesgen's higher-level parts. The parser backend may be out of our scope.
 
-### Key differences in usage
-
-*A selection of behavioral differences relevant when switching from upstream ctypesgen to this fork (as of Jan 2024).*
-
-* strings: all strings interfacing with the C extension have to be encoded as bytes. We do not do implicit UTF-8 encoding/decoding. (A new, opt-in string helper might be added in the future.)
-* We declare `c_void_p` as restype directly, which ctypes autoconverts to int/None. Previously, ctypesgen would declare it as `c_ubyte` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The difference for a caller is that we don't have to access the `.value` property. The object itself is the value, removing a layer of indirection.
 
 ### System Dependencies
 
 ctypesgen depends on the presence of an external C pre-processor, by default `gcc` or `clang`, as available.
 Alternatively, you may specify a custom pre-processor command using the `--cpp` option (e.g. `--cpp "clang -E"` to always use clang).
 
+
+### Key differences in usage
+
+* CLI
+  - Headers have been converted from positional to flag `-i`/`--headers`, to avoid confusion with options that take a variadic number of params.
+  - Beware: upstream's `--include` flag does something different and is now called `--other-headers` here.
+  - `--symbol-rules` replaces `--include-symbols` (yes) / `--exclude-symbols` (never).
+  - More flags changed or renamed.
+* The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
+* All strings interfacing with the C extension have to be encoded as bytes. We do not do implicit UTF-8 encoding/decoding. (A new, opt-in string helper might be added in the future.)
+* We declare `c_void_p` as restype directly, which ctypes autoconverts to int/None. Previously, ctypesgen would declare it as `c_ubyte` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The main difference for a caller is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
+
+See also `--help` for usage details.
+Further, upstream docs may provide some information of interest ([readme](https://github.com/ctypesgen/ctypesgen#readme), [wiki](https://github.com/ctypesgen/ctypesgen/wiki)), but note that parts may not match this fork anymore.
+
+
+### New features and improvements (selection)
+
+* Implemented relative imports with `--link-modules`, and library handle sharing with `--no-embed-preamble`. Removed incorrect `POINTER` override that breaks the type system.
+* Prevent assignment of invalid struct fields.
+* Slimmed up template by removing many avoidable wrappers.
+* Rewrote library loader. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libdirs to runtime.
+* Better control over symbol inclusion via `--symbol-rules` (exposes `if_needed` strategy, allows free order of actions).
+* Auto-detect default pre-processor.
+
+See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
+
+
 ### Tips & Tricks
 
 * If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
   If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share the template using `--no-embed-preamble`. Relative modules will be expected to be present in the output directory at compile time.
   Note, this strategy can also be used to bind to same-library headers separately; however, you'll need to resolve the dependency tree on your own.
-* To provide extra dependency headers that are not present in the system, you can set the `CPATH` or `C_INCLUDE_PATH` env vars for the C pre-processor. It may also be possible to use this for "cross-compilation" of bindings, or to spoof an optional foreign symbol using `typedef void* SYMBOL;` (`c_void_p`).
+* To provide extra dependency headers that are not present in the system, you can set the `CPATH` or `C_INCLUDE_PATH` env vars for the C pre-processor. It may also be possible to use this for "cross-compilation" of bindings, or to spoof a foreign symbol using `typedef void* SYMBOL;` (`c_void_p`).
 * If building with `--no-macro-guards` and you encounter broken macros, you may use `--symbol-rules` (see below) or replace them manually. This can be necessary on C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python. In particular, you are likely to run into this with `--all-headers`.
 
 #### Notes on symbol inclusion
@@ -41,6 +61,7 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 * `--no-macros` sets the include rule of all macro objects to `never`.
 * Finally, the `--symbol-rules` option is applied, which can be used to assign symbol rules by regex fullmatch expressions, providing callers with powerful means of control over symbol inclusion.
 * To filter out excess symbols, you'll usually want to use `if_needed` rather than `never` to avoid accidental exclusion of dependants. Use `never` only where this side effect is actually wanted, e.g. to exclude a broken symbol.
+
 
 ### Known Limitations
 
@@ -57,9 +78,6 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
   However, the scope of this issue should be somewhat limited, for structs and enums are prefixed as such and then aliased to their real name, and functions try to use the direct (prefixed) definition.
   E.g. if you have a struct called `class`, the direct definition would be `struct_class`, and a function `foo(class* obj)` should be translated to `foo.argtypes = [POINTER(struct_class)]`.
 
-### Bugs
-
-Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues.
 
 ### Fork rationale
 
@@ -69,6 +87,7 @@ Contrast this to a fork, which allows us to keep focused and effect improvements
 
 However, we would be glad if our work could eventually be merged back upstream once the change set has matured, if upstream can arrange themselves with the radical changes.
 See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
+
 
 ### Syncing with upstream
 
@@ -81,3 +100,8 @@ Changes to files we haven't really modified can usually just be pulled in as-is.
 Otherwise, you'll have to manually look through the changes and pick what you consider worthwhile on a case by case basis.
 
 Note, it is important to verify the resulting merge commit for correctness - automatic merge strategies might produce mistakes!
+
+
+### Bugs
+
+Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues.
