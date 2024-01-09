@@ -11,6 +11,13 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for a draft overview of
 * We endeavor to use plain ctypes as much as possible and keep the template lean. Contrast this to upstream ctypesgen, which clogs up the bindings with custom wrappers.
 * For now, we only envisage to work with ctypesgen's higher-level parts (e.g. the printer). The parser backend may be out of our scope.
 
+### Key differences in usage
+
+*A selection of behavioral differences relevant when switching from upstream ctypesgen to this fork (as of Jan 2024).*
+
+* strings: all strings interfacing with the C extension have to be encoded as bytes. We do not do implicit UTF-8 encoding/decoding. (A new, opt-in string helper might be added in the future.)
+* We declare `c_void_p` as restype directly, which ctypes autoconverts to int/None. Previously, ctypesgen would declare it as `c_ubyte` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The difference for a caller is that we don't have to access the `.value` property. The object itself is the value, removing a layer of indirection.
+
 ### System Dependencies
 
 ctypesgen depends on the presence of an external C pre-processor, by default `gcc` or `clang`, as available.
@@ -50,6 +57,10 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
   However, the scope of this issue should be somewhat limited, for structs and enums are prefixed as such and then aliased to their real name, and functions try to use the direct (prefixed) definition.
   E.g. if you have a struct called `class`, the direct definition would be `struct_class`, and a function `foo(class* obj)` should be translated to `foo.argtypes = [POINTER(struct_class)]`.
 
+### Bugs
+
+Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues.
+
 ### Fork rationale
 
 Trying to get through changes upstream is tedious, with unclear outcome, and often not applicable due to mismatched intents (e.g. regarding backwards compatibility). Also consider that isolating commits in separate branches is not feasible anymore as merge conflicts arise (e.g. due to code cleanups and interfering changes).
@@ -70,7 +81,3 @@ Changes to files we haven't really modified can usually just be pulled in as-is.
 Otherwise, you'll have to manually look through the changes and pick what you consider worthwhile on a case by case basis.
 
 Note, it is important to verify the resulting merge commit for correctness - automatic merge strategies might produce mistakes!
-
-### Bugs
-
-Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues.
