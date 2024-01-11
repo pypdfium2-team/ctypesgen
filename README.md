@@ -74,9 +74,7 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
 
 *ctypesgen*
-* Conflicting names are detected, but not actually resolved recursively: any dependant symbols would currently get excluded from the output.
-  However, the scope of this issue should be somewhat limited, for structs and enums are prefixed as such and then aliased to their real name, and functions try to use the direct (prefixed) definition.
-  E.g. if you have a struct called `class`, the direct definition would be `struct_class`, and a function `foo(class* obj)` should be translated to `foo.argtypes = [POINTER(struct_class)]`.
+* The conflicting names resolver is currently untested, in particular the handling of dependants. Please report success or failure.
 
 
 ### Fork rationale
