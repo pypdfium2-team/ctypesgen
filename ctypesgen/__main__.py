@@ -85,6 +85,7 @@ def main(given_argv=sys.argv[1:]):
         dest="headers",
         nargs="+",
         action="extend",
+        type=lambda p: Path(p).resolve(),
         default=[],
         help="Sequence of header files",
     )

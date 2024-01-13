@@ -49,20 +49,18 @@ def mask_external_members(data, opts):
     """mask_external_members() removes descriptions if they came from files
     outside of the header files specified from the command line."""
     
-    # TODO(geisserml) use full path (except system_headers)
-    known_headers = [Path(x).name for x in opts.headers] + opts.system_headers
-    
     for desc in data.all:
-        if desc.src is not None:
-            if desc.src[0] == "<command line>":
-                # FIXME(geisserml) I don't understand the intent behind this clause. When does <command line> occur?
+        if desc.src is None: continue
+        if desc.src[0] == "<command line>":
+            # FIXME(geisserml) I don't understand the intent behind this clause. When does <command line> occur?
+            desc.include_rule = "if_needed"
+        elif desc.src[0] == "<built-in>" and not opts.builtin_symbols:
+            desc.include_rule = "if_needed"
+        else:
+            # pre-reqs: opts.headers = list of resolved Path objects & pre-processor outputs full source paths
+            p = Path(desc.src[0])
+            if not (p in opts.headers or p.name in opts.system_headers or opts.all_headers):
                 desc.include_rule = "if_needed"
-            elif desc.src[0] == "<built-in>":
-                if not opts.builtin_symbols:
-                    desc.include_rule = "if_needed"
-            elif Path(desc.src[0]).name not in known_headers:
-                if not opts.all_headers:
-                    desc.include_rule = "if_needed"
 
 
 def remove_macros(data, opts):

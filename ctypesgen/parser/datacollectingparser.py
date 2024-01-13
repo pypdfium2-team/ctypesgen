@@ -74,7 +74,8 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
             for header in self.options.system_headers:
                 f.write(f"#include <{header}>\n")
             for header in self.headers:
-                f.write(f'#include "{Path(header).resolve()}"\n')
+                # self.headers: list of resolved Path objects
+                f.write(f'#include "{header}"\n')
             f.flush()
         try:
             super(DataCollectingParser, self).parse(fname, self.options.debug_level)
