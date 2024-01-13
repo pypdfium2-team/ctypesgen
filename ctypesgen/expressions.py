@@ -37,7 +37,7 @@ class EvaluationContext:
         return 0
 
     def evaluate_sizeof(self, object):
-        warnings.warn(f"Attempt to evaluate sizeof object '{str(object)}' failed")
+        warnings.warn(f"Attempt to evaluate sizeof object '{object}' failed")
         return 0
 
     def evaluate_parameter(self, name):
@@ -158,9 +158,9 @@ class SizeOfExpressionNode(ExpressionNode):
 
     def py_string(self, can_be_ctype):
         if isinstance(self.child, CtypesType):
-            return "sizeof(%s)" % self.child.py_string()
+            return f"sizeof({self.child.py_string()})"
         else:
-            return "sizeof(%s)" % self.child.py_string(True)
+            return f"sizeof({self.child.py_string(True)})"
 
 
 class BinaryExpressionNode(ExpressionNode):
@@ -240,10 +240,8 @@ class AttributeExpressionNode(ExpressionNode):
         return self.op(self.base.evaluate(context), self.attribute)
 
     def py_string(self, can_be_ctype):
-        if can_be_ctype:
-            return self.format % (self.base.py_string(can_be_ctype), self.attribute)
-        else:
-            return "%s.value" % (self.format % (self.base.py_string(can_be_ctype), self.attribute))
+        out = self.format % (self.base.py_string(can_be_ctype), self.attribute)
+        return out if can_be_ctype else f"{out}.value"
 
 
 class CallExpressionNode(ExpressionNode):
@@ -270,7 +268,7 @@ class CallExpressionNode(ExpressionNode):
 
 class TypeCastExpressionNode(ExpressionNode):
     """
-    Type cast expressions as handled by ctypesgen.  There is a strong
+    Type cast expressions as handled by ctypesgen. There is a strong
     possibility that this does not support all types of casts.
     """
 
@@ -289,23 +287,16 @@ class TypeCastExpressionNode(ExpressionNode):
 
     def py_string(self, can_be_ctype):
         if isinstance(self.ctype, CtypesPointer):
-            return "cast({}, {})".format(self.base.py_string(True), self.ctype.py_string())
+            return "cast(%s, %s)" % (self.base.py_string(True), self.ctype.py_string())
         elif isinstance(self.ctype, CtypesStruct):
-            raise TypeError(
-                "conversion to non-scalar type ({}) requested from {}".format(
-                    self.ctype, self.base.py_string(False)
-                )
-            )
+            raise TypeError(f"conversion to non-scalar type ({self.ctype}) requested from {self.base.py_string(False)}")
         else:
             if isinstance(self.ctype, CtypesSimple) and self.ctype.name == "void":
-                # This is a very simple type cast:  cast everything to (void)
+                # This is a very simple type cast: cast everything to (void)
                 # At least one macro from mingw does this
                 return "None"
-            # FIXME(geisserml) any way to avoid unnecessary brackets in `frm` ?
-            return "{to}({frm}).value".format(
-                to=self.ctype.py_string(),
-                frm=self.base.py_string(False),
-            )
+            # FIXME(geisserml) any way to avoid unnecessary brackets in base ?
+            return "%s(%s).value" % (self.ctype.py_string(), self.base.py_string(False))
 
 
 class UnsupportedExpressionNode(ExpressionNode):
@@ -315,10 +306,10 @@ class UnsupportedExpressionNode(ExpressionNode):
         self.error(message, "unsupported-type")
 
     def evaluate(self, context):
-        raise ValueError("Tried to evaluate an unsupported expression " "node: %s" % self.message)
+        raise ValueError(f"Tried to evaluate an unsupported expression node: {self.message}")
 
     def __repr__(self):
         return "<UnsupportedExpressionNode>"
 
     def py_string(self, can_be_ctype):
-        raise ValueError("Called py_string() an unsupported expression " "node: %s" % self.message)
+        raise ValueError(f"Called py_string() an unsupported expression node: {self.message}")
