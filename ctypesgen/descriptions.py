@@ -242,7 +242,6 @@ class UndefDescription(Description):
     def __init__(self, macro, src=None):
         super(UndefDescription, self).__init__(src)
         self.include_rule = "if_needed"
-
         self.macro = macro
 
     def casual_name(self):

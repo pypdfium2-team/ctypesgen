@@ -107,8 +107,7 @@ class WrapperPrinter:
         return f"try:\n{indent(entry, pad)}\nexcept:\n{pad}pass"
     
     def _srcinfo(self, src):
-        if not src:  # FIXME might be unreached?
-            return
+        if not src: return  # FIXME unreached?
         filepath, lineno = src
         if filepath in ("<built-in>", "<command line>"):
             self.file.write(f"# {filepath}\n")

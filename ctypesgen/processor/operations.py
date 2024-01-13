@@ -24,22 +24,19 @@ from ctypesgen.messages import warning_message, status_message
 def automatically_typedef_structs(data, options):
     """automatically_typedef_structs() aliases "struct_<tag>" to "<tag>" for
     every struct and union."""
-    # FIXME Check if it has already been aliased in the C code.
-
+    # XXX Check if it has already been aliased in the C code.
     for struct in data.structs:
-        if not struct.ctype.anonymous:  # Don't alias anonymous structs
-            typedef = TypedefDescription(struct.tag, struct.ctype, src=struct.src)
-            typedef.add_requirements(struct)
-
-            data.typedefs.append(typedef)
-            data.all.insert(data.all.index(struct) + 1, typedef)
-            data.output_order.append(("typedef", typedef))
+        if struct.ctype.anonymous: continue  # Don't alias anonymous structs
+        typedef = TypedefDescription(struct.tag, struct.ctype, src=struct.src)
+        typedef.add_requirements(struct)
+        data.typedefs.append(typedef)
+        data.all.insert(data.all.index(struct) + 1, typedef)
+        data.output_order.append(("typedef", typedef))
 
 
 def remove_NULL(data, options):
     """remove_NULL() removes any NULL definitions from the C headers because
     ctypesgen supplies its own NULL definition."""
-    
     for macro in data.macros:
         if macro.name == "NULL":
             macro.include_rule = "never"
@@ -48,9 +45,8 @@ def remove_NULL(data, options):
 def mask_external_members(data, opts):
     """mask_external_members() removes descriptions if they came from files
     outside of the header files specified from the command line."""
-    
     for desc in data.all:
-        if desc.src is None: continue
+        if desc.src is None: continue  # FIXME unreached?
         if desc.src[0] == "<command line>":
             # FIXME(geisserml) I don't understand the intent behind this clause. When does <command line> occur?
             desc.include_rule = "if_needed"
@@ -65,9 +61,9 @@ def mask_external_members(data, opts):
 
 def remove_macros(data, opts):
     """remove_macros() removes macros if --no-macros is set."""
-    if not opts.include_macros:
-        for macro in data.macros:
-            macro.include_rule = "never"
+    if opts.include_macros: return
+    for macro in data.macros:
+        macro.include_rule = "never"
 
 
 def filter_by_regex_rules(data, opts):
@@ -117,40 +113,39 @@ def fix_conflicting_names(data, opts):
     
     for desc in descriptions:
         
-        if desc.py_name() in protected_names:
+        if desc.py_name() not in protected_names: continue
             
-            conflict_name = protected_names[desc.py_name()]
-            original_name = desc.casual_name()
-            while desc.py_name() in protected_names:
-                if isinstance(desc, (StructDescription, EnumDescription)):
-                    desc.tag += "_"
-                else:
-                    desc.name += "_"
-            
-            message = f"{original_name} has been renamed to {desc.casual_name()} due to a name conflict with {conflict_name}."
-            if desc.dependents:
-                # pre-requisite: no copying of desc objects throughout the pipeline
-                message += f" Dependants (should adapt implicitly): {desc.dependents}"
-            desc.warning(message)
-            
-            # Protect renamed symbols that are known to be included, since they diverge from the original input. We must not generally protect included symbols (deliberate redefines).
-            # TODO(pipeline) ideally, this should also be done for "if_needed" symbols that were resolved to be included
-            if desc.include_rule == "yes":
-                protected_names[desc.py_name()] = desc.casual_name()
+        conflict_name = protected_names[desc.py_name()]
+        original_name = desc.casual_name()
+        while desc.py_name() in protected_names:
+            if isinstance(desc, (StructDescription, EnumDescription)):
+                desc.tag += "_"
+            else:
+                desc.name += "_"
+        
+        message = f"{original_name} has been renamed to {desc.casual_name()} due to a name conflict with {conflict_name}."
+        if desc.dependents:
+            # pre-requisite: no copying of desc objects throughout the pipeline
+            message += f" Dependants (should adapt implicitly): {desc.dependents}"
+        desc.warning(message)
+        
+        # Protect renamed symbols that are known to be included, since they diverge from the original input. We must not generally protect included symbols (deliberate redefines).
+        # TODO(pipeline) ideally, this should also be done for "if_needed" symbols that were resolved to be included
+        if desc.include_rule == "yes":
+            protected_names[desc.py_name()] = desc.casual_name()
 
-    # Names of struct members don't conflict with much, but they can conflict
-    # with Python keywords.
+    # Names of struct members don't conflict with much, but they can conflict with Python keywords.
 
     for struct in data.structs:
         if struct.opaque: continue  # no members
         for i, (name, type) in enumerate(struct.members):
             # it should be safe to expect there will be no underscored sibling to a keyword, so we needn't loop
-            if name in keyword.kwlist:
-                struct.members[i] = (f"{name}_", type)
-                struct.warning(
-                    f"Member '{name}' of {struct.casual_name()} has been renamed to '{name}_' because it has the same name as a Python keyword.",
-                    cls="rename",
-                )
+            if name not in keyword.kwlist: continue
+            struct.members[i] = (f"{name}_", type)
+            struct.warning(
+                f"Member '{name}' of {struct.casual_name()} has been renamed to '{name}_' because it has the same name as a Python keyword.",
+                cls="rename",
+            )
 
     # Macro arguments may be have names that conflict with Python keywords.
     # TODO actually rename parameter
@@ -158,13 +153,13 @@ def fix_conflicting_names(data, opts):
     for macro in data.macros:
         if not macro.params: continue  # may be None
         for param in macro.params:
-            if param in keyword.kwlist:
-                macro.error(
-                    f"One of the params to {macro.casual_name()}, '{param}', has the same name as a Python keyword. {macro.casual_name()} will be excluded.",
-                    cls="name-conflict",
-                )
-                macro.include_rule = "never"
-                break  # params loop
+            if param not in keyword.kwlist: continue
+            macro.error(
+                f"One of the params to {macro.casual_name()}, '{param}', has the same name as a Python keyword. {macro.casual_name()} will be excluded.",
+                cls="name-conflict",
+            )
+            macro.include_rule = "never"
+            break  # params loop
 
 
 import _ctypes as ctypes_backend
