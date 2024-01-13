@@ -719,14 +719,9 @@ typedef MyStructT (*FP_CustomRestype)(void);
         self.assertEqual(F(struct), 10)
     
     def test_custom_restype(self):  # xfail
-        """
-        Test non-primitive restype. Fails because not supported by ctypes.
-        
-        ctypesgen prior to pypdfium2-team changes had a c_void_p bypass to somewhat allow custom pointer types by letting the callback return addressof(...), but we don't really return pointers from callbacks for object lifetime reasons, and relying on C to dereference a memory address is problematic, because pointers don't necessarily have to be implemented as memory addresses.
-        In any case, we cannot return custom objects by value from callbacks if ctypes doesn't support it.
-        """
+        """ Test non-primitive restype. Fails because not supported by ctypes. """
         with self.assertRaises(TypeError, msg="invalid result type for callback function"):
-            F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT(a=10))
+            F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT())
     
     @classmethod
     def tearDownClass(cls):
