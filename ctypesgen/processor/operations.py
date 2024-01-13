@@ -93,15 +93,16 @@ def fix_conflicting_names(data, opts):
     our_names |= {x for x in dir(ctypes) if not x.startswith("_")}
     
     # This dictionary maps names to a string representing where the name came from.
-    important_names = {}
+    protected_names = {}
     for name in our_names:
-        important_names[name] = "a name from ctypes or ctypesgen"
+        protected_names[name] = "a name from ctypes or ctypesgen"
     for name in dir(__builtins__):
-        important_names[name] = "a Python builtin"
-    for name in opts.imported_symbols:
-        important_names[name] = "a name from an included Python module"
+        protected_names[name] = "a Python builtin"
+    for name in opts.linked_symbols:
+        # known issue: linked modules are naively prioritized throughout ctypesgen, i.e. intentional overloads are ignored
+        protected_names[name] = "a name from a linked Python module"
     for name in keyword.kwlist:
-        important_names[name] = "a Python keyword"
+        protected_names[name] = "a Python keyword"
     
     # This is the order of priority for names
     descriptions = (
@@ -114,30 +115,28 @@ def fix_conflicting_names(data, opts):
         + data.macros
     )
     
-    # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them.
-    # However, I'm not sure why the rename is a problem, as the dependants presumably store a reference to the mutable object, and dest strings should be evaluated lazyly ... ?
-    # That said, the scope of this issue should be somewhat limited due to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
-    
     for desc in descriptions:
-        if desc.py_name() in important_names:
-            conflict_name = important_names[desc.py_name()]
-
+        
+        if desc.py_name() in protected_names:
+            
+            conflict_name = protected_names[desc.py_name()]
             original_name = desc.casual_name()
-            while desc.py_name() in important_names:
+            while desc.py_name() in protected_names:
                 if isinstance(desc, (StructDescription, EnumDescription)):
                     desc.tag += "_"
                 else:
-                    desc.name = f"_{desc.name}"
+                    desc.name += "_"
             
             message = f"{original_name} has been renamed to {desc.casual_name()} due to a name conflict with {conflict_name}."
             if desc.dependents:
-                message += " Dependant objects will be excluded (FIXME)."
-                for dependent in desc.dependents:
-                    dependent.include_rule = "never"
+                # pre-requisite: no copying of desc objects throughout the pipeline
+                message += f" Dependants (should adapt implicitly): {desc.dependents}"
             desc.warning(message)
             
+            # Protect renamed symbols that are known to be included, since they diverge from the original input. We must not generally protect included symbols (deliberate redefines).
+            # TODO(pipeline) ideally, this should also be done for "if_needed" symbols that were resolved to be included
             if desc.include_rule == "yes":
-                important_names[desc.py_name()] = desc.casual_name()
+                protected_names[desc.py_name()] = desc.casual_name()
 
     # Names of struct members don't conflict with much, but they can conflict
     # with Python keywords.
@@ -145,10 +144,11 @@ def fix_conflicting_names(data, opts):
     for struct in data.structs:
         if struct.opaque: continue  # no members
         for i, (name, type) in enumerate(struct.members):
+            # it should be safe to expect there will be no underscored sibling to a keyword, so we needn't loop
             if name in keyword.kwlist:
-                struct.members[i] = (f"_{name}", type)
+                struct.members[i] = (f"{name}_", type)
                 struct.warning(
-                    f"Member '{name}' of {struct.casual_name()} has been renamed to '_{name}' because it has the same name as a Python keyword.",
+                    f"Member '{name}' of {struct.casual_name()} has been renamed to '{name}_' because it has the same name as a Python keyword.",
                     cls="rename",
                 )
 
@@ -205,7 +205,6 @@ def check_symbols(data, opts):
     
     try:
         # don't bother checking symbols that will definitely be excluded
-        # TODO consider doing this in between the two calculate_final_inclusion() steps to also skip if_needed symbols that won't be part of the output.
         missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     finally:
         free_library(library._handle)

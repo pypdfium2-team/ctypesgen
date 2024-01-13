@@ -20,7 +20,7 @@ def find_dependencies(data, opts):
 
     # Start the lookup tables with names from imported modules
 
-    for name in opts.imported_symbols:
+    for name in opts.linked_symbols:
         typedef_names[name] = None
         ident_names[name] = None
         if name.startswith("struct_") or name.startswith("enum_"):

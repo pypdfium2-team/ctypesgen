@@ -49,6 +49,8 @@ from ctypesgen.processor.operations import (
 
 
 def process(data, options):
+    # FIXME(pipeline) can we do fix_conflicting_names() and check_symbols() after we know the decision of symbols with include rule "if_needed", to avoid unnecessary operations?
+    
     status_message("Processing description list.")
     
     find_dependencies(data, options)
