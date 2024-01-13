@@ -3,6 +3,7 @@ Simple test suite using unittest.
 Aims to test for regressions. Where possible use stdlib to avoid the need to compile C code.
 
 Originally written by clach04 (Chris Clark).
+Significally restructured by mara004 (geisserml).
 
 Calling:
     python3 -m unittest tests.testsuite
@@ -33,7 +34,7 @@ from contextlib import (
 
 from ctypesgen import VERSION
 from ctypesgen.processor.operations import free_library
-from tests.ctypesgentest import (
+from .conftest import (
     cleanup_common,
     generate,
     generate_common,
@@ -41,7 +42,7 @@ from tests.ctypesgentest import (
     TMP_DIR,
     CLEANUP_OK,
 )
-from tests import json_expects
+from . import json_expects
 
 
 # ctypes docs say: "On Windows, find_library() searches along the system search path, and returns the full pathname, but since there is no predefined naming scheme a call like find_library("c") will fail and return None."

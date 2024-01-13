@@ -14,7 +14,7 @@ import ctypesgen.__main__
 TEST_DIR = Path(__file__).resolve().parent
 COMMON_DIR = TEST_DIR/"common"
 TMP_DIR = TEST_DIR/"tmp"
-COUNTER = 0
+
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
 CPP = os.environ.get("CPP", None)
 
@@ -42,6 +42,8 @@ def module_from_code(name, python_code):
     return module
 
 
+COUNTER = 0
+
 def generate(header, args=[], lang="py", sys_header=False):
     
     # Windows notes:
@@ -50,9 +52,7 @@ def generate(header, args=[], lang="py", sys_header=False):
     
     # Use custom tempfiles scoping so we may retain data for inspection
     # FIXME can cause confusion with partial test suite runs - static naming by test case would be better, also more descriptive
-    global COUNTER
-    COUNTER += 1
-    
+    global COUNTER; COUNTER += 1
     
     cmdargs = []
     tmp_in = None
@@ -123,13 +123,11 @@ void bar(struct mystruct *m);
 void bar(struct mystruct *m) { }
 """
 
-    if COMMON_DIR.exists():
-        shutil.rmtree(COMMON_DIR)
+    if COMMON_DIR.exists(): shutil.rmtree(COMMON_DIR)
     COMMON_DIR.mkdir()
 
     for name, source in names.items():
-        with (COMMON_DIR/name).open("w") as f:
-            f.write(source)
+        (COMMON_DIR/name).write_text(source)
 
 
 def _compile_common(common_lib):
