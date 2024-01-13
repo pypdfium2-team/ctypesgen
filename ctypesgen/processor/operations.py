@@ -101,7 +101,7 @@ def fix_conflicting_names(data, opts):
     for name in dir(__builtins__):
         protected_names[name] = "a Python builtin"
     for name in opts.linked_symbols:
-        # NOTE(geisserml) the dependency resolver honors (prioritizes) linked modules, but I guess we can get conflicts with eagerly included symbols
+        # known issue: linked modules are naively prioritized throughout ctypesgen, i.e. intentional overloads are ignored
         protected_names[name] = "a name from a linked Python module"
     for name in keyword.kwlist:
         protected_names[name] = "a Python keyword"
@@ -116,10 +116,6 @@ def fix_conflicting_names(data, opts):
         + data.constants
         + data.macros
     )
-    
-    # FIXME(geisserml) This does not actually update dependents, just recursively exlcude them.
-    # However, I'm not sure why the rename is a problem, as the dependants presumably store a reference to the mutable object, and dest strings should be evaluated lazyly ... ?
-    # That said, the scope of this issue should be somewhat limited due to the struct_* and enum_* prefixes, and functions trying to use the direct definition.
     
     for desc in descriptions:
         

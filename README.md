@@ -74,7 +74,8 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
 
 *ctypesgen*
-* The conflicting names resolver is currently untested, in particular the handling of dependants. Please report success or failure.
+* The conflicting names resolver is largely untested, in particular the handling of dependants. Please report success or failure.
+* Linked modules are naively prioritized in dependency resolver and conflicting names handler, i.e. intentional overrides are ignored. The position of includes is not honored; ctypesgen always imports linked modules at top level.
 
 
 ### Fork rationale
