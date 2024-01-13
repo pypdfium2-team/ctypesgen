@@ -41,7 +41,7 @@ def module_from_code(name, python_code):
     return module
 
 
-def generate(header_str, args=[], lang="py"):
+def generate(header, args=[], lang="py", sys_header=False):
     
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
@@ -52,11 +52,17 @@ def generate(header_str, args=[], lang="py"):
     global COUNTER
     COUNTER += 1
     
-    tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
-    tmp_in.write_text(header_str.strip() + "\n", encoding="utf-8")
+    if sys_header:
+        assert header.endswith(".h")
+        base_args = ["--system-header", header]
+    else:
+        tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
+        tmp_in.write_text(header.strip() + "\n", encoding="utf-8")
+        base_args = ["-i", tmp_in]
+    
     try:
         tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.{lang}"
-        ctypesgen_main(["-i", tmp_in, "-o", tmp_out, "--output-language", lang, *args])
+        ctypesgen_main([*base_args, "-o", tmp_out, "--output-language", lang, *args])
         content = tmp_out.read_text(encoding="utf-8")
     finally:
         if CLEANUP_OK:

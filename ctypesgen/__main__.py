@@ -80,39 +80,36 @@ def main(given_argv=sys.argv[1:]):
 
     # Parameters
     parser.add_argument(
-        # do not add --include for a migration period because this previously did what is now called --other-headers
+        # do not add --include for a migration period because this previously did what is now called --system-headers
         "-i", "--headers",
         dest="headers",
-        required=True,
         nargs="+",
         action="extend",
         default=[],
         help="Sequence of header files",
     )
     parser.add_argument(
-        "-l",
-        "--library",
+        "-l", "--library",
         metavar="LIBRARY",
-        help="link to LIBRARY",
+        help="Link to LIBRARY",
     )
     parser.add_argument(
-        "-o",
-        "--output",
+        "-o", "--output",
         required=True,
         metavar="FILE",
-        help="write wrapper to FILE",
+        help="Write bindings to FILE",
     )
     parser.add_argument(
-        "--other-headers",
+        "--system-headers",
         nargs="+",
         action="extend",
         default=[],
         metavar="HEADER",
-        help="include system header HEADER (e.g. stdio.h or stdlib.h)",
+        # pypdfium2-team change: eagerly include members
+        help="Include and bind against members from system header HEADER, with '.h' suffix (e.g. stdio.h or stdlib.h)",
     )
     parser.add_argument(
-        "-m",
-        "--modules",
+        "-m", "--modules",
         "--link-modules",
         dest="modules",
         nargs="+",
@@ -122,8 +119,7 @@ def main(given_argv=sys.argv[1:]):
         help="Use symbols from python module MODULE. If prefixed with '.', the import is interpreted relative to the output dir. Otherwise, we import from installed packages. (Note, in case of a relative import, the output dir's parent is temporarily added to PYTHONPATH due to import system limitations, so you'll want to check it does not contain conflicting files.)",
     )
     parser.add_argument(
-        "-I",
-        "--includedirs",
+        "-I", "--includedirs",
         dest="include_search_paths",
         nargs="+",
         action="extend",
@@ -132,8 +128,7 @@ def main(given_argv=sys.argv[1:]):
         help="add INCLUDEDIR as a directory to search for headers",
     )
     parser.add_argument(
-        "-L",
-        "--universal-libdirs",
+        "-L", "--universal-libdirs",
         nargs="+",
         action="extend",
         default=[],
@@ -184,8 +179,7 @@ def main(given_argv=sys.argv[1:]):
         "Specify this flag to avoid ctypesgen undefining '__GNUC__' as shown above.",
     )
     parser.add_argument(
-        "-D",
-        "--define",
+        "-D", "--define",
         nargs="+",
         action="extend",
         default=[],
@@ -194,8 +188,7 @@ def main(given_argv=sys.argv[1:]):
         help="Add a definition to the preprocessor via commandline",
     )
     parser.add_argument(
-        "-U",
-        "--undefine",
+        "-U", "--undefine",
         nargs="+",
         action="extend",
         default=[],
@@ -217,8 +210,7 @@ def main(given_argv=sys.argv[1:]):
 
     # Processor options
     parser.add_argument(
-        "-a",
-        "--all-headers",
+        "-a", "--all-headers",
         action="store_true",
         help="include symbols from all headers, including system headers",
     )
@@ -331,6 +323,10 @@ def main(given_argv=sys.argv[1:]):
     )
     
     args = parser.parse_args(given_argv)
+    
+    if not any([args.headers, args.system_headers]):
+        raise argparse.ArgumentError("Either --headers or --system-headers required.")
+    
     if args.cpp:
         # split while preserving quotes
         args.cpp = shlex.split(args.cpp)

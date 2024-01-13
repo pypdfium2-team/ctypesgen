@@ -20,7 +20,7 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 
 * CLI
   - Headers have been converted from positional to flag `-i`/`--headers`, to avoid confusion with options that take a variadic number of params.
-  - Beware: upstream's `--include` flag does something different and is now called `--other-headers` here.
+  - Beware: Historically, `--include` did something different and is now called `--system-headers` here.
   - `--symbol-rules` replaces `--include-symbols` (yes) / `--exclude-symbols` (never).
   - More flags changed or renamed.
 * The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
@@ -38,6 +38,8 @@ Further, upstream docs may provide some information of interest ([readme](https:
 * Slimmed up template by removing many avoidable wrappers.
 * Rewrote library loader. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libdirs to runtime.
 * Better control over symbol inclusion via `--symbol-rules` (exposes `if_needed` strategy, allows free order of actions).
+* Eagerly include direct members with `--system-headers`. This helps lower the need for `--all-headers` (which generally includes a lot more than necessary).
+* Symbol regex matching uses `fullmatch()` rather than `match()` (more explicit).
 * Auto-detect default pre-processor.
 
 See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.

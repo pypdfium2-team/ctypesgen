@@ -66,8 +66,7 @@ class StdlibTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        header_str = "#include <stdlib.h>\n"
-        cls.module = generate(header_str, ["-l", STDLIB_NAME, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
+        cls.module = generate("stdlib.h", ["-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"], sys_header=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -113,9 +112,7 @@ class VariadicFunctionTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        header_str = "#include <stdio.h>\n"
-        # FIXME duplication with StdlibTest
-        cls.module = generate(header_str, ["-l", STDLIB_NAME, "--all-headers", "--symbol-rules", r"if_needed=__\w+"])
+        cls.module = generate("stdio.h", ["-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"], sys_header=True)
     
     def test_type_error_catch(self):
         with self.assertRaises(ctypes.ArgumentError):
@@ -143,8 +140,7 @@ class MathTest(unittest.TestCase):
 #define sin_plus_y(x,y) (sin(x) + (y))
 """
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
-        # Also exclude unused members starting with __ to avoid garbage in the output.
-        # TODO consider adding options like --replace-symbol/--add-symbols/--add-imports so the caller could e.g. redefine NAN=math.nan
+        # TODO consider adding option like --replace-symbol NAN=float("nan")
         cls.module = generate(header_str, ["-l", MATHLIB_NAME, "--all-headers", "--symbol-rules", "never=NAN", r"if_needed=__\w+"])
 
     @classmethod

@@ -71,7 +71,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
     def parse(self):
         fd, fname = mkstemp(suffix=".h")
         with os.fdopen(fd, "w") as f:
-            for header in self.options.other_headers:
+            for header in self.options.system_headers:
                 f.write(f"#include <{header}>\n")
             for header in self.headers:
                 f.write(f'#include "{Path(header).resolve()}"\n')

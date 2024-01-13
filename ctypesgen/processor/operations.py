@@ -49,9 +49,9 @@ def mask_external_members(data, opts):
     """mask_external_members() removes descriptions if they came from files
     outside of the header files specified from the command line."""
     
-    # FIXME(geisserml) shouldn't we rather honor the full path?
-    known_headers = [Path(x).name for x in opts.headers]
-
+    # TODO(geisserml) use full path (except system_headers)
+    known_headers = [Path(x).name for x in opts.headers] + opts.system_headers
+    
     for desc in data.all:
         if desc.src is not None:
             if desc.src[0] == "<command line>":
