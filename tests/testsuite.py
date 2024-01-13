@@ -1,28 +1,23 @@
-"""Simple test suite using unittest.
+"""
+Simple test suite using unittest.
+Aims to test for regressions. Where possible use stdlib to avoid the need to compile C code.
+
 Originally written by clach04 (Chris Clark).
 
 Calling:
-
     python3 -m unittest tests.testsuite
-
-    Calling a specific test only:
-
+Calling a specific test only:
     python3 -m unittest tests.testsuite.[TestCase class].[test name]
-    e.g.:
-    python3 -m unittest tests.testsuite.StdBoolTest.test_stdbool_type
-
+    e.g.: python3 -m unittest tests.testsuite.StdBoolTest.test_stdbool_type
 or
     pytest -v  --showlocals tests/testsuite.py
-
     pytest -v  --showlocals tests/testsuite.py::StdBoolTest::test_stdbool_type
 
 Could use any unitest compatible test runner (nose, etc.)
 
-Aims to test for regressions. Where possible use stdlib to avoid the
-need to compile C code.
-
-Note, you may set CLEANUP_OK=0 to retain generated data. This can be
-useful for inspection.
+Note, you may set CLEANUP_OK=0 to retain generated data. This can be useful for inspection.
+Further, the test session's C pre-processor may be configured via the CPP env var:
+e.g. CPP="clang -E"
 """
 
 import io

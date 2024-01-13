@@ -16,6 +16,7 @@ COMMON_DIR = TEST_DIR/"common"
 TMP_DIR = TEST_DIR/"tmp"
 COUNTER = 0
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
+CPP = os.environ.get("CPP", None)
 
 
 def _remove_tmpdir():
@@ -52,21 +53,28 @@ def generate(header, args=[], lang="py", sys_header=False):
     global COUNTER
     COUNTER += 1
     
+    
+    cmdargs = []
+    tmp_in = None
     if sys_header:
         assert header.endswith(".h")
-        base_args = ["--system-header", header]
+        cmdargs += ["--system-header", header]
     else:
         tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
         tmp_in.write_text(header.strip() + "\n", encoding="utf-8")
-        base_args = ["-i", tmp_in]
+        cmdargs += ["-i", tmp_in]
+    
+    if CPP: cmdargs += ["--cpp", CPP]
+    cmdargs += ["--output-language", lang] + args
     
     try:
         tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.{lang}"
-        ctypesgen_main([*base_args, "-o", tmp_out, "--output-language", lang, *args])
+        cmdargs += ["-o", tmp_out]
+        ctypesgen_main(cmdargs)
         content = tmp_out.read_text(encoding="utf-8")
     finally:
         if CLEANUP_OK:
-            tmp_in.unlink()
+            if tmp_in: tmp_in.unlink()
             tmp_out.unlink()
     
     if lang.startswith("py"):
