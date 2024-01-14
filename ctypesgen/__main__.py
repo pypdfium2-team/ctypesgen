@@ -349,17 +349,15 @@ def main(given_argv=sys.argv[1:]):
     args.linked_symbols = find_symbols_in_modules(args.modules, Path(args.output).resolve())
     
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
-    descriptions = core_parser.parse(args.headers, args)
-    processor.process(descriptions, args)
-    printer(args.output, args, descriptions, given_argv)
+    descs = core_parser.parse(args.headers, args)
+    processor.process(descs, args)
+    data = [(k, d) for k, d in descs.output_order if d.included]
+    printer(args.output, args, data, given_argv)
     
     msgs.status_message("Wrapping complete.")
     
-    if not descriptions.all:
-        msgs.warning_message("There wasn't anything of use in the specified header file(s).", cls="usage")
-        # Note what may be a common mistake
-        if not args.all_headers:
-            msgs.warning_message("Perhaps you meant to run with --all-headers to include objects from included sub-headers?", cls="usage")
+    if not data:
+        raise RuntimeError("No target members found. An empty wrapper has been written.")
 
 
 if __name__ == "__main__":

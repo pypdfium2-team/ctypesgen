@@ -56,11 +56,10 @@ class WrapperPrinter:
         }
 
         res = []
-        for kind, desc in data.output_order:
-            if desc.included:
-                item = method_table[kind](desc)
-                if item:
-                    res.append(item)
+        for kind, desc in data:
+            item = method_table[kind](desc)
+            if item:
+                res.append(item)
         self.file.write(json.dumps(res, sort_keys=True, indent=4))
         self.file.write("\n")
 

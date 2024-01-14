@@ -122,7 +122,7 @@ class VariadicFunctionTest(unittest.TestCase):
             c_file = self.module.fopen(str(tmp).encode(), b"w")
             self.module.fprintf(c_file, b"Test variadic function: %s %d", b"Hello", 123)
             self.module.fclose(c_file)
-            assert tmp.read_bytes() == b"Test variadic function: Hello 123"
+            self.assertEqual(tmp.read_bytes(), b"Test variadic function: Hello 123")
         finally:
             if CLEANUP_OK: tmp.unlink()
 
@@ -561,7 +561,7 @@ typedef struct {
 
     @classmethod
     def tearDownClass(cls):
-        del StructuresTest.module
+        del cls.module
 
     def test_struct_json(self):
         json_ans = json_expects.get_ans_struct(self.tmp_header_path)
@@ -833,7 +833,7 @@ struct foo {
 
     @classmethod
     def tearDownClass(cls):
-        del ConstantsTest.module
+        del cls.module
 
     def test_integer_constants(self):
         """Test if integer constants are parsed correctly"""
@@ -884,11 +884,11 @@ class NULLTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del NULLTest.module
+        del cls.module
 
     def test_null_type(self):
         """Test if NULL is parsed correctly"""
-        self.assertEqual(NULLTest.module.A_NULL_MACRO, None)
+        self.assertEqual(self.module.A_NULL_MACRO, None)
 
 
 @unittest.skipUnless(sys.platform == "darwin", "requires Mac")
@@ -927,3 +927,32 @@ class MacromanEncodeTest(unittest.TestCase):
         module = MacromanEncodeTest.module
         expected = b"\xef\xbf\xbd\\pHelper\xef\xbf\xbd".decode("utf-8")
         self.assertEqual(module.MYSTRING, expected)
+
+
+class TestEmptyHeader(unittest.TestCase):
+    """ Test how ctypesgen behaves when no members were found. """
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.exc = None
+        cls.infile = TMP_DIR/"empty_header.h"
+        cls.outfile = TMP_DIR/"empty_output.py"
+        cls.infile.write_text("// this is an empty header\n")
+        try:
+            ctypesgen_main(["-i", cls.infile, "-o", cls.outfile])
+        except RuntimeError as e:
+            cls.exc = e
+    
+    @classmethod
+    def tearDownClass(cls):
+        if CLEANUP_OK:
+            cls.infile.unlink()
+            cls.outfile.unlink()
+    
+    def test_empty_header(self):
+        self.assertIsNotNone(self.exc)
+        self.assertEqual(
+            str(self.exc),
+            "No target members found. An empty wrapper has been written."
+        )
+        self.assertTrue(self.outfile.exists())

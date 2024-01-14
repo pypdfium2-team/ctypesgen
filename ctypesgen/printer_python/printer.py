@@ -68,8 +68,7 @@ class WrapperPrinter:
             
             self.file.write("\n\n\n")
             with self.paragraph_ctx("header members"):
-                for kind, desc in data.output_order:
-                    if not desc.included: continue
+                for kind, desc in data:
                     self.file.write("\n\n")
                     getattr(self, f"print_{kind}")(desc)
                 self.file.write("\n")
