@@ -945,14 +945,9 @@ class TestEmptyHeader(unittest.TestCase):
     
     @classmethod
     def tearDownClass(cls):
-        if CLEANUP_OK:
-            cls.infile.unlink()
-            cls.outfile.unlink()
+        if CLEANUP_OK: cls.infile.unlink()
     
     def test_empty_header(self):
         self.assertIsNotNone(self.exc)
-        self.assertEqual(
-            str(self.exc),
-            "No target members found. An empty wrapper has been written."
-        )
-        self.assertTrue(self.outfile.exists())
+        self.assertEqual(str(self.exc), "No target members found.")
+        self.assertFalse(self.outfile.exists())

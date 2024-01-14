@@ -352,12 +352,12 @@ def main(given_argv=sys.argv[1:]):
     descs = core_parser.parse(args.headers, args)
     processor.process(descs, args)
     data = [(k, d) for k, d in descs.output_order if d.included]
+    if not data:
+        raise RuntimeError("No target members found.")
     printer(args.output, args, data, given_argv)
     
     msgs.status_message("Wrapping complete.")
     
-    if not data:
-        raise RuntimeError("No target members found. An empty wrapper has been written.")
 
 
 if __name__ == "__main__":
