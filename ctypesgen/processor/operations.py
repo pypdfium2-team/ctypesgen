@@ -74,14 +74,14 @@ def remove_macros(data, opts):
 
 
 def filter_by_regex_rules(data, opts):
-    valid_rules = {"never", "if_needed", "yes"}
-    for rules_entry in opts.symbol_rules:
-        rule_name, symbols_regex = rules_entry.split("=", maxsplit=1)
-        assert rule_name in valid_rules
+    for rule_entry in opts.symbol_rules:
+        rule_name, symbols_regex = rule_entry.split("=", maxsplit=1)
+        if rule_name not in {"never", "if_needed", "yes"}:
+            raise ValueError(f"Unknown include rule {rule_name!r}")
         expr = re.compile(symbols_regex)
-        for object in data.all:
-            if expr.fullmatch(object.py_name()):
-                object.include_rule = rule_name
+        for desc in data.all:
+            if expr.fullmatch(desc.py_name()):
+                desc.include_rule = rule_name
 
 
 def fix_conflicting_names(data, opts):
@@ -173,7 +173,7 @@ import _ctypes as ctypes_backend
 
 def free_library(lib_handle):
     # https://github.com/python/cpython/issues/58802
-    # On windows, we have to free libraries explicitly so the backing file may be deleted afterwards.
+    # On Windows, we have to free libraries explicitly so the backing file may be deleted afterwards (the test suite does this).
     # While we're at it, also free libraries on other platforms for consistency.
     status_message(f"Freeing library handle {lib_handle} ...")
     if sys.platform.startswith("win32"):
@@ -184,13 +184,10 @@ def free_library(lib_handle):
 
 def check_symbols(data, opts):
     
-    if opts.no_load_library:
-        status_message(f"Bypass load_library '{opts.library}'.")
+    if opts.no_load_library or not opts.library:
+        status_message(f"No library loading.")
         return
-    if not opts.library:
-        status_message(f"No library given, nothing to load.")
-        return
-
+    
     try:
         libraryloader._register_library(
             name = opts.library,
@@ -206,21 +203,12 @@ def check_symbols(data, opts):
         return
     
     try:
-        # don't bother checking symbols that will definitely be excluded
         missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     finally:
-        free_library(library._handle)
-        del library
+        free_library(library._handle); del library
     
     if missing_symbols:
-        warning_message(
-            f"{len(missing_symbols)} symbols could not be found. Possible causes include:\n"
-            "- Private members (use --symbol-rules to exclude)\n"
-            "- Binary/headers mismatch (ABI unsafe, should be avoided by caller)\n"
-            f"{missing_symbols}",
-            cls="other"
-        )
-        
+        warning_message(f"Some symbols could not be found:\n{missing_symbols}", cls="other")
         if not opts.guard_symbols:
             warning_message("Missing symbols will be excluded due to --no-symbol-guards")
             for s in missing_symbols:
