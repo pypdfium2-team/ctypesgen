@@ -107,7 +107,7 @@ def main(given_argv=sys.argv[1:]):
         default=[],
         metavar="HEADER",
         # pypdfium2-team change: eagerly include members
-        help="Include and bind against members from system header HEADER, with '.h' suffix (e.g. stdio.h or stdlib.h)",
+        help="Include and bind against members from system header HEADER, with '.h' suffix (e.g. stdio.h, stdlib.h, python3.X/Python.h). Will be translated to a <...> style include and passed to the pre-processor. Provided for portability. If the full path is known, it may be preferable to use the regular --headers option.",
     )
     parser.add_argument(
         "-m", "--modules",

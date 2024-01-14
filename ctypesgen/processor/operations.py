@@ -42,6 +42,13 @@ def remove_NULL(data, options):
             macro.include_rule = "never"
 
 
+def _path_endswith(full, suffix):
+    return full.parts[-len(suffix.parts):] == suffix.parts
+
+def _matches_sys_header(p, sys_headers):
+    return any(_path_endswith(p, Path(h)) for h in sys_headers)
+
+
 def mask_external_members(data, opts):
     """mask_external_members() removes descriptions if they came from files
     outside of the header files specified from the command line."""
@@ -55,7 +62,7 @@ def mask_external_members(data, opts):
         else:
             # pre-reqs: opts.headers = list of resolved Path objects & pre-processor outputs full source paths
             p = Path(desc.src[0])
-            if not (p in opts.headers or p.name in opts.system_headers or opts.all_headers):
+            if not (p in opts.headers or _matches_sys_header(p, opts.system_headers) or opts.all_headers):
                 desc.include_rule = "if_needed"
 
 
