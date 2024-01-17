@@ -332,12 +332,12 @@ def main(given_argv=sys.argv[1:]):
         # split while preserving quotes
         args.cpp = shlex.split(args.cpp)
     else:
-        if shutil.which("gcc"):
-            args.cpp = ["gcc", "-E"]
-        elif shutil.which("cpp"):
-            args.cpp = ["cpp"]
-        elif shutil.which("clang"):
-            args.cpp = ["clang", "-E"]
+        if exe := shutil.which("gcc"):
+            args.cpp = [exe, "-E"]
+        elif exe := shutil.which("cpp"):
+            args.cpp = [exe]
+        elif exe := shutil.which("clang"):
+            args.cpp = [exe, "-E"]
         else:
             raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
     
