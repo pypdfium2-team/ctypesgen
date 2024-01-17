@@ -325,7 +325,7 @@ def main(given_argv=sys.argv[1:]):
     
     args = parser.parse_args(given_argv)
     
-    if not any([args.headers, args.system_headers]):
+    if not (args.headers or args.system_headers):
         raise argparse.ArgumentError("Either --headers or --system-headers required.")
     
     if args.cpp:

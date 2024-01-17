@@ -18,7 +18,7 @@ def find_dependencies(data, opts):
     typedef_names = {}
     ident_names = {}
 
-    # Start the lookup tables with names from imported modules
+    # Start the lookup tables with names from linked modules
 
     for name in opts.linked_symbols:
         typedef_names[name] = None
@@ -155,12 +155,11 @@ def find_dependencies(data, opts):
     # Macros are handled differently from everything else because macros can
     # call other macros that are referenced after them in the input file, but
     # no other type of description can look ahead like that.
-
+    
+    macros = []
     for kind, desc in data.output_order:
         add_to_lookup_table(desc, kind)
-        if kind != "macro":
-            find_dependencies_for(desc, kind)
+        find_dependencies_for(desc, kind) if kind != "macro" else macros.append(desc)
 
-    for kind, desc in data.output_order:
-        if kind == "macro":
-            find_dependencies_for(desc, kind)
+    for desc in macros:
+        find_dependencies_for(desc, "macro")
