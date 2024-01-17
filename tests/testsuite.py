@@ -62,7 +62,7 @@ class StdlibTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        cls.module = generate("stdlib.h", ["-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"], sys_header=True)
+        cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"])
 
     @classmethod
     def tearDownClass(cls):
@@ -108,7 +108,7 @@ class VariadicFunctionTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        cls.module = generate("stdio.h", ["-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"], sys_header=True)
+        cls.module = generate(header=None, args=["--system-headers", "stdio.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"])
     
     def test_type_error_catch(self):
         with self.assertRaises(ctypes.ArgumentError):

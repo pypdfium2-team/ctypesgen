@@ -44,7 +44,7 @@ def module_from_code(name, python_code):
 
 COUNTER = 0
 
-def generate(header, args=[], lang="py", sys_header=False):
+def generate(header=None, args=[], lang="py"):
     
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
@@ -56,10 +56,7 @@ def generate(header, args=[], lang="py", sys_header=False):
     
     cmdargs = []
     tmp_in = None
-    if sys_header:
-        assert header.endswith(".h")
-        cmdargs += ["--system-header", header]
-    else:
+    if header:
         tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
         tmp_in.write_text(header.strip() + "\n", encoding="utf-8")
         cmdargs += ["-i", tmp_in]
