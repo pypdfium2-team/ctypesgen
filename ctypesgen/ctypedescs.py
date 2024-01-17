@@ -298,7 +298,7 @@ class CtypesStruct(CtypesType):
         self.attrib = attrib
         self.variety = variety  # "struct" or "union"
         self.members = members
-        self.opaque = True if self.members is None else False
+        self.opaque = self.members is None
         self.src = src
         
         if type(self.tag) == int or not self.tag:

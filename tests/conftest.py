@@ -51,7 +51,7 @@ def generate(header, args=[], lang="py", sys_header=False):
     # - The default file encoding seems to be cp1252, which is problematic with special chars (such as the banana in the constants test). Need to specify UTF-8 explicitly. PEP 686 should hopefully improve this.
     
     # Use custom tempfiles scoping so we may retain data for inspection
-    # FIXME can cause confusion with partial test suite runs - static naming by test case would be better, also more descriptive
+    # FIXME can cause confusion with partial test suite runs - static naming by test case would be better, including more descriptive
     global COUNTER; COUNTER += 1
     
     cmdargs = []
@@ -83,9 +83,6 @@ def generate(header, args=[], lang="py", sys_header=False):
         return json.loads(content), str(tmp_in)
     else:
         assert False
-
-
-# -- Functions facilitating tests of use of cross inclusion --
 
 
 def generate_common():
