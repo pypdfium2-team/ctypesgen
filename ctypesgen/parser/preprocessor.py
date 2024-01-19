@@ -61,7 +61,6 @@ class PreprocessorParser:
         self.cparser = cparser  # An instance of CParser
         
         self.default_flags = {"-D": {}, "-U": []}
-        
         self.default_flags["-D"].update({
             "__extension__": "",
             "__asm__(x)": "",
@@ -97,8 +96,11 @@ class PreprocessorParser:
     
     def _get_default_flags(self):
         
+        if self.options.no_default_flags:
+            return {}
+        
         flags_dict = copy.deepcopy(self.default_flags)
-        crossout = self.options.no_default_cppflags
+        crossout = self.options.pop_default_flags
         for params in flags_dict.values():
             deletor = params.pop if isinstance(params, dict) else params.remove
             unfound = []
