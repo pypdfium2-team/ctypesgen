@@ -58,34 +58,30 @@ class PreprocessorParser:
         self.options = options
         self.cparser = cparser  # An instance of CParser
         
-        self.default_defs = [
-            "__extension__=",
-            "__const=const",
-            "__asm__(x)=",
-            "__asm(x)=",
-            "CTYPESGEN=1",
+        self.default_args = [
+            "-D", "__extension__=",
+            "-D", "__const=const",
+            "-D", "__asm__(x)=",
+            "-D", "__asm(x)=",
+            "-D", "CTYPESGEN=1",
         ]
-
-        # On macOS, explicitly add these defines to keep from getting syntax
-        # errors in the macOS standard headers.
         if IS_MAC:
-            self.default_defs += [
-                "_Nullable=",
-                "_Nonnull=",
+            # On macOS, explicitly add these defines to keep from getting syntax
+            # errors in the macOS standard headers.
+            self.default_args += [
+                "-D", "_Nullable=",
+                "-D", "_Nonnull=",
             ]
+            # This fixes Issue #6 where OS X 10.6+ adds a C extension that breaks
+            # the parser. Blocks shouldn't be needed for ctypesgen support anyway.
+            self.default_args += ["-U", "__BLOCKS__"]
         
-        # Legacy behaviour is to implicitly undefine '__GNUC__'
-        # Continue doing this, unless user explicitly requested to allow it.
-        # TODO allow for more flexible overrides of defaults?
-        self.default_undefs = []
         if not self.options.allow_gnu_c:
-            self.default_undefs += ["__GNUC__"]
+            # Legacy behaviour is to implicitly undefine '__GNUC__'
+            # Continue doing this, unless user explicitly requested to allow it.
+            # TODO allow for more flexible overrides of defaults?
+            self.default_args += ["-U", "__GNUC__"]
         
-        # This fixes Issue #6 where OS X 10.6+ adds a C extension that breaks
-        # the parser. Blocks shouldn't be needed for ctypesgen support anyway.
-        if IS_MAC:
-            self.default_undefs += ["__BLOCKS__"]
-
         self.matches = []
         self.output = []
         self.lexer = lex.lex(
@@ -100,16 +96,11 @@ class PreprocessorParser:
     def parse(self, filename):
         """Parse a file and save its output"""
 
-        cmd = self.options.cpp + ["-dD"]
+        cmd = [*self.options.cpp, "-dD"]
         for path in self.options.include_search_paths:
             cmd += ["-I", path]
         
-        for u in self.default_undefs:
-            cmd += ["-U", u]
-        for d in self.default_defs:
-            cmd += ["-D", d]
-        cmd += self.options.cppargs
-        
+        cmd += self.default_args + self.options.cppargs
         cmd += [filename]
         self.cparser.handle_status(cmd)
 
