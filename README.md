@@ -23,6 +23,7 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
   - Beware: Historically, `--include` did something different and is now called `--system-headers` here.
   - `--symbol-rules` replaces `--include-symbols` (yes) / `--exclude-symbols` (never).
   - More flags changed or renamed.
+  - `--allow-gnu-c` replaced by `-X __GNUC__`.
 * The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
 * All strings interfacing with the C extension have to be encoded as bytes. We do not do implicit UTF-8 encoding/decoding. (A new, opt-in string helper might be added in the future.)
 * We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
@@ -38,9 +39,11 @@ Further, upstream docs may provide some information of interest ([readme](https:
 * Slimmed up template by removing many avoidable wrappers.
 * Rewrote library loader. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libdirs to runtime.
 * Better control over symbol inclusion via `--symbol-rules` (exposes `if_needed` strategy, allows free order of actions).
-* Eagerly include direct members with `--system-headers`. This helps lower the need for `--all-headers` (which generally includes a lot more than necessary).
 * Symbol regex matching uses `fullmatch()` rather than `match()` (more explicit).
+* Eagerly include direct members with `--system-headers`. This helps lower the need for `--all-headers` (which generally includes a lot more than necessary).
 * Auto-detect default pre-processor.
+* `-X`: Ability to override arbitrary pre-processor default flags added by ctypesgen.
+* Pass through `-D/-U` in given order, i.e. honor undefines overriding defines, and vice versa.
 
 See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 

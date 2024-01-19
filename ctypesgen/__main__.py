@@ -172,12 +172,6 @@ def main(given_argv=sys.argv[1:]):
         help="The command to invoke the C preprocessor, including any necessary options. By default, we try to find a supported preprocessor automatically. Example: to always use clang, pass --cpp \"clang -E\". (In a shell env, note the quotes for the arguments to end up in the right parser. Nested quotes in the command are also honored.)",
     )
     parser.add_argument(
-        "--allow-gnu-c",
-        action="store_true",
-        dest="allow_gnu_c",
-        help="Specify whether to undefine the '__GNUC__' macro, while invoking the C preprocessor. (default: False. i.e. ctypesgen adds an implicit undefine using '-U __GNUC__'.) Specify this flag to avoid ctypesgen undefining '__GNUC__' as shown above.",
-    )
-    parser.add_argument(
         "-D", "--define",
         dest="cppargs",
         type=lambda n: ("-D", n),
@@ -196,6 +190,14 @@ def main(given_argv=sys.argv[1:]):
         default=[],
         metavar="NAME",
         help="Instruct the preprocessor to undefine the specified macro via commandline",
+    )
+    parser.add_argument(
+        "-X", "--no-default-cppflags",
+        nargs="+",
+        action="extend",
+        default=[],
+        metavar="ENTRY",
+        help="Remove ENTRY from preprocessor defaults, e.g. -X __GNUC__ can be used to not implicitly undefine __GNUC__.",
     )
     parser.add_argument(
         "--preproc-savepath",
