@@ -43,7 +43,7 @@ exclude = ["tests*"]
 namespaces = false
 
 [tool.setuptools.dynamic.readme]
-file = ["README.md", "LICENSE", "CHANGELOG.md"]
+file = ["README.md", "LICENSE", "docs/CHANGELOG.md"]
 content-type = "text/markdown"
 
 [tool.setuptools_scm]
