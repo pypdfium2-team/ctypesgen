@@ -279,16 +279,10 @@ class CtypesFunction(CtypesType):
 
 last_tagnum = 0
 
-def anonymous_struct_tagnum():
+def anon_struct_tagnum():
     global last_tagnum
     last_tagnum += 1
     return last_tagnum
-
-def fmt_anonymous_struct_tag(num):
-    return f"anon_{num}"
-
-def anonymous_struct_tag():
-    return fmt_anonymous_struct_tag(anonymous_struct_tagnum())
 
 
 class CtypesStruct(CtypesType):
@@ -300,16 +294,11 @@ class CtypesStruct(CtypesType):
         self.members = members
         self.opaque = self.members is None
         self.src = src
-        
-        if type(self.tag) == int or not self.tag:
-            if type(self.tag) == int:
-                self.tag = fmt_anonymous_struct_tag(self.tag)
-            else:
-                self.tag = anonymous_struct_tag()
-            self.anonymous = True
-        else:
-            self.anonymous = False
-        
+        tag_is_int = type(self.tag) == int
+        self.anonymous = tag_is_int or not self.tag
+        if self.anonymous:
+            self.tag = f"anon_{self.tag if tag_is_int else anon_struct_tagnum()}"
+    
 
     def get_required_types(self):
         types = super(CtypesStruct, self).get_required_types()
@@ -324,10 +313,7 @@ class CtypesStruct(CtypesType):
         super(CtypesStruct, self).visit(visitor)
 
     def get_subtypes(self):
-        if self.opaque:
-            return set()
-        else:
-            return set([m[1] for m in self.members])
+        return set() if self.opaque else {m[1] for m in self.members}
 
     def py_string(self, ignore_can_be_ctype=None):
         return f"{self.variety}_{self.tag}"
@@ -345,19 +331,11 @@ class CtypesEnum(CtypesType):
     def __init__(self, tag, enumerators, src=None):
         super(CtypesEnum, self).__init__()
         self.tag = tag
-        self.enumerators = enumerators
-
-        if not self.tag:
+        self.anonymous = not self.tag
+        if self.anonymous:
             self.tag = anonymous_enum_tag()
-            self.anonymous = True
-        else:
-            self.anonymous = False
-
-        if self.enumerators is None:
-            self.opaque = True
-        else:
-            self.opaque = False
-
+        self.enumerators = enumerators
+        self.opaque = self.enumerators is None
         self.src = src
 
     def visit(self, visitor):
