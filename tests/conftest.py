@@ -56,7 +56,7 @@ def generate(header=None, args=[], lang="py"):
     
     cmdargs = []
     tmp_in = None
-    if header:
+    if header != None:
         tmp_in = TMP_DIR/f"in_header_{COUNTER:02d}.h"
         tmp_in.write_text(header.strip() + "\n", encoding="utf-8")
         cmdargs += ["-i", tmp_in]
