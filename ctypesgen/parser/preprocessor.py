@@ -96,11 +96,13 @@ class PreprocessorParser:
     
     def _get_default_flags(self):
         
-        if self.options.no_default_flags:
+        if self.options.no_default_cppflags is None:
+            return self.default_flags
+        elif not self.options.no_default_cppflags:
             return {}
         
         flags_dict = copy.deepcopy(self.default_flags)
-        crossout = self.options.pop_default_flags
+        crossout = self.options.no_default_cppflags
         for params in flags_dict.values():
             deletor = params.pop if isinstance(params, dict) else params.remove
             unfound = []

@@ -192,17 +192,12 @@ def main(given_argv=sys.argv[1:]):
         help="Instruct the preprocessor to undefine the specified macro via commandline",
     )
     parser.add_argument(
-        "-X", "--pop-default-flags",
-        nargs="+",
+        "-X", "--no-default-cppflags",
+        nargs="*",
         action="extend",
-        default=[],
+        default=None,
         metavar="ENTRY",
-        help="Remove ENTRY from preprocessor defaults, e.g. -X __GNUC__ can be used to not implicitly undefine __GNUC__.",
-    )
-    parser.add_argument(
-        "--no-default-flags",
-        action="store_true",
-        help="Do not add any default defines/undefines at all. Beware: this will most probably lead to more parser errors."
+        help="Remove ENTRY from preprocessor defaults, e.g. -X __GNUC__ can be used to not implicitly undefine __GNUC__. If only the flag is passed but never any values, it removes all defaults.",
     )
     parser.add_argument(
         "--preproc-savepath",
