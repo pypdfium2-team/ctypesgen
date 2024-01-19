@@ -9,6 +9,7 @@ import shutil
 import importlib
 import contextlib
 import argparse
+import itertools
 from pathlib import Path
 
 from ctypesgen import (
@@ -174,26 +175,25 @@ def main(given_argv=sys.argv[1:]):
         "--allow-gnu-c",
         action="store_true",
         dest="allow_gnu_c",
-        help="Specify whether to undefine the '__GNUC__' macro, "
-        "while invoking the C preprocessor.\n"
-        "(default: False. i.e. ctypesgen adds an implicit undefine using '-U __GNUC__'.)\n"
-        "Specify this flag to avoid ctypesgen undefining '__GNUC__' as shown above.",
+        help="Specify whether to undefine the '__GNUC__' macro, while invoking the C preprocessor. (default: False. i.e. ctypesgen adds an implicit undefine using '-U __GNUC__'.) Specify this flag to avoid ctypesgen undefining '__GNUC__' as shown above.",
     )
     parser.add_argument(
         "-D", "--define",
+        dest="cppargs",
+        type=lambda n: ("-D", n),
         nargs="+",
         action="extend",
         default=[],
-        dest="cpp_defines",
-        metavar="MACRO",
+        metavar="NAME",
         help="Add a definition to the preprocessor via commandline",
     )
     parser.add_argument(
         "-U", "--undefine",
+        dest="cppargs",
+        type=lambda n: ("-U", n),
         nargs="+",
         action="extend",
         default=[],
-        dest="cpp_undefines",
         metavar="NAME",
         help="Instruct the preprocessor to undefine the specified macro via commandline",
     )
@@ -340,6 +340,8 @@ def main(given_argv=sys.argv[1:]):
             args.cpp = ["clang", "-E"]
         else:
             raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
+    
+    args.cppargs = list( itertools.chain(*args.cppargs) )
     
     # important: must not use +=, this would mutate the original object, which is problematic when calling ctypesgen natively from the python API
     args.compile_libdirs = args.compile_libdirs + args.universal_libdirs

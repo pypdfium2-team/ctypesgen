@@ -951,3 +951,17 @@ class TestEmptyHeader(unittest.TestCase):
         self.assertIsNotNone(self.exc)
         self.assertEqual(str(self.exc), "No target members found.")
         self.assertFalse(self.outfile.exists())
+
+
+class TestDefUndef(unittest.TestCase):
+    """ Test that defines and undefines are passed through in given order. """
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.module = generate("", [*"-D A=1 B=2 C=3 -U B -D B=0 -U C".split(" "), "--symbol-rules", "yes=A|B|C"])
+    
+    def test_ordered_passthrough(self):
+        m = self.module
+        self.assertEqual(m.A, 1)
+        self.assertEqual(m.B, 0)
+        self.assertFalse(hasattr(m, "C"))

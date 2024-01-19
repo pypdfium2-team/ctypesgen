@@ -104,16 +104,11 @@ class PreprocessorParser:
         for path in self.options.include_search_paths:
             cmd += ["-I", path]
         
-        # apply in this order so given params always override defaults
         for u in self.default_undefs:
             cmd += ["-U", u]
         for d in self.default_defs:
             cmd += ["-D", d]
-        # note: the input order of given undefs/defs is not currently honored due to argparse gathering in two separate lists, i.e. we rely on the caller not to pass a matching undefine after a define (this would be redundant, anyway)
-        for u in self.options.cpp_undefines:
-            cmd += ["-U", u]
-        for d in self.options.cpp_defines:
-            cmd += ["-D", d]
+        cmd += self.options.cppargs
         
         cmd += [filename]
         self.cparser.handle_status(cmd)
