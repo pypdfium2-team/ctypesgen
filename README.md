@@ -53,7 +53,8 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 * If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
   If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share the template using `--no-embed-preamble`. Relative modules will be expected to be present in the output directory at compile time.
   Note, this strategy can also be used to bind to same-library headers separately; however, you'll need to resolve the dependency tree on your own.
-* To provide extra dependency headers that are not present in the system, you can set the `CPATH` or `C_INCLUDE_PATH` env vars for the C pre-processor. It may also be possible to use this for "cross-compilation" of bindings, or to spoof a foreign symbol using `typedef void* SYMBOL;` (`c_void_p`).
+* Extra include search paths can be provided using the `-I` option or by setting `$CPATH`/`$C_INCLUDE_PATH`.
+  You could use this to add a header spoofing an external symbol via `typedef void* SYMBOL;` (`c_void_p`) that may be provided by a third-party binding at runtime.
 * If building with `--no-macro-guards` and you encounter broken macros, you may use `--symbol-rules` (see below) or replace them manually. This can be necessary on C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python. In particular, you are likely to run into this with `--all-headers`.
 
 #### Notes on symbol inclusion
