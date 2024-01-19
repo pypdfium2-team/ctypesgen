@@ -16,7 +16,7 @@ COMMON_DIR = TEST_DIR/"common"
 TMP_DIR = TEST_DIR/"tmp"
 
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
-CPP = os.environ.get("CPP", None)
+MAIN_CPP = os.environ.get("CPP", None)
 
 
 def _remove_tmpdir():
@@ -44,7 +44,7 @@ def module_from_code(name, python_code):
 
 COUNTER = 0
 
-def generate(header=None, args=[], lang="py"):
+def generate(header=None, args=[], lang="py", cpp=MAIN_CPP):
     
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
@@ -61,7 +61,7 @@ def generate(header=None, args=[], lang="py"):
         tmp_in.write_text(header.strip() + "\n", encoding="utf-8")
         cmdargs += ["-i", tmp_in]
     
-    if CPP: cmdargs += ["--cpp", CPP]
+    if cpp: cmdargs += ["--cpp", cpp]
     cmdargs += ["--output-language", lang] + args
     
     try:

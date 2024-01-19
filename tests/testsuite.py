@@ -25,6 +25,7 @@ import io
 import sys
 import os
 import ctypes
+import shutil
 import math
 import unittest
 from contextlib import (
@@ -956,12 +957,34 @@ class TestEmptyHeader(unittest.TestCase):
 class TestDefUndef(unittest.TestCase):
     """ Test that defines and undefines are passed through in given order. """
     
-    @classmethod
-    def setUpClass(cls):
-        cls.module = generate("", [*"-D A=1 B=2 C=3 -U B -D B=0 -U C".split(" "), "--symbol-rules", "yes=A|B|C"])
-    
     def test_ordered_passthrough(self):
-        m = self.module
+        m = generate("", [*"-D A=1 B=2 C=3 -U B -D B=0 -U C".split(" "), "--symbol-rules", "yes=A|B|C"])
         self.assertEqual(m.A, 1)
         self.assertEqual(m.B, 0)
         self.assertFalse(hasattr(m, "C"))
+
+
+requires_gcc = unittest.skipUnless(shutil.which("gcc"), reason="Requires GCC")
+
+class TestFlagDefaultOverride(unittest.TestCase):
+    """ Test that we can override default pre-processor flags added by ctypesgen. """
+    
+    @requires_gcc
+    def test_default_undef(self):
+        # this actually works because the def/undef are taken over into the output, so we won't get a "no target members" exception.
+        m = generate("", ["--symbol-rules", "yes=__GNUC__"], cpp=f"gcc -E")
+        self.assertFalse(hasattr(m, "__GNUC__"))
+    
+    @requires_gcc
+    def test_override_default_undef(self):
+        m = generate("", ["-X", "__GNUC__", "--symbol-rules", "yes=__GNUC__"], cpp=f"gcc -E")
+        self.assertIsInstance(m.__GNUC__, int)  # this will be the GCC major version
+    
+    def test_default_def(self):
+        m = generate("", ["--symbol-rules", "yes=CTYPESGEN"])
+        self.assertEqual(m.CTYPESGEN, 1)
+    
+    def test_override_default_def(self):
+        # here we have to define a placeholder to bypass the "no target members" exception
+        m = generate("#define PLACEHOLDER 1", ["-X", "CTYPESGEN", "--symbol-rules", "yes=CTYPESGEN"])
+        self.assertFalse(hasattr(m, "CTYPESGEN"))
