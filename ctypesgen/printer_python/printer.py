@@ -31,12 +31,13 @@ def ParagraphCtxFactory(file):
 class WrapperPrinter:
     
     def __init__(self, outpath, options, data, argv):
+        
+        self.options = options
         outpath = Path(outpath).resolve()
         status_message(f"Writing to {outpath}.")
-        self.file = outpath.open("w", encoding="utf-8")
         
-        try:
-            self.options = options
+        with outpath.open("w", encoding="utf-8") as self.file:
+            
             self.paragraph_ctx = ParagraphCtxFactory(self.file)
             
             self.print_info(argv)
@@ -65,9 +66,6 @@ class WrapperPrinter:
                 self._embed_file(fp, f"inserted file '{fp}'")
             
             self.file.write("\n")
-        
-        finally:
-            self.file.close()
     
     
     PRIVATE_PATHS_TABLE = [(str(Path.home()), "~")]
