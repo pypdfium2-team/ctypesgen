@@ -20,7 +20,7 @@ class Declaration:
         d = {"declarator": self.declarator, "type": self.type}
         if self.storage:
             d["storage"] = self.storage
-        li = ["%s=%r" % (k, v) for k, v in d.items()]
+        li = [f"{k}={v!r}" for k, v in d.items()]
         return "Declaration(%s)" % ", ".join(li)
 
 
@@ -45,7 +45,7 @@ class Declarator:
         if self.array:
             s += repr(self.array)
         if self.initializer:
-            s += " = %r" % self.initializer
+            s += f" = {self.initializer!r}"
         if self.parameters is not None:
             s += "(" + ", ".join([repr(p) for p in self.parameters]) + ")"
         return s
@@ -72,7 +72,7 @@ class Array:
 
     def __repr__(self):
         if self.size:
-            a = "[%r]" % self.size
+            a = f"[{self.size!r}]"
         else:
             a = "[]"
         if self.array:
@@ -94,7 +94,7 @@ class Parameter:
             d["declarator"] = self.declarator
         if self.storage:
             d["storage"] = self.storage
-        li = ["%s=%r" % (k, v) for k, v in d.items()]
+        li = [f"{k}={v!r}" for k, v in d.items()]
         return "Parameter(%s)" % ", ".join(li)
 
 
@@ -112,12 +112,12 @@ class Type:
 
 class StorageClassSpecifier(str):
     def __repr__(self):
-        return "StorageClassSpecifier({})".format(str(self))
+        return f"StorageClassSpecifier({self})"
 
 
 class TypeSpecifier(str):
     def __repr__(self):
-        return "TypeSpecifier({})".format(str(self))
+        return f"TypeSpecifier({self})"
 
 
 class StructTypeSpecifier:
@@ -130,21 +130,17 @@ class StructTypeSpecifier:
         self.lineno = -1
 
     def __repr__(self):
-        if self.is_union:
-            s = "union"
-        else:
-            s = "struct"
+        s = "union" if self.is_union else "struct"
         if self.attrib:
             attrs = list()
             for attr, val in self.attrib.items():
                 if val and type(val) == str:
-                    attrs.append("{}({})".format(attr, val))
+                    attrs.append(f"{attr}({val})")
                 elif val:
                     attrs.append(attr)
-
-            s += " __attribute__(({}))".format(",".join(attrs))
+            s += " __attribute__((%s))" % ",".join(attrs)
         if self.tag and type(self.tag) != int:
-            s += " %s" % self.tag
+            s += f" {self.tag}"
         if self.declarations:
             s += " {%s}" % "; ".join([repr(d) for d in self.declarations])
         return s
@@ -160,7 +156,7 @@ class EnumSpecifier:
     def __repr__(self):
         s = "enum"
         if self.tag:
-            s += " %s" % self.tag
+            s += f" {self.tag}"
         if self.enumerators:
             s += " {%s}" % ", ".join([repr(e) for e in self.enumerators])
         return s
@@ -174,13 +170,13 @@ class Enumerator:
     def __repr__(self):
         s = self.name
         if self.expression:
-            s += " = %r" % self.expression
+            s += f" = {self.expression!r}"
         return s
 
 
 class TypeQualifier(str):
     def __repr__(self):
-        return "TypeQualifier({})".format(str(self))
+        return f"TypeQualifier({self})"
 
 
 class PragmaPack:
@@ -203,12 +199,9 @@ class PragmaPack:
     def pop(self, id=None):
         if not self.stack:
             if id:
-                return (
-                    "#pragma pack(pop, {id}) encountered without matching "
-                    "#pragma pack(push, {id})".format(id=id),
-                )
+                return f"encountered #pragma pack(pop, {id}) without matching #pragma pack(push, {id})"
             else:
-                return "#pragma pack(pop) encountered without matching #pragma pack(push)"
+                return "encountered #pragma pack(pop) without matching #pragma pack(push)"
 
         item = None
         err = None
@@ -222,10 +215,7 @@ class PragmaPack:
                 item = self.stack[i]
                 self.stack = self.stack[:i]
             else:
-                err = (
-                    "#pragma pack(pop, {id}) encountered without matching "
-                    "#pragma pack(push, {id}); popped last".format(id=id)
-                )
+                err = f"encountered #pragma pack(pop, {id}) without matching #pragma pack(push, {id}); popped last"
 
         if item is None:
             item = self.stack.pop()
@@ -247,7 +237,7 @@ class Attrib(dict):
         self._unalias()
 
     def __repr__(self):
-        return "Attrib({})".format(dict(self))
+        return f"Attrib({dict(self)})"
 
     def update(self, *a, **kw):
         super(Attrib, self).update(*a, **kw)

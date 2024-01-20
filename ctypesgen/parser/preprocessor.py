@@ -3,7 +3,6 @@
 
 Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
-
 """
 
 import os
