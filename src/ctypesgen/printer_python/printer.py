@@ -265,8 +265,8 @@ _register_library(
     
     
     def print_macro(self, macro):
-        # important: must check precisely against None because params may be an empty list for a func macro
         self._srcinfo(macro.src)
+        # important: must check precisely against None because params may be an empty list for a func macro
         if macro.params is None:
             self._print_simple_macro(macro)
         else:
