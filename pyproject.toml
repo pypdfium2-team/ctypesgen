@@ -40,7 +40,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["ctypesgen"]
+include = ["ctypesgen", "ctypesgen.*"]
 namespaces = false
 
 [tool.setuptools.dynamic.readme]
