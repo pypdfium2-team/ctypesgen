@@ -6,7 +6,6 @@ calling DataCollectingParser.data().
 """
 
 import os
-from pathlib import Path
 from tempfile import mkstemp
 
 from ctypesgen.ctypedescs import CtypesEnum, CtypesType, CtypesTypeVisitor
@@ -24,6 +23,7 @@ from ctypesgen.descriptions import (
 from ctypesgen.expressions import ConstantExpressionNode
 from ctypesgen.messages import error_message, status_message
 from ctypesgen.parser import ctypesparser
+from ctypesgen.parser.cdeclarations import Attrib
 
 
 class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
@@ -281,7 +281,10 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
             self.constants.append(constant)
             self.all.append(constant)
             return
-
+        
+        if type(expr) is Attrib:
+            return
+        
         expr.visit(self)
 
         if isinstance(expr, CtypesType):
