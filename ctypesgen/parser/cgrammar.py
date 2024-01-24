@@ -1305,9 +1305,6 @@ def p_define(p):
             elif len(p) == 8:
                 expr = p[6]
 
-        filename = p.slice[1].filename
-        lineno = p.slice[1].lineno
-
         p.parser.cparser.handle_define_macro(p[2], params, expr, filename, lineno)
 
 
