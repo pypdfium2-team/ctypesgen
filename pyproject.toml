@@ -39,7 +39,8 @@ package-dir = {}
 include-package-data = true
 
 [tool.setuptools.packages.find]
-exclude = ["tests*"]
+where = ["src"]
+include = ["ctypesgen"]
 namespaces = false
 
 [tool.setuptools.dynamic.readme]
@@ -47,5 +48,5 @@ file = ["README.md", "LICENSE", "docs/CHANGELOG.md"]
 content-type = "text/markdown"
 
 [tool.setuptools_scm]
-write_to = "ctypesgen/VERSION"
+write_to = "src/ctypesgen/VERSION"
 write_to_template = "{version}"
