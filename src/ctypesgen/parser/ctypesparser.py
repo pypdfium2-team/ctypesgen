@@ -225,18 +225,18 @@ class CtypesParser(CParser):
         elif declaration.storage != "static":
             self.handle_ctypes_variable(name, t, filename, lineno)
 
-    # ctypes parser interface.  Override these methods in your subclass.
+    # ctypes parser interface. Override these methods in your subclass.
 
     def handle_ctypes_new_type(self, ctype, filename, lineno):
-        pass
+        raise NotImplementedError()
 
     def handle_ctypes_typedef(self, name, ctype, filename, lineno):
-        pass
+        raise NotImplementedError()
 
     def handle_ctypes_function(
         self, name, restype, argtypes, errcheck, variadic, attrib, filename, lineno
     ):
-        pass
+        raise NotImplementedError()
 
     def handle_ctypes_variable(self, name, ctype, filename, lineno):
-        pass
+        raise NotImplementedError()
