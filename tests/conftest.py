@@ -34,9 +34,8 @@ def ctypesgen_main(args):
     return ctypesgen.__main__.main([str(a) for a in args])
 
 def module_from_code(name, python_code):
-    # exec'ed modules do not have __file__, but we could define it manually as an anchor point for relative paths (commented out because no test case needs this yet)
-    # file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
-    # python_code = file_spoof + python_code
+    file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
+    python_code = file_spoof + python_code
     module = types.ModuleType(name)
     exec(python_code, module.__dict__)
     return module

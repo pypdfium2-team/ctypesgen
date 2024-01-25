@@ -189,12 +189,12 @@ def check_symbols(data, opts):
         return
     
     try:
+        libraryloader.__file__ = str(Path.cwd() / "spoofed_ll.py")
         libraryloader._register_library(
             name = opts.library,
             dllclass = getattr(ctypes, opts.dllclass),
             dirs = opts.compile_libdirs,
             search_sys = opts.search_sys,
-            reldir = Path.cwd(),
         )
         library = libraryloader._libs[opts.library]
     except ImportError as e:

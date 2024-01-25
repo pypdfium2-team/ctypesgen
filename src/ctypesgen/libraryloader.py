@@ -1,10 +1,9 @@
 import sys
 import ctypes
 import ctypes.util
-import warnings
 import pathlib
 
-def _find_library(name, dirs, search_sys, reldir=None):
+def _find_library(name, dirs, search_sys):
     
     if sys.platform in ("win32", "cygwin", "msys"):
         patterns = ["{}.dll", "lib{}.dll", "{}"]
@@ -13,17 +12,13 @@ def _find_library(name, dirs, search_sys, reldir=None):
     else:  # assume unix pattern or plain name
         patterns = ["lib{}.so", "{}.so", "{}"]
     
-    if reldir is None:
-        try:
-            reldir = pathlib.Path(__file__).parent
-        except NameError:
-            reldir = None
+    reldir = pathlib.Path(__file__).parent
+    libpath = None
     
     for dir in dirs:
         dir = pathlib.Path(dir)
         if not dir.is_absolute():
             # NOTE joining an absolute path silently discardy the path before
-            assert reldir != None, "cannot resolve relative paths without anchor point (__file__ not defined?)"
             dir = (reldir/dir).resolve(strict=False)
         for pat in patterns:
             libpath = dir / pat.format(name)
@@ -31,14 +26,11 @@ def _find_library(name, dirs, search_sys, reldir=None):
                 return str(libpath)
     
     if search_sys:
-        if dirs:
-            warnings.warn(f"Could not find library '{name}' in {dirs}, falling back to system")
         libpath = ctypes.util.find_library(name)
-        if not libpath:
-            raise ImportError(f"Could not find library '{name}' in system")
-        return libpath
-    else:
-        raise ImportError(f"Could not find library '{name}' in {dirs} (system search disabled)")
+    if not libpath:
+        raise ImportError(f"Could not find library '{name}' (dirs={dirs}, search_sys={search_sys})")
+    
+    return libpath
 
 _libs_info, _libs = {}, {}
 
