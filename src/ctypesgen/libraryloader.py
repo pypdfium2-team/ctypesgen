@@ -12,14 +12,12 @@ def _find_library(name, dirs, search_sys):
     else:  # assume unix pattern or plain name
         patterns = ["lib{}.so", "{}.so", "{}"]
     
-    reldir = pathlib.Path(__file__).parent
     libpath = None
-    
     for dir in dirs:
         dir = pathlib.Path(dir)
         if not dir.is_absolute():
             # NOTE joining an absolute path silently discardy the path before
-            dir = (reldir/dir).resolve(strict=False)
+            dir = (pathlib.Path(__file__).parent / dir).resolve(strict=False)
         for pat in patterns:
             libpath = dir / pat.format(name)
             if libpath.is_file():
@@ -36,6 +34,5 @@ _libs_info, _libs = {}, {}
 
 def _register_library(name, dllclass, **kwargs):
     libpath = _find_library(name, **kwargs)
-    assert libpath, "output expected from _find_library()"
     _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs, "path": libpath}
     _libs[name] = dllclass(libpath)
