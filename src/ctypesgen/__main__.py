@@ -35,10 +35,11 @@ def tmp_searchpath(path):
 
 def find_symbols_in_modules(modnames, outpath):
     
-    symbols = set()
+    assert isinstance(modnames, (tuple, list))  # not str
+    assert isinstance(outpath, Path) and outpath.is_absolute()
     
+    symbols = set()
     for modname in modnames:
-        
         if modname.startswith("."):
             # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
             # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
@@ -50,7 +51,7 @@ def find_symbols_in_modules(modnames, outpath):
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, "Linked modules must provide symbols"
-        msgs.status_message(f"Found symbols {module_syms} in module {module}")
+        msgs.status_message(f"Found symbols {module_syms} in {module}")
         symbols.update(module_syms)
     
     return symbols

@@ -236,7 +236,7 @@ _register_library(
         self.file.write(pad + f"__slots__ = {[n for n, _ in struct.members]}")
     
     def print_struct_fields(self, struct):
-        # Fields are defined indepedent of the actual class to handle things like self-references, cyclic struct references and forward declarations
+        # Fields are defined indepedent of the actual class to handle forward declarations, including self-references and cyclic structs
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
         self.file.write("%s_%s._fields_ = [" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
