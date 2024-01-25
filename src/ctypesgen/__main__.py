@@ -169,7 +169,7 @@ def main(given_argv=sys.argv[1:]):
     # Parser options
     parser.add_argument(
         "--cpp",
-        help="The command to invoke the C preprocessor, including any necessary options. By default, we try to find a supported preprocessor automatically. Example: to always use clang, pass --cpp \"clang -E\". (In a shell env, note the quotes for the arguments to end up in the right parser. Nested quotes in the command are also honored.)",
+        help="The command to invoke the C preprocessor, including any necessary options. By default, we try to find a supported preprocessor automatically. Example: to always use clang, pass --cpp \"clang -E\".",
     )
     parser.add_argument(
         "-D", "--define",
@@ -291,7 +291,7 @@ def main(given_argv=sys.argv[1:]):
         "--no-symbol-guards",
         dest="guard_symbols",
         action="store_false",
-        help="Do not add hasattr(_lib, ...) if-guards. Use when input headers and runtime binary are guaranteed to match. Note, if the library was loaded and missing symbols were determined, these would still be guarded selectively, if included.",
+        help="Do not add hasattr(...) if-guards around binary symbols. Use when input headers and runtime binary are guaranteed to match. If missing symbols are encountered during library loading, they will be excluded from the output.",
     )
     parser.add_argument(
         "--no-macro-guards",
@@ -361,7 +361,6 @@ def main(given_argv=sys.argv[1:]):
     printer(args.output, args, data, given_argv)
     
     msgs.status_message("Wrapping complete.")
-    
 
 
 if __name__ == "__main__":
