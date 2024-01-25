@@ -247,6 +247,7 @@ class CtypesNoErrorCheck:
     __nonzero__ = __bool__
 
 
+# FIXME(geisserml) CtypesPointerCast is probably unused AOTW
 class CtypesPointerCast:
     def __init__(self, target):
         self.target = target
