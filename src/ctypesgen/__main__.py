@@ -99,6 +99,7 @@ def main(given_argv=sys.argv[1:]):
     parser.add_argument(
         "-o", "--output",
         required=True,
+        type=lambda p: Path(p).resolve(),
         metavar="FILE",
         help="Write bindings to FILE",
     )
@@ -351,7 +352,7 @@ def main(given_argv=sys.argv[1:]):
     args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
     
     # Figure out what names will be defined by imported Python modules
-    args.linked_symbols = find_symbols_in_modules(args.modules, Path(args.output).resolve())
+    args.linked_symbols = find_symbols_in_modules(args.modules, args.output)
     
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
     descs = core_parser.parse(args.headers, args)

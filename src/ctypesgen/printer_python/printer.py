@@ -33,7 +33,6 @@ class WrapperPrinter:
     def __init__(self, outpath, options, data, argv):
         
         self.options = options
-        outpath = Path(outpath).resolve()
         status_message(f"Writing to {outpath}.")
         
         with outpath.open("w", encoding="utf-8") as self.file:
