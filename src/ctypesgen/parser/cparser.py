@@ -198,7 +198,6 @@ class CParser:
         `declaration` is an instance of Declaration.  Where a declaration has
         multiple initialisers, each is returned as a separate declaration.
         """
-        pass
 
 
 class DebugCParser(CParser):

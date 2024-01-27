@@ -50,8 +50,8 @@ def find_symbols_in_modules(modnames, outpath):
             module = importlib.import_module(modname)
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
-        assert len(module_syms) > 0, "Linked modules must provide symbols"
-        msgs.status_message(f"Found symbols {module_syms} in {module}")
+        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
+        msgs.status_message(f"Found symbols {module_syms} in {module.__name__!r}")
         symbols.update(module_syms)
     
     return symbols
@@ -347,19 +347,19 @@ def main(given_argv=sys.argv[1:]):
     
     args.cppargs = list( itertools.chain(*args.cppargs) )
     
-    # important: must not use +=, this would mutate the original object, which is problematic when calling ctypesgen natively from the python API
+    # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
     args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
     args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
     
-    # Figure out what names will be defined by imported Python modules
+    # Figure out what names will be defined by linked-in python modules
     args.linked_symbols = find_symbols_in_modules(args.modules, args.output)
     
-    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
-    descs = core_parser.parse(args.headers, args)
-    processor.process(descs, args)
-    data = [(k, d) for k, d in descs.output_order if d.included]
+    data = core_parser.parse(args.headers, args)
+    processor.process(data, args)
+    data = [(k, d) for k, d in data.output_order if d.included]
     if not data:
         raise RuntimeError("No target members found.")
+    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
     printer(args.output, args, data, given_argv)
     
     msgs.status_message("Wrapping complete.")
