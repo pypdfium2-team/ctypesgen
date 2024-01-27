@@ -14,7 +14,6 @@ PREAMBLE_PATH = THIS_DIR/"preamble.py"
 DEFAULTHEADER_PATH = THIS_DIR/"defaultheader.py"
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
-
 # Concerning newlines handling, please read docs/dev_comments.md
 
 def ParagraphCtxFactory(file):
@@ -107,6 +106,9 @@ class WrapperPrinter:
     
     
     def print_templates(self, opts, outpath):
+        # TODO(preamble)
+        # - Perspectively, we'd like to add individual templates only on as-needed basis.
+        # - The ctypes * import is somewhat unfortunate for the namespace. On the other hand, prefixing would make the output bigger and less readable.
         if opts.embed_preamble:
             self._embed_file(PREAMBLE_PATH, "preamble")
             if opts.library:
