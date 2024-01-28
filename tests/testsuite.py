@@ -935,39 +935,33 @@ class TestEmptyHeader(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        cls.exc = None
         cls.infile = TMP_DIR/"empty_header.h"
         cls.outfile = TMP_DIR/"empty_output.py"
         cls.infile.write_text("// this is an empty header\n")
-        try:
-            ctypesgen_main(["-i", cls.infile, "-o", cls.outfile])
-        except RuntimeError as e:
-            cls.exc = e
     
     @classmethod
     def tearDownClass(cls):
         if CLEANUP_OK: cls.infile.unlink()
     
     def test_empty_header(self):
-        self.assertIsNotNone(self.exc)
-        self.assertEqual(str(self.exc), "No target members found.")
+        with self.assertRaises(RuntimeError, msg="No target members found."):
+            ctypesgen_main(["-i", self.infile, "-o", self.outfile])
         self.assertFalse(self.outfile.exists())
 
 
+requires_gcc = unittest.skipUnless(shutil.which("gcc"), reason="Requires GCC")
+
 class TestDefUndef(unittest.TestCase):
-    """ Test that defines and undefines are passed through in given order. """
+    """
+    Test handling of defines/undefines passed to ctypesgen.
+    Checks order, defaults, and overrides of defaults.
+    """
     
     def test_ordered_passthrough(self):
         m = generate("", [*"-D A=1 B=2 C=3 -U B -D B=0 -U C".split(" "), "--symbol-rules", "yes=A|B|C"])
         self.assertEqual(m.A, 1)
         self.assertEqual(m.B, 0)
         self.assertFalse(hasattr(m, "C"))
-
-
-requires_gcc = unittest.skipUnless(shutil.which("gcc"), reason="Requires GCC")
-
-class TestFlagDefaultOverride(unittest.TestCase):
-    """ Test that we can override default pre-processor flags added by ctypesgen. """
     
     @requires_gcc
     def test_default_undef(self):
