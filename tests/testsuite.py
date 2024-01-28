@@ -3,7 +3,7 @@ Simple test suite using unittest.
 Aims to test for regressions. Where possible use stdlib to avoid the need to compile C code.
 
 Originally written by clach04 (Chris Clark).
-Significally restructured by mara004 (geisserml).
+Significantly restructured by mara004 (geisserml).
 
 Calling:
     python3 -m unittest tests.testsuite
@@ -59,15 +59,17 @@ else:
     MATHLIB_NAME = STDLIB_NAME
 
 
-class StdlibTest(unittest.TestCase):
+class TestCaseWithCleanup(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        del cls.module
+
+
+class StdlibTest(TestCaseWithCleanup):
     
     @classmethod
     def setUpClass(cls):
         cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
     def test_getenv_returns_string(self):
         """ Test string return """
@@ -104,7 +106,7 @@ class StdlibTest(unittest.TestCase):
         self.assertEqual(result, None)
 
 
-class VariadicFunctionTest(unittest.TestCase):
+class VariadicFunctionTest(TestCaseWithCleanup):
     """ This tests calling variadic functions. """
     
     @classmethod
@@ -128,7 +130,7 @@ class VariadicFunctionTest(unittest.TestCase):
             if CLEANUP_OK: tmp.unlink()
 
 
-class MathTest(unittest.TestCase):
+class MathTest(TestCaseWithCleanup):
 
     @classmethod
     def setUpClass(cls):
@@ -139,10 +141,6 @@ class MathTest(unittest.TestCase):
         # math.h contains a macro NAN = (0.0 / 0.0) which triggers a ZeroDivisionError on module import, so exclude the symbol.
         # TODO consider adding option like --replace-symbol NAN=float("nan")
         cls.module = generate(header_str, ["-l", MATHLIB_NAME, "--all-headers", "--symbol-rules", "never=NAN", r"if_needed=__\w+"])
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
     def test_sin(self):
         self.assertEqual(self.module.sin(2), math.sin(2))
@@ -202,7 +200,7 @@ class CommonHeaderTest(unittest.TestCase):
             free_library(common_loader._libs["common"]._handle)
 
 
-class StdBoolTest(unittest.TestCase):
+class StdBoolTest(TestCaseWithCleanup):
     """Test correct parsing and generation of bool type"""
 
     @classmethod
@@ -217,17 +215,13 @@ struct foo {
 """
         cls.module = generate(header_str)  # ["--all-headers"]
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
-
     def test_stdbool_type(self):
         """Test if bool is parsed correctly"""
         struct_foo = self.module.struct_foo
         self.assertEqual(struct_foo._fields_, [("is_bar", ctypes.c_bool), ("a", ctypes.c_int)])
 
 
-class IntTypesTest(unittest.TestCase):
+class IntTypesTest(TestCaseWithCleanup):
     """Test correct parsing and generation of different integer types"""
 
     @classmethod
@@ -248,10 +242,6 @@ struct int_types {
 };
 """
         cls.module = generate(header_str)
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
     def test_int_types(self):
         """Test if different integer types are parsed correctly"""
@@ -274,7 +264,7 @@ struct int_types {
         )
 
 
-class SimpleMacrosTest(unittest.TestCase):
+class SimpleMacrosTest(TestCaseWithCleanup):
 
     @classmethod
     def setUpClass(cls):
@@ -303,7 +293,8 @@ class SimpleMacrosTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.module, cls.json
+        super().tearDownClass()
+        del cls.json
 
     def test_macro_constant_int(self):
         self.assertEqual(self.module.A, 1)
@@ -476,7 +467,7 @@ def compute_packed(modulo, fields):
     return sum(packs)
 
 
-class StructuresTest(unittest.TestCase):
+class StructuresTest(TestCaseWithCleanup):
 
     @classmethod
     def setUpClass(cls):
@@ -560,10 +551,6 @@ typedef struct {
         cls.module = generate(header_str)
         cls.json, cls.tmp_header_path = generate(header_str, lang="json")
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
-
     def test_struct_json(self):
         json_ans = json_expects.get_ans_struct(self.tmp_header_path)
         json_expects.compare_json(self, StructuresTest.json, json_ans, True)
@@ -640,7 +627,7 @@ typedef struct {
         self.assertEqual(PBAR0._type_, BAR0)
 
 
-class EnumTest(unittest.TestCase):
+class EnumTest(TestCaseWithCleanup):
     @classmethod
     def setUpClass(cls):
         header_str = """
@@ -654,7 +641,8 @@ typedef enum {
 
     @classmethod
     def tearDownClass(cls):
-        del cls.module, cls.json
+        super().tearDownClass()
+        del cls.json
 
     def test_enum(self):
         self.assertEqual(EnumTest.module.TEST_1, 0)
@@ -688,7 +676,7 @@ void foo5(void) __attribute__((__stdcall__));
         json_expects.compare_json(self, self.json, json_ans, True)
 
 
-class CallPrototypesTest(unittest.TestCase):
+class CallPrototypesTest(TestCaseWithCleanup):
     """Test usability of function prototypes."""
     
     @classmethod
@@ -724,13 +712,9 @@ typedef MyStructT (*FP_CustomRestype)(void);
         """ Test non-primitive restype. Fails because not supported by ctypes. """
         with self.assertRaises(TypeError, msg="invalid result type for callback function"):
             F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT())
-    
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
 
-class LongDoubleTest(unittest.TestCase):
+class LongDoubleTest(TestCaseWithCleanup):
     """Test correct parsing and generation of 'long double' type"""
 
     @classmethod
@@ -742,10 +726,6 @@ struct foo {
 };
 """
         cls.module = generate(header_str)  # ["--all-headers"]
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
     def test_longdouble_type(self):
         """Test if long double is parsed correctly"""
@@ -799,7 +779,7 @@ class CommandParserTest(unittest.TestCase):
         self.assertIn("error: unrecognized arguments: --this-does-not-exist", err)
 
 
-class ConstantsTest(unittest.TestCase):
+class ConstantsTest(TestCaseWithCleanup):
     """Test correct parsing and generation of NULL"""
 
     @classmethod
@@ -831,10 +811,6 @@ struct foo {
 #define CHAR_CONST u'🍌'
 """
         cls.module = generate(header_str)
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
 
     def test_integer_constants(self):
         """Test if integer constants are parsed correctly"""
@@ -875,7 +851,7 @@ struct foo {
         self.assertEqual(ConstantsTest.module.CHAR_CONST, "🍌")
 
 
-class NULLTest(unittest.TestCase):
+class NULLTest(TestCaseWithCleanup):
     "Test correct parsing and generation of NULL"
 
     @classmethod
@@ -883,17 +859,13 @@ class NULLTest(unittest.TestCase):
         header_str = "#define A_NULL_MACRO NULL\n"
         cls.module = generate(header_str)  # ["--all-headers"]
 
-    @classmethod
-    def tearDownClass(cls):
-        del cls.module
-
     def test_null_type(self):
         """Test if NULL is parsed correctly"""
         self.assertEqual(self.module.A_NULL_MACRO, None)
 
 
 @unittest.skipUnless(sys.platform == "darwin", "requires Mac")
-class MacromanEncodeTest(unittest.TestCase):
+class MacromanEncodeTest(TestCaseWithCleanup):
     """Test if source file with mac_roman encoding is parsed correctly.
 
     This test is skipped on non-mac platforms.
@@ -921,7 +893,7 @@ class MacromanEncodeTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.module
+        super().tearDownClass()
         if CLEANUP_OK: cls.mac_roman_file.unlink()
 
     def test_macroman_encoding_source(self):
