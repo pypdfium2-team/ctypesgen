@@ -247,15 +247,6 @@ class CtypesNoErrorCheck:
     __nonzero__ = __bool__
 
 
-# FIXME(geisserml) CtypesPointerCast is probably unused AOTW
-class CtypesPointerCast:
-    def __init__(self, target):
-        self.target = target
-
-    def py_string(self, ignore_can_be_ctype=None):
-        return f"lambda v,*a : cast(v, {self.target.py_string()})"
-
-
 class CtypesFunction(CtypesType):
     def __init__(self, restype, parameters, variadic, attrib=dict()):
         super(CtypesFunction, self).__init__()

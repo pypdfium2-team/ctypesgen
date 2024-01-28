@@ -53,7 +53,6 @@ def mask_external_members(data, opts):
     """mask_external_members() removes descriptions if they came from files
     outside of the header files specified from the command line."""
     for desc in data.all:
-        if desc.src is None: continue  # FIXME unreached?
         if desc.src[0] == "<command line>":
             # FIXME(geisserml) I don't understand the intent behind this clause. When does <command line> occur?
             desc.include_rule = "if_needed"
