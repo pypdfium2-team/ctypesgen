@@ -230,7 +230,7 @@ class AttributeExpressionNode(ExpressionNode):
         # Fortunately, the processor module does the same thing to
         # the struct member name.
         if self.attribute in keyword.kwlist:
-            self.attribute = "_" + self.attribute
+            self.attribute += "_"
 
     def visit(self, visitor):
         self.base.visit(visitor)
