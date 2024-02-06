@@ -313,7 +313,7 @@ class CtypesStruct(CtypesType):
 
 last_tagnum = 0
 
-def anonymous_enum_tag():
+def anon_enum_tag():
     global last_tagnum
     last_tagnum += 1
     return f"anon_{last_tagnum}"
@@ -325,7 +325,7 @@ class CtypesEnum(CtypesType):
         self.tag = tag
         self.anonymous = not self.tag
         if self.anonymous:
-            self.tag = anonymous_enum_tag()
+            self.tag = anon_enum_tag()
         self.enumerators = enumerators
         self.opaque = self.enumerators is None
         self.src = src
