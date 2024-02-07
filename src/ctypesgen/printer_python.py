@@ -105,7 +105,7 @@ class WrapperPrinter:
     
     
     def print_loader(self, opts, outpath):
-        if opts.embed_preamble:
+        if opts.embed_templates:
             self.file.write("\n\n\n")
             self._embed_file(LIBRARYLOADER_PATH, "loader template")
         else:
@@ -130,7 +130,7 @@ _register_library(
     search_sys = {opts.search_sys},
 )\
 """
-        if opts.embed_preamble:
+        if opts.embed_templates:
             self.file.write(f"\n\n\n{content}")
         else:
             loader_txt = self.EXT_LOADER.read_text()

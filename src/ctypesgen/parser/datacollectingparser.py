@@ -315,8 +315,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
             self.output_order.append(("macro", macro))
 
         # Macros could possibly contain things like __FILE__, __LINE__, etc...
-        # This could be supported, but it would be a lot of work. It would
-        # probably also bloat the Preamble considerably.
+        # This could be supported, but it would be a lot of work and require a considerable amount of templates
 
     def handle_error(self, message, filename, lineno):
         # Called by CParser

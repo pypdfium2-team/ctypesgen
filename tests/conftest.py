@@ -86,7 +86,7 @@ def generate_common():
     _create_common_files()
     _compile_common(common_lib)
     
-    ctypesgen_main(["-i", COMMON_DIR/"common.h", "--no-embed-preamble", "-o", COMMON_DIR/"common.py"])
+    ctypesgen_main(["-i", COMMON_DIR/"common.h", "--no-embed-templates", "-o", COMMON_DIR/"common.py"])
     for file_name, shared in product(["a", "b"], [False, True]):
         _generate_with_common(file_name, shared)
 
@@ -133,7 +133,7 @@ def _generate_with_common(file_name, shared):
     args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
     if shared:
         file_name += "_shared"
-        args += ["-m", ".common", "--no-embed-preamble"]
+        args += ["-m", ".common", "--no-embed-templates"]
     else:
         # manually add the `mystruct` symbol (alias to ctypesgen auxiliary symbol struct_mystruct), which is not taken over by default with indirect header inclusion
         # the alternative would be to eagerly include all members from common.h by adding it to the input headers, i.e. args += ["-i", COMMON_DIR/"common.h"]

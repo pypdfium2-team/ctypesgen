@@ -22,8 +22,9 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
   - Headers have been converted from positional to flag `-i`/`--headers`, to avoid confusion with options that take a variadic number of params.
   - Beware: Historically, `--include` did something different and is now called `--system-headers` here.
   - `--symbol-rules` replaces `--include-symbols` (yes) / `--exclude-symbols` (never).
-  - More flags changed or renamed.
+  - `--no-embed-preamble` renamed to `--no-embed-templates`.
   - `--allow-gnu-c` replaced by `-X __GNUC__`.
+  - More flags changed or renamed.
 * The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
 * All strings interfacing with the C extension have to be encoded as bytes. We do not do implicit UTF-8 encoding/decoding. (A new, opt-in string helper might be added in the future.)
 * We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
@@ -34,7 +35,7 @@ Further, upstream docs may provide some information of interest ([readme](https:
 
 ### New features and improvements (selection)
 
-* Implemented relative imports with `--link-modules`, and library handle sharing with `--no-embed-preamble`. Removed incorrect `POINTER` override that breaks the type system.
+* Implemented relative imports with `--link-modules`, and library handle sharing with `--no-embed-templates`. Removed incorrect `POINTER` override that breaks the type system.
 * Prevent assignment of invalid struct fields.
 * Slimmed up template by removing many avoidable wrappers.
 * Rewrote library loader. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libdirs to runtime.
@@ -51,7 +52,7 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 ### Tips & Tricks
 
 * If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
-  If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share the template using `--no-embed-preamble`. Relative modules will be expected to be present in the output directory at compile time.
+  If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share boilerplate code using `--no-embed-templates`. Relative modules will be expected to be present in the output directory at compile time.
   Note, this strategy can also be used to bind to same-library headers separately; however, you'll need to resolve the dependency tree on your own.
 * Extra include search paths can be provided using the `-I` option or by setting `$CPATH`/`$C_INCLUDE_PATH`.
   You could use this to add a header spoofing an external symbol via `typedef void* SYMBOL;` (`c_void_p`) that may be provided by a third-party binding at runtime.
@@ -77,7 +78,7 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 
 *pypdfium2-ctypesgen*
 * The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, because it does not match the API layer of ctypes.
-* We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the preamble, and possibly use module linking, as described above.
+* We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the loader template, and possibly use module linking, as described above.
 
 *ctypesgen*
 * The conflicting names resolver is largely untested, in particular the handling of dependants. Please report success or failure.

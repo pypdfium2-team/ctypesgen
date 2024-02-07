@@ -162,10 +162,10 @@ def main(given_argv=sys.argv[1:]):
         help="Deactivate fallback system library search; mandate that the library be contained in the given libdirs instead."
     )
     parser.add_argument(
-        "--no-embed-preamble",
+        "--no-embed-templates",
         action="store_false",
-        dest="embed_preamble",
-        help="Do not embed preamble and loader in output file. Defining --output-language to Python is a prerequisite.",
+        dest="embed_templates",
+        help="Do not embed boilerplate code in output file (e.g. library loader). Defining --output-language to Python is a prerequisite.",
     )
 
     # Parser options
