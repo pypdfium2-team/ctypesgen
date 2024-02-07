@@ -8,11 +8,8 @@ from ctypesgen.expressions import ExpressionNode
 from ctypesgen.messages import warning_message, status_message
 
 
-THIS_DIR = Path(__file__).resolve().parent
-CTYPESGEN_DIR = THIS_DIR.parent
+CTYPESGEN_DIR = Path(__file__).resolve().parent
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
-
-# Concerning newlines handling, please read docs/dev_comments.md
 
 def ParagraphCtxFactory(file):
     @contextmanager
@@ -24,6 +21,8 @@ def ParagraphCtxFactory(file):
             file.write(f"\n# -- End {txt} --")
     return paragraph_ctx
 
+
+# Important: Concerning newlines handling, please read docs/dev_comments.md
 
 class WrapperPrinter:
     
@@ -37,9 +36,8 @@ class WrapperPrinter:
             self.paragraph_ctx = ParagraphCtxFactory(self.file)
             
             self.print_info(argv)
-            self.file.write("\n\n")
             self.file.write(
-                "import ctypes"
+                "\n\nimport ctypes"
                 "\nfrom ctypes import *"
             )
             
@@ -107,8 +105,6 @@ class WrapperPrinter:
     
     
     def print_loader(self, opts, outpath):
-        if not opts.library:
-            return
         if opts.embed_preamble:
             self.file.write("\n\n\n")
             self._embed_file(LIBRARYLOADER_PATH, "loader template")
