@@ -34,5 +34,5 @@ _libs_info, _libs = {}, {}
 
 def _register_library(name, dllclass, **kwargs):
     libpath = _find_library(name, **kwargs)
-    _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs, "path": libpath}
+    _libs_info[name] = {**kwargs, "path": libpath}
     _libs[name] = dllclass(libpath)
