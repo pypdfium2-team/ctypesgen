@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Trivial ctypesgen demo library consumer
+Python consumer of trivial ctypesgen demo library
 
-NOTE pydemolib needs to be generated via:
+pydemolib can be generated via:
     ctypesgen -i demolib.h -l demolib -L . -o pydemolib.py
 """
 

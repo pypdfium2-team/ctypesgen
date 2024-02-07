@@ -1,4 +1,4 @@
-/* Trivial ctypesgen demo library
+/* Trivial ctypesgen demo library - Implementation
 
 Build with:
     gcc -fPIC -shared demolib.c -o demolib.so
