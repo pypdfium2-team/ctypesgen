@@ -269,6 +269,7 @@ def main(given_argv=sys.argv[1:]):
     parser.add_argument(
         "--insert-files",
         dest="inserted_files",
+        type=lambda p: Path(p).resolve(),
         nargs="+",
         action="extend",
         default=[],
