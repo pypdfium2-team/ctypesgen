@@ -23,7 +23,6 @@ def _find_library(name, dirs, search_sys):
     else:  # assume unix pattern or plain name
         patterns = ["lib{}.so", "{}.so", "{}"]
     
-    libpath = None
     for dir in dirs:
         dir = pathlib.Path(dir)
         if not dir.is_absolute():
@@ -34,8 +33,7 @@ def _find_library(name, dirs, search_sys):
             if libpath.is_file():
                 return str(libpath)
     
-    if search_sys:
-        libpath = ctypes.util.find_library(name)
+    libpath = ctypes.util.find_library(name) if search_sys else None
     if not libpath:
         raise ImportError(f"Could not find library '{name}' (dirs={dirs}, search_sys={search_sys})")
     
@@ -45,7 +43,7 @@ _libs_info, _libs = {}, {}
 
 def _register_library(name, dllclass, **kwargs):
     libpath = _find_library(name, **kwargs)
-    _libs_info[name] = {"name": name, "dllclass": dllclass, **kwargs, "path": libpath}
+    _libs_info[name] = {**kwargs, "path": libpath}
     _libs[name] = dllclass(libpath)
 
 # -- End loader template --
