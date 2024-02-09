@@ -40,12 +40,13 @@ def find_symbols_in_modules(modnames, outpath):
     
     symbols = set()
     for modname in modnames:
-        if modname.startswith("."):
+        n_dots = len(modname) - len(modname.lstrip("."))
+        if n_dots > 0:
             # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
             # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
-            anchor_dir = outpath.parent
+            anchor_dir = outpath.parents[n_dots-1]
             with tmp_searchpath(anchor_dir.parent):
-                module = importlib.import_module(modname, anchor_dir.name)
+                module = importlib.import_module(modname[n_dots-1:], anchor_dir.name)
         else:
             module = importlib.import_module(modname)
         
