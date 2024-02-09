@@ -33,6 +33,16 @@ def tmp_searchpath(path):
         assert popped is path
 
 
+def _is_relative_to(path, other):
+    # check if 'path' is equal to or contained in 'other'
+    # this implies that 'path' is longer than 'other', and 'other' a directory
+    assert len(path.parts) >= len(other.parts) and other.is_dir()
+    if sys.version_info >= (3, 9):
+        return path.is_relative_to(other)
+    else:
+        return path == other or other in path.parents
+
+
 def find_symbols_in_modules(modnames, outpath, anchor):
     
     # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
@@ -54,7 +64,7 @@ def find_symbols_in_modules(modnames, outpath, anchor):
             if anchor == tight_anchor:
                 import_path = modname
             else:
-                assert anchor in tight_anchor.parents
+                assert _is_relative_to(tight_anchor, anchor)
                 diff = tight_anchor.parts[len(anchor.parts):]
                 import_path = ".".join(["", *diff, modname[n_dots:]])
                 msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
@@ -132,12 +142,12 @@ def main(given_argv=sys.argv[1:]):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from python module MODULE. Either as system import, or as dot-prefixed relative import. In the latter case, you have to specify the top-level package via --linkage-anchor.",
+        help="Use symbols from python module MODULE. Either as system import, or as dot-prefixed relative import. In the latter case, specifying --no-embed-templates and --linkage-anchor is mandatory.",
     )
     parser.add_argument(
         "--linkage-anchor",
         type=lambda p: Path(p).resolve(),
-        help="The top-level package to use as anchor when importing relative linked modules at compile time. While we can deduce a narrow anchor based on output path and number of dots, this is not necessarily the package root, and would fail for higher-reaching indirect imports. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries. Therefore, this option is mandatory with relative modules.",
+        help="The top-level package to use as anchor when importing relative linked modules at compile time. While we can deduce a narrow anchor based on output path and number of dots, this is not necessarily the package root, and would fail for higher-reaching indirect imports. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries (it does not have to match the bindings output directory in case of a nested layout). Therefore, this option is mandatory with relative modules or --no-embed-templates, to avoid ambiguity.",
     )
     parser.add_argument(
         "-I", "--includedirs",
@@ -348,9 +358,11 @@ def main(given_argv=sys.argv[1:]):
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
     if any(m.startswith(".") for m in args.modules):
-        assert args.linkage_anchor and not args.embed_templates, "Linked modules require --linkage-anchor and --no-embed-templates"
+        assert args.linkage_anchor and not args.embed_templates, "Relative linked modules require --linkage-anchor and --no-embed-templates"
     if not args.embed_templates:
         assert args.linkage_anchor, "--no-embed-templates requires --linkage-anchor"
+    if args.linkage_anchor:
+        assert _is_relative_to(args.output, args.linkage_anchor)
     
     if args.cpp:
         # split while preserving quotes
