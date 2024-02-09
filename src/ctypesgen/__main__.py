@@ -71,7 +71,7 @@ def find_symbols_in_modules(modnames, outpath, anchor):
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
-        msgs.status_message(f"Found symbols {module_syms} in {module.__name__!r}")
+        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
         symbols.update(module_syms)
     
     return symbols
