@@ -61,12 +61,10 @@ def find_symbols_in_modules(modnames, outpath, anchor):
             module = importlib.import_module(modname)
         else:
             tight_anchor = outpath.parents[n_dots-1]
-            if anchor == tight_anchor:
-                import_path = modname
-            else:
-                assert _is_relative_to(tight_anchor, anchor)
-                diff = tight_anchor.parts[len(anchor.parts):]
-                import_path = ".".join(["", *diff, modname[n_dots:]])
+            assert _is_relative_to(tight_anchor, anchor)
+            diff = tight_anchor.parts[len(anchor.parts):]
+            import_path = ".".join(["", *diff, modname[n_dots:]])
+            if modname != import_path:
                 msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
             with tmp_searchpath(anchor.parent):
                 module = importlib.import_module(import_path, anchor.name)
