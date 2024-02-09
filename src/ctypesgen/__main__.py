@@ -33,22 +33,33 @@ def tmp_searchpath(path):
         assert popped is path
 
 
-def find_symbols_in_modules(modnames, outpath):
+def find_symbols_in_modules(modnames, outpath, anchor):
+    
+    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
+    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
     
     assert isinstance(modnames, (tuple, list))  # not str
     assert isinstance(outpath, Path) and outpath.is_absolute()
+    if any(m.startswith(".") for m in modnames):
+        assert anchor, "It is mandated to provide an explicit --linkage-anchor with relative modules."
+        assert isinstance(anchor, Path) and anchor.is_absolute()
     
     symbols = set()
     for modname in modnames:
         n_dots = len(modname) - len(modname.lstrip("."))
-        if n_dots > 0:
-            # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
-            # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
-            anchor_dir = outpath.parents[n_dots-1]
-            with tmp_searchpath(anchor_dir.parent):
-                module = importlib.import_module(modname[n_dots-1:], anchor_dir.name)
-        else:
+        if not n_dots > 0:
             module = importlib.import_module(modname)
+        else:
+            tight_anchor = outpath.parents[n_dots-1]
+            if anchor == tight_anchor:
+                import_path = modname
+            else:
+                assert anchor in tight_anchor.parents
+                diff = tight_anchor.parts[len(anchor.parts):]
+                import_path = ".".join(["", *diff, modname[n_dots:]])
+                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
+            with tmp_searchpath(anchor.parent):
+                module = importlib.import_module(import_path, anchor.name)
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
@@ -121,7 +132,12 @@ def main(given_argv=sys.argv[1:]):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from python module MODULE. If prefixed with '.', the import is interpreted relative to the output dir. Otherwise, we import from installed packages. (Note, in case of a relative import, the output dir's parent is temporarily added to PYTHONPATH due to import system limitations, so you'll want to make sure there are no conflicts.)",
+        help="Use symbols from python module MODULE. Either as system import, or as dot-prefixed relative import. In the latter case, you have to specify the top-level package via --linkage-anchor.",
+    )
+    parser.add_argument(
+        "--linkage-anchor",
+        type=lambda p: Path(p).resolve(),
+        help="The top-level package to use as anchor when importing relative linked modules at compile time. While we can deduce a narrow anchor based on output path and number of dots, this is not necessarily the package root, and would fail for higher-reaching indirect imports. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries. Therefore, this option is mandatory with relative modules.",
     )
     parser.add_argument(
         "-I", "--includedirs",
@@ -353,7 +369,7 @@ def main(given_argv=sys.argv[1:]):
     args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
     
     # Figure out what names will be defined by linked-in python modules
-    args.linked_symbols = find_symbols_in_modules(args.modules, args.output)
+    args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)
     
     data = core_parser.parse(args.headers, args)
     processor.process(data, args)
