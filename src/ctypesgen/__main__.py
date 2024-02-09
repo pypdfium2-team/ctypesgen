@@ -40,12 +40,12 @@ def find_symbols_in_modules(modnames, outpath, anchor):
     
     assert isinstance(modnames, (tuple, list))  # not str
     assert isinstance(outpath, Path) and outpath.is_absolute()
-    if any(m.startswith(".") for m in modnames):
-        assert anchor, "It is mandated to provide an explicit --linkage-anchor with relative modules."
+    if anchor:
         assert isinstance(anchor, Path) and anchor.is_absolute()
     
     symbols = set()
     for modname in modnames:
+        
         n_dots = len(modname) - len(modname.lstrip("."))
         if not n_dots > 0:
             module = importlib.import_module(modname)
@@ -346,8 +346,11 @@ def main(given_argv=sys.argv[1:]):
     
     args = parser.parse_args(given_argv)
     
-    if not (args.headers or args.system_headers):
-        raise ValueError("Either --headers or --system-headers required.")
+    assert args.headers or args.system_headers, "Either --headers or --system-headers required."
+    if any(m.startswith(".") for m in args.modules):
+        assert args.linkage_anchor and not args.embed_templates, "Linked modules require --linkage-anchor and --no-embed-templates"
+    if not args.embed_templates:
+        assert args.linkage_anchor, "--no-embed-templates requires --linkage-anchor"
     
     if args.cpp:
         # split while preserving quotes
