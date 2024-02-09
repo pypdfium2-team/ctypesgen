@@ -69,6 +69,30 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 * Finally, the `--symbol-rules` option is applied, which can be used to assign symbol rules by regex fullmatch expressions, providing callers with powerful means of control over symbol inclusion.
 * To filter out excess symbols, you'll usually want to use `if_needed` rather than `never` to avoid accidental exclusion of dependants. Use `never` only where this side effect is actually wanted, e.g. to exclude a broken symbol.
 
+#### Binding against the Python API
+
+```bash
+ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --all-headers -o ctypes_python.py --symbol-rules never=PyTypeObject
+```
+(substituting `3.X` with your system's python version). Minimal test:
+```python
+from ctypes import *
+from ctypes_python import *
+
+v = Py_GetVersion()
+v = cast(v, c_char_p).value.decode("utf-8")
+print(v)
+```
+It should yield something like
+```
+3.11.6 (main, Oct  3 2023, 00:00:00) [GCC 12.3.1 20230508 (Red Hat 12.3.1-1)]
+```
+and the same as `sys.version`:
+```python
+import sys
+print(v == sys.version)  # True
+```
+
 
 ### Known Limitations
 

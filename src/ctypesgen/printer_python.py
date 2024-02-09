@@ -27,9 +27,9 @@ def ParagraphCtxFactory(file):
 
 class WrapperPrinter:
     
-    def __init__(self, outpath, options, data, argv):
+    def __init__(self, outpath, opts, data, argv):
         
-        self.options = options
+        self.opts = opts
         status_message(f"Writing to {outpath}.")
         
         with outpath.open("w", encoding="utf-8") as self.file:
@@ -42,14 +42,18 @@ class WrapperPrinter:
                 "\nfrom ctypes import *"
             )
             
-            if self.options.modules:
+            if opts.modules:
                 self.file.write("\n\n# Linked modules")
-                for mod in self.options.modules:
+                for mod in opts.modules:
                     self.file.write(f"\nfrom {mod} import *")
             
-            if self.options.library:
-                self.print_loader(self.options, outpath)
-                self.print_library(self.options)
+            if opts.library:
+                if opts.dllclass == "pythonapi":
+                    assert opts.library == "python"
+                    self.file.write("\n\n_libs = {%r: ctypes.pythonapi}" % opts.library)
+                else:
+                    self.print_loader(opts, outpath)
+                    self.print_library(opts)
             else:
                 warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             
@@ -60,7 +64,7 @@ class WrapperPrinter:
                     getattr(self, f"print_{kind}")(desc)
                 self.file.write("\n")
             
-            for fp in self.options.inserted_files:
+            for fp in opts.inserted_files:
                 self.file.write("\n\n\n")
                 self._embed_file(fp, f"inserted file '{self._txtpath(fp)}'")
             
@@ -144,7 +148,7 @@ _register_library(
     
     
     def print_function(self, function):
-        assert self.options.library, "Binary symbol requires --library LIBNAME"
+        assert self.opts.library, "Binary symbol requires --library LIBNAME"
         self._srcinfo(function.src)
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
@@ -154,7 +158,7 @@ _register_library(
 {PN}.restype = {RT}\
 """
         fields = dict(
-            L=self.options.library,
+            L=self.opts.library,
             CN=function.c_name(),
             PN=function.py_name(),
             ATS=", ".join([a.py_string() for a in function.argtypes]),
@@ -164,7 +168,7 @@ _register_library(
             template += "\n{PN}.errcheck = {EC}"
             fields["EC"] = function.errcheck.py_string()
         
-        if self.options.guard_symbols:
+        if self.opts.guard_symbols:
             template = "if hasattr(_libs['{L}'], '{CN}'):\n" + indent(template, prefix=" "*4)
         if function.variadic:
             template = "# Variadic function '{CN}'\n" + template
@@ -173,15 +177,15 @@ _register_library(
     
     
     def print_variable(self, variable):
-        assert self.options.library, "Binary symbol requires --library LIBNAME"
+        assert self.opts.library, "Binary symbol requires --library LIBNAME"
         self._srcinfo(variable.src)
         entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
-            L=self.options.library,
+            L=self.opts.library,
             CN=variable.c_name(),
         )
-        if self.options.guard_symbols:
+        if self.opts.guard_symbols:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
     
@@ -268,7 +272,7 @@ _register_library(
     
     def _print_simple_macro(self, macro):
         entry = f"{macro.name} = {macro.expr.py_string(True)}"
-        if self.options.guard_macros:
+        if self.opts.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)
     
@@ -284,6 +288,6 @@ _register_library(
         name = undef.macro.py_string(False)
         self.file.write(f"# undef {name}\n")
         entry = f"del {name}"
-        if self.options.guard_macros:
+        if self.opts.guard_macros:
             entry = self._try_except_wrap(entry)
         self.file.write(entry)

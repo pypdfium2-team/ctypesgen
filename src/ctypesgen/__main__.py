@@ -283,12 +283,11 @@ def main(given_argv=sys.argv[1:]):
         choices=("py", "json"),
         help="Choose output language",
     )
-    # TODO add direct support for ctypes.pythonapi
     parser.add_argument(
         "--dllclass",
         default="CDLL",
-        choices=("CDLL", "WinDLL", "OleDLL", "PyDLL"),
-        help="The ctypes library class to use. 'CDLL' corresponds to the 'cdecl' calling convention, 'WinDLL' to windows-only 'stdcall'. We do not currently support libraries with mixed calling convention.",
+        choices=("CDLL", "WinDLL", "OleDLL", "pythonapi"),
+        help="The ctypes library class to use. 'CDLL' corresponds to the 'cdecl' calling convention, 'WinDLL' to windows-only 'stdcall'. We do not currently support libraries with mixed calling convention. As a special case, you may use 'pythonapi' to bind against Python's C API (passing matching headers and '-l python' is a pre-requisite). 'pythonapi' implies --no-load-library.",
     )
     parser.add_argument(
         "--no-symbol-guards",

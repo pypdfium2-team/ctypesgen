@@ -183,7 +183,7 @@ def free_library(lib_handle):
 
 def check_symbols(data, opts):
     
-    if opts.no_load_library or not opts.library:
+    if opts.no_load_library or not opts.library or opts.dllclass == "pythonapi":
         status_message(f"No library loading.")
         return
     
