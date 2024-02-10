@@ -73,7 +73,7 @@ See https://github.com/pypdfium2-team/ctypesgen/issues/1 for more.
 
 ```bash
 printf "import ctypes\nPyTypeObject = ctypes.POINTER(None)\n" > overrides.py
-ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --all-headers -m .overrides -o ctypes_python.py
+ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --all-headers -m .overrides --linkage-anchor . -o ctypes_python.py
 ```
 (substituting `3.X` with your system's python version). Minimal test:
 ```python
