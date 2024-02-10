@@ -6,6 +6,9 @@ on:
       upload_data:
         default: false
         type: boolean
+      cpp:
+        default: ''
+        type: string
   # - push
   # - pull_request
   # - fork
@@ -57,6 +60,7 @@ jobs:
         run: pytest -sv tests/testsuite.py
         env:
           CLEANUP_OK: ${{ !inputs.upload_data && 1 || 0 }}
+          CPP: ${{ inputs.cpp }}
       
       - name: Upload generated data
         if: ${{ inputs.upload_data && !cancelled() }}
