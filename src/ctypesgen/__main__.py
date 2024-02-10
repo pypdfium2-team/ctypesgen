@@ -92,9 +92,10 @@ def input_dir_t(p):
     return checked_path_t(p, check=Path.is_dir, exc=FileNotFoundError)
 
 
-# FIXME argparse parameters are not ordered consistently...
-# TODO consider BooleanOptionalAction (with compat backport)
-def main(given_argv=sys.argv[1:]):
+def get_parser():
+    
+    # FIXME argparse parameters are not ordered consistently...
+    # TODO consider BooleanOptionalAction (with compat backport)
     
     parser = argparse.ArgumentParser(prog="ctypesgen")
     
@@ -366,10 +367,13 @@ def main(given_argv=sys.argv[1:]):
         type=int,
         help="Run ctypesgen with specified debug level (also applies to yacc parser)",
     )
-    
-    args = parser.parse_args(given_argv)
+    return parser
+
+
+def api_main(args, given_argv=[]):
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
+    
     if any(m.startswith(".") for m in args.modules) or not args.embed_templates:
         assert args.linkage_anchor, "Relative linked modules or --no-embed-templates require --linkage-anchor"
     if args.linkage_anchor:
@@ -407,6 +411,11 @@ def main(given_argv=sys.argv[1:]):
     printer(args.output, args, data, given_argv)
     
     msgs.status_message("Wrapping complete.")
+
+
+def main(given_argv=sys.argv[1:]):
+    args = get_parser().parse_args(given_argv)
+    api_main(args, given_argv)
 
 
 if __name__ == "__main__":
