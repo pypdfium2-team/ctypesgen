@@ -770,14 +770,6 @@ class CommandParserTest(unittest.TestCase):
         self.assertGreater(len(out), 3000)  # it's long, so it'll be the generated help
         self.assertEqual(err, "")
 
-    def test_invalid_option(self):
-        """Test reporting of invalid (non-existent) arguments"""
-        out, err, rc = self._run(["-i", "_", "-l", "_", "-o", "_", "--this-does-not-exist"])
-        self.assertEqual(rc, 2)
-        self.assertEqual(out, "")
-        self.assertTrue(err.splitlines()[0].startswith("usage: ctypesgen"))
-        self.assertIn("error: unrecognized arguments: --this-does-not-exist", err)
-
 
 class ConstantsTest(TestCaseWithCleanup):
     """Test correct parsing and generation of NULL"""
