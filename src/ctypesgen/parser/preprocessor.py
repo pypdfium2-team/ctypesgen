@@ -139,7 +139,7 @@ class PreprocessorParser:
             cmd,
             universal_newlines=False,  # binary
             stdout=subprocess.PIPE,
-            check=True,
+            check=not IS_WINDOWS,
         )
         
         if IS_MAC:
