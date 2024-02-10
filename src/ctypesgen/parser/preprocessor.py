@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import copy
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -134,7 +135,7 @@ class PreprocessorParser:
         for p in self.options.include_search_paths:
             cmd += ["-I", p]
         cmd += self.options.cppargs + [filename]
-        self.cparser.handle_status(cmd)
+        self.cparser.handle_status(' '.join([shlex.quote(c) for c in cmd]))
 
         pp = subprocess.run(
             cmd,

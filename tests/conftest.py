@@ -3,8 +3,9 @@ import sys
 import json
 import atexit
 import types
-import subprocess
+import shlex
 import shutil
+import subprocess
 from itertools import product
 from pathlib import Path
 
@@ -32,7 +33,9 @@ if CLEANUP_OK: atexit.register(_remove_tmpdir)
 
 def ctypesgen_main(args, echo=True):
     args = [str(a) for a in args]
-    if echo: print(["ctypesgen", *args], file=sys.stderr)
+    if echo:
+        str_args = ' '.join([shlex.quote(a) for a in ["ctypesgen", *args]])
+        print(str_args, file=sys.stderr)
     return ctypesgen.__main__.main(args)
 
 def module_from_code(name, python_code):
