@@ -170,8 +170,6 @@ _register_library(
         
         if self.opts.guard_symbols:
             template = "if hasattr(_libs['{L}'], '{CN}'):\n" + indent(template, prefix=" "*4)
-        if function.variadic:
-            template = "# Variadic function '{CN}'\n" + template
         
         self.file.write(template.format(**fields))
     
@@ -286,7 +284,6 @@ _register_library(
     def print_undef(self, undef):
         self._srcinfo(undef.src)
         name = undef.macro.py_string(False)
-        self.file.write(f"# undef {name}\n")
         entry = f"del {name}"
         if self.opts.guard_macros:
             entry = self._try_except_wrap(entry)
