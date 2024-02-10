@@ -145,7 +145,7 @@ def main(given_argv=sys.argv[1:]):
     parser.add_argument(
         "--linkage-anchor",
         type=lambda p: Path(p).resolve(),
-        help="The top-level package to use as anchor when importing relative linked modules at compile time. While we can deduce a narrow anchor based on output path and number of dots, this is not necessarily the package root, and would fail for higher-reaching indirect imports. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries (it does not have to match the bindings output directory in case of a nested layout). To avoid ambiguity, this option is generally mandatory with relative modules or --no-embed-templates.",
+        help="The top-level package to use as anchor when importing relative linked modules at compile time. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries. To avoid ambiguity, this option is mandatory in both cases.",
     )
     parser.add_argument(
         "-I", "--includedirs",
