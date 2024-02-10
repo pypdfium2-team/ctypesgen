@@ -749,7 +749,7 @@ class CommandParserTest(unittest.TestCase):
         out, err, rc = io.StringIO(), io.StringIO(), None
         with redirect_stdout(out), redirect_stderr(err):
             try:
-                ctypesgen_main(args)
+                ctypesgen_main(args, echo=False)
             except SystemExit as e:
                 rc = e.code
         return out.getvalue(), err.getvalue(), rc

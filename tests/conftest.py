@@ -30,8 +30,10 @@ _init_tmpdir()
 if CLEANUP_OK: atexit.register(_remove_tmpdir)
 
 
-def ctypesgen_main(args):
-    return ctypesgen.__main__.main([str(a) for a in args])
+def ctypesgen_main(args, echo=True):
+    args = [str(a) for a in args]
+    if echo: print(["ctypesgen", *args], file=sys.stderr)
+    return ctypesgen.__main__.main(args)
 
 def module_from_code(name, python_code):
     file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
