@@ -135,31 +135,21 @@ class PreprocessorParser:
         cmd += self.options.cppargs + [filename]
         self.cparser.handle_status(cmd)
 
-        pp = subprocess.Popen(
+        pp = subprocess.run(
             cmd,
             universal_newlines=False,  # binary
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            check=True,
         )
-        ppout_data, pperr_data = pp.communicate()
-
-        try:
-            ppout = ppout_data.decode("utf-8")
-        except UnicodeError:
-            if IS_MAC:
-                ppout = ppout_data.decode("utf-8", errors="replace")
-            else:
-                raise UnicodeError
-        pperr = pperr_data.decode("utf-8")
-
+        
+        if IS_MAC:
+            ppout = pp.stdout.decode("utf-8", errors="replace")
+        else:
+            ppout = pp.stdout.decode("utf-8")
+        
         if IS_WINDOWS:
             ppout = ppout.replace("\r\n", "\n")
-            pperr = pperr.replace("\r\n", "\n")
-
-        for line in pperr.split("\n"):
-            if line:
-                self.cparser.handle_pp_error(line)
-
+        
         # We separate lines to two groups: directives and c-source.  Note that
         # #pragma directives actually belong to the source category for this.
         # This is necessary because some source files intermix preprocessor

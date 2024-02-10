@@ -321,10 +321,6 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         # Called by CParser
         error_message(f"{filename}:{lineno}: {message}", cls="cparser")
 
-    def handle_pp_error(self, message):
-        # Called by PreprocessorParser
-        error_message(f"Pre-processor: {message}", cls="cparser")
-
     def handle_status(self, message):
         # Called by CParser
         status_message(message)

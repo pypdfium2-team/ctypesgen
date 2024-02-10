@@ -132,14 +132,6 @@ class CParser:
         """
         print(f"{filename}:{lineno} {message}", file=sys.stderr)
 
-    def handle_pp_error(self, message):
-        """The C preprocessor emitted an error.
-
-        The default implementation prints the error to stderr. If processing
-        can continue, it will.
-        """
-        print(f"Preprocessor: {message}", file=sys.stderr)
-
     def handle_status(self, message):
         """Progress information.
 
