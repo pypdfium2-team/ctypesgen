@@ -140,12 +140,12 @@ def main(given_argv=sys.argv[1:]):
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from python module MODULE. Either as system import, or as dot-prefixed relative import. In the latter case, specifying --no-embed-templates and --linkage-anchor is mandatory.",
+        help="Use symbols from python module MODULE (system or local import). For local import, either as dot-prefixed import relative to the output file, or as absolute import. Local imports need --no-embed-templates and --linkage-anchor. Local absolute imports also need  adding the parent dir to PYTHONPATH.",
     )
     parser.add_argument(
         "--linkage-anchor",
         type=lambda p: Path(p).resolve(),
-        help="The top-level package to use as anchor when importing relative linked modules at compile time. While we can deduce a narrow anchor based on output path and number of dots, this is not necessarily the package root, and would fail for higher-reaching indirect imports. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries (it does not have to match the bindings output directory in case of a nested layout). Therefore, this option is mandatory with relative modules or --no-embed-templates, to avoid ambiguity.",
+        help="The top-level package to use as anchor when importing relative linked modules at compile time. While we can deduce a narrow anchor based on output path and number of dots, this is not necessarily the package root, and would fail for higher-reaching indirect imports. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries (it does not have to match the bindings output directory in case of a nested layout). To avoid ambiguity, this option is generally mandatory with relative modules or --no-embed-templates.",
     )
     parser.add_argument(
         "-I", "--includedirs",
