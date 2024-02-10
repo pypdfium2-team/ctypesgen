@@ -20,14 +20,57 @@ from ctypesgen import (
 
 # -- Argparse-based entry point --
 
+# API callers beware: argparse can raise SystemExit - you might want to try/except guard against this.
+
 def main(given_argv=sys.argv[1:]):
     args = get_parser().parse_args(given_argv)
-    api_main(args, given_argv)
+    main_impl(args, given_argv)
 
 
-# -- Pure API entry point --
+# -- Pure API entry point (experimental) --
 
-def api_main(args, given_argv=[]):
+# Not officially supported. Use at own risk.
+# API callers should prefer to go through argparse-based main() where possible.
+
+def api_main(args):
+    
+    parser = get_parser()
+    
+    required_args = _get_parser_requires(parser)
+    defaults = _get_parser_defaults(parser)
+    print(required_args, defaults, args, sep="\n", file=sys.stderr)
+    
+    assert all(r in args for r in required_args), f"Must provide all required arguments: {required_args}"
+    
+    real_args = defaults.copy()
+    real_args.update(args)
+    real_args = argparse.Namespace(**real_args)
+    given_argv = "Unknown API Call".split(" ")  # FIXME
+    
+    return main_impl(real_args, given_argv=given_argv)
+
+
+# Adapted from https://stackoverflow.com/a/59395868/15547292
+
+def _get_parser_defaults(parser):
+    defaults = {}
+    for action in parser._actions:
+        if (not action.required and action.default is not argparse.SUPPRESS
+            and action.dest not in ("help", "version")):
+            defaults[action.dest] = action.default
+    return defaults
+
+def _get_parser_requires(parser):
+    required = []
+    for action in parser._actions:
+        if action.required:
+            required.append(action.dest)
+    return required
+
+
+# -- Main implementation --
+
+def main_impl(args, given_argv):
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
     
@@ -70,7 +113,7 @@ def api_main(args, given_argv=[]):
     msgs.status_message("Wrapping complete.")
 
 
-# -- Helper functions for api_main() --
+# -- Helper functions for main_impl() --
 
 def find_symbols_in_modules(modnames, outpath, anchor):
     
