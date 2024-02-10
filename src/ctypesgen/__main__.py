@@ -355,10 +355,8 @@ def main(given_argv=sys.argv[1:]):
     args = parser.parse_args(given_argv)
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
-    if any(m.startswith(".") for m in args.modules):
-        assert args.linkage_anchor and not args.embed_templates, "Relative linked modules require --linkage-anchor and --no-embed-templates"
-    if not args.embed_templates:
-        assert args.linkage_anchor, "--no-embed-templates requires --linkage-anchor"
+    if any(m.startswith(".") for m in args.modules) or not args.embed_templates:
+        assert args.linkage_anchor, "Relative linked modules or --no-embed-templates require --linkage-anchor"
     if args.linkage_anchor:
         assert _is_relative_to(args.output, args.linkage_anchor)
     
