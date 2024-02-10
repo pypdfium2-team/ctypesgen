@@ -1,7 +1,3 @@
-"""
-Command-line interface for ctypesgen
-"""
-
 import re
 import sys
 import shlex
@@ -22,60 +18,14 @@ from ctypesgen import (
 )
 
 
-@contextlib.contextmanager
-def tmp_searchpath(path):
-    path = str(path)
-    sys.path.insert(0, path)
-    try:
-        yield
-    finally:
-        popped = sys.path.pop(0)
-        assert popped is path
+# -- Argparse-based entry point --
+
+def main(given_argv=sys.argv[1:]):
+    args = get_parser().parse_args(given_argv)
+    api_main(args, given_argv)
 
 
-def _is_relative_to(path, other):
-    # check if 'path' is equal to or contained in 'other'
-    # this implies that 'path' is longer than 'other', and 'other' a directory
-    assert len(path.parts) >= len(other.parts) and other.is_dir()
-    if sys.version_info >= (3, 9):
-        return path.is_relative_to(other)
-    else:
-        return path == other or other in path.parents
-
-
-def find_symbols_in_modules(modnames, outpath, anchor):
-    
-    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
-    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
-    
-    assert isinstance(modnames, (tuple, list))  # not str
-    assert isinstance(outpath, Path) and outpath.is_absolute()
-    if anchor:
-        assert isinstance(anchor, Path) and anchor.is_absolute()
-    
-    symbols = set()
-    for modname in modnames:
-        
-        n_dots = len(modname) - len(modname.lstrip("."))
-        if not n_dots > 0:
-            module = importlib.import_module(modname)
-        else:
-            tight_anchor = outpath.parents[n_dots-1]
-            assert _is_relative_to(tight_anchor, anchor)
-            diff = tight_anchor.parts[len(anchor.parts):]
-            import_path = ".".join(["", *diff, modname[n_dots:]])
-            if modname != import_path:
-                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
-            with tmp_searchpath(anchor.parent):
-                module = importlib.import_module(import_path, anchor.name)
-        
-        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
-        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
-        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
-        symbols.update(module_syms)
-    
-    return symbols
-
+# -- Pure API entry point --
 
 def api_main(args, given_argv=[]):
     
@@ -120,10 +70,64 @@ def api_main(args, given_argv=[]):
     msgs.status_message("Wrapping complete.")
 
 
-def main(given_argv=sys.argv[1:]):
-    args = get_parser().parse_args(given_argv)
-    api_main(args, given_argv)
+# -- Helper functions for api_main() --
 
+def find_symbols_in_modules(modnames, outpath, anchor):
+    
+    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
+    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
+    
+    assert isinstance(modnames, (tuple, list))  # not str
+    assert isinstance(outpath, Path) and outpath.is_absolute()
+    if anchor:
+        assert isinstance(anchor, Path) and anchor.is_absolute()
+    
+    symbols = set()
+    for modname in modnames:
+        
+        n_dots = len(modname) - len(modname.lstrip("."))
+        if not n_dots > 0:
+            module = importlib.import_module(modname)
+        else:
+            tight_anchor = outpath.parents[n_dots-1]
+            assert _is_relative_to(tight_anchor, anchor)
+            diff = tight_anchor.parts[len(anchor.parts):]
+            import_path = ".".join(["", *diff, modname[n_dots:]])
+            if modname != import_path:
+                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
+            with tmp_searchpath(anchor.parent):
+                module = importlib.import_module(import_path, anchor.name)
+        
+        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
+        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
+        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
+        symbols.update(module_syms)
+    
+    return symbols
+
+
+@contextlib.contextmanager
+def tmp_searchpath(path):
+    path = str(path)
+    sys.path.insert(0, path)
+    try:
+        yield
+    finally:
+        popped = sys.path.pop(0)
+        assert popped is path
+
+
+def _is_relative_to(path, other):
+    # check if 'path' is equal to or contained in 'other'
+    # this implies that 'path' is longer than 'other', and 'other' a directory
+    assert len(path.parts) >= len(other.parts) and other.is_dir()
+    if sys.version_info >= (3, 9):
+        return path.is_relative_to(other)
+    else:
+        return path == other or other in path.parents
+
+
+# -- Argument Parser ---
 
 def generic_path_t(p):
     return Path(p).expanduser().resolve()
@@ -417,6 +421,8 @@ def get_parser():
     )
     return parser
 
+
+# -- Run main() if this script is invoked --
 
 if __name__ == "__main__":
     main()
