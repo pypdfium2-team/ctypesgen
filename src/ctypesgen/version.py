@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# TODO(geisserml) rework ctypesgen version management
+
 from subprocess import Popen, PIPE
 import os
 from os import path

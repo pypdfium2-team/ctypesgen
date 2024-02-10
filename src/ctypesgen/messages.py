@@ -18,9 +18,11 @@ Warning classes are:
 'other' - catchall.
 """
 
-import logging
+# TODO(geisserml) rework ctypesgen logging
 
 __all__ = ["error_message", "warning_message", "status_message"]
+
+import logging
 
 log = logging.getLogger("ctypesgen")
 ch = logging.StreamHandler()  # use stdio
@@ -34,10 +36,8 @@ log.setLevel(logging.INFO)  # default level that ctypesgen was using with origin
 def error_message(msg, cls=None):
     log.error("%s", msg)
 
-
 def warning_message(msg, cls=None):
     log.warning("%s", msg)
-
 
 def status_message(msg):
     log.info("Status: %s", msg)
