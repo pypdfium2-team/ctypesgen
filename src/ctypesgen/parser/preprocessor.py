@@ -130,8 +130,9 @@ class PreprocessorParser:
         
         cmd = [*self.options.cpp, "-dD"]
         flags_dict = self._get_default_flags()
-        flags_dict["-I"] = self.options.include_search_paths
         cmd += self._serialize_flags_dict(flags_dict)
+        for p in self.options.include_search_paths:
+            cmd += ["-I", p]
         cmd += self.options.cppargs + [filename]
         self.cparser.handle_status(cmd)
 
