@@ -77,6 +77,54 @@ def find_symbols_in_modules(modnames, outpath, anchor):
     return symbols
 
 
+def api_main(args, given_argv=[]):
+    
+    assert args.headers or args.system_headers, "Either --headers or --system-headers required."
+    
+    if any(m.startswith(".") for m in args.modules) or not args.embed_templates:
+        assert args.linkage_anchor, "Relative linked modules or --no-embed-templates require --linkage-anchor"
+    if args.linkage_anchor:
+        assert _is_relative_to(args.output, args.linkage_anchor)
+    
+    if args.cpp:
+        # split while preserving quotes
+        args.cpp = shlex.split(args.cpp)
+    else:
+        if shutil.which("gcc"):
+            args.cpp = ["gcc", "-E"]
+        elif shutil.which("cpp"):
+            args.cpp = ["cpp"]
+        elif shutil.which("clang"):
+            args.cpp = ["clang", "-E"]
+        else:
+            raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
+    
+    args.cppargs = list( itertools.chain(*args.cppargs) )
+    
+    # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
+    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
+    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
+    
+    # Figure out what names will be defined by linked-in python modules
+    args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)
+    
+    data = core_parser.parse(args.headers, args)
+    processor.process(data, args)
+    data = [(k, d) for k, d in data.output_order if d.included]
+    if not data:
+        raise RuntimeError("No target members found.")
+    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
+    msgs.status_message(f"Printing to {args.output}.")
+    printer(args.output, args, data, given_argv)
+    
+    msgs.status_message("Wrapping complete.")
+
+
+def main(given_argv=sys.argv[1:]):
+    args = get_parser().parse_args(given_argv)
+    api_main(args, given_argv)
+
+
 def generic_path_t(p):
     return Path(p).expanduser().resolve()
 
@@ -368,54 +416,6 @@ def get_parser():
         help="Run ctypesgen with specified debug level (also applies to yacc parser)",
     )
     return parser
-
-
-def api_main(args, given_argv=[]):
-    
-    assert args.headers or args.system_headers, "Either --headers or --system-headers required."
-    
-    if any(m.startswith(".") for m in args.modules) or not args.embed_templates:
-        assert args.linkage_anchor, "Relative linked modules or --no-embed-templates require --linkage-anchor"
-    if args.linkage_anchor:
-        assert _is_relative_to(args.output, args.linkage_anchor)
-    
-    if args.cpp:
-        # split while preserving quotes
-        args.cpp = shlex.split(args.cpp)
-    else:
-        if shutil.which("gcc"):
-            args.cpp = ["gcc", "-E"]
-        elif shutil.which("cpp"):
-            args.cpp = ["cpp"]
-        elif shutil.which("clang"):
-            args.cpp = ["clang", "-E"]
-        else:
-            raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
-    
-    args.cppargs = list( itertools.chain(*args.cppargs) )
-    
-    # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
-    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
-    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
-    
-    # Figure out what names will be defined by linked-in python modules
-    args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)
-    
-    data = core_parser.parse(args.headers, args)
-    processor.process(data, args)
-    data = [(k, d) for k, d in data.output_order if d.included]
-    if not data:
-        raise RuntimeError("No target members found.")
-    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
-    msgs.status_message(f"Printing to {args.output}.")
-    printer(args.output, args, data, given_argv)
-    
-    msgs.status_message("Wrapping complete.")
-
-
-def main(given_argv=sys.argv[1:]):
-    args = get_parser().parse_args(given_argv)
-    api_main(args, given_argv)
 
 
 if __name__ == "__main__":
