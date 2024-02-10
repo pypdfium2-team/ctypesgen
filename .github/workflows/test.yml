@@ -39,20 +39,22 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v3
 
+      - uses: actions/checkout@v3
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
-
+      
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install pytest
+          pip install -e .
 
       - name: Run Test
-        run: pytest -v --showlocals tests/testsuite.py
+        run: pytest -sv tests/testsuite.py
         env:
           CLEANUP_OK: ${{ !inputs.upload_data && 1 || 0 }}
       
