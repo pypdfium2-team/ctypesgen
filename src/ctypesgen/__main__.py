@@ -77,6 +77,21 @@ def find_symbols_in_modules(modnames, outpath, anchor):
     return symbols
 
 
+def generic_path_t(p):
+    return Path(p).expanduser().resolve()
+
+def checked_path_t(p, check, exc):
+    p = generic_path_t(p)
+    if not check(p): raise exc(f"{p}")
+    return p
+
+def input_file_t(p):
+    return checked_path_t(p, check=Path.is_file, exc=FileNotFoundError)
+
+def input_dir_t(p):
+    return checked_path_t(p, check=Path.is_dir, exc=FileNotFoundError)
+
+
 # FIXME argparse parameters are not ordered consistently...
 # TODO consider BooleanOptionalAction (with compat backport)
 def main(given_argv=sys.argv[1:]):
@@ -107,7 +122,7 @@ def main(given_argv=sys.argv[1:]):
         dest="headers",
         nargs="+",
         action="extend",
-        type=lambda p: Path(p).resolve(),
+        type=input_file_t,
         default=[],
         help="Sequence of header files",
     )
@@ -119,9 +134,9 @@ def main(given_argv=sys.argv[1:]):
     parser.add_argument(
         "-o", "--output",
         required=True,
-        type=lambda p: Path(p).resolve(),
+        type=generic_path_t,
         metavar="FILE",
-        help="Write bindings to FILE",
+        help="Write bindings to FILE. Beware: If FILE exists already, it will be silently overwritten.",
     )
     parser.add_argument(
         "--system-headers",
@@ -144,7 +159,7 @@ def main(given_argv=sys.argv[1:]):
     )
     parser.add_argument(
         "--linkage-anchor",
-        type=lambda p: Path(p).resolve(),
+        type=input_dir_t,
         help="The top-level package to use as anchor when importing relative linked modules at compile time. Further, --no-embed-templates needs to know the package root to handle shared templates and libraries. To avoid ambiguity, this option is mandatory in both cases.",
     )
     parser.add_argument(
@@ -294,7 +309,7 @@ def main(given_argv=sys.argv[1:]):
     parser.add_argument(
         "--insert-files",
         dest="inserted_files",
-        type=lambda p: Path(p).resolve(),
+        type=input_file_t,
         nargs="+",
         action="extend",
         default=[],
