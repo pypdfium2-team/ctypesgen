@@ -106,6 +106,7 @@ print(v == sys.version)  # True
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the loader template, and possibly use module linking, as described above.
 
 *ctypesgen*
+* ctypesgen's parser was originally written for C99. Support for later standards (C11 etc.) is probably incomplete.
 * The conflicting names resolver is largely untested, in particular the handling of dependants. Please report success or failure.
 * Linked modules are naively prioritized in dependency resolver and conflicting names handler, i.e. intentional overrides are ignored. The position of includes is not honored; ctypesgen always imports linked modules at top level.
 
