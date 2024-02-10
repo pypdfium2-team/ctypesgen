@@ -1,9 +1,5 @@
-import os
-import sys
 import json
-
 from ctypesgen.ctypedescs import CtypesBitfield
-from ctypesgen.messages import status_message
 
 
 # From:
@@ -14,8 +10,7 @@ def todict(obj, classkey="Klass"):
             obj[k] = todict(obj[k], classkey)
         return obj
     elif isinstance(obj, str) or isinstance(obj, bytes):
-        # must handle strings before __iter__ test, since they now have
-        # __iter__ in Python3
+        # must handle strings before __iter__
         return obj
     elif hasattr(obj, "__iter__"):
         return [todict(v, classkey) for v in obj]
@@ -36,13 +31,9 @@ def todict(obj, classkey="Klass"):
 
 class WrapperPrinter:
     def __init__(self, outpath, options, data, argv):
-        status_message("Writing to %s." % (outpath or "stdout"))
-
-        self.file = open(outpath, "w") if outpath else sys.stdout
         self.options = options
 
         self.print_library(self.options.library)
-
         method_table = {
             "function": self.print_function,
             "macro": self.print_macro,
@@ -58,17 +49,10 @@ class WrapperPrinter:
         res = []
         for kind, desc in data:
             item = method_table[kind](desc)
-            if item:
-                res.append(item)
-        self.file.write(json.dumps(res, sort_keys=True, indent=4))
-        self.file.write("\n")
-
-    def __del__(self):
-        self.file.close()
-
-    def print_group(self, list, name, function):
-        if list:
-            return [function(obj) for obj in list]
+            if item: res.append(item)
+        with outpath.open("w", encoding="utf-8") as fh:
+            fh.write(json.dumps(res, sort_keys=True, indent=4))
+            fh.write("\n")
 
     def print_library(self, library):
         return {"load_library": library}
@@ -94,8 +78,7 @@ class WrapperPrinter:
         return res
 
     def print_struct_fields(self, struct):
-        # FIXME loses info about forward declarations?
-        pass
+        pass  # FIXME loses info about forward declarations?
 
     def print_enum(self, enum):
         res = {"type": "enum", "name": enum.tag}

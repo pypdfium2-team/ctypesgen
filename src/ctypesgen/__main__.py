@@ -403,6 +403,7 @@ def main(given_argv=sys.argv[1:]):
     if not data:
         raise RuntimeError("No target members found.")
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
+    msgs.status_message(f"Printing to {args.output}.")
     printer(args.output, args, data, given_argv)
     
     msgs.status_message("Wrapping complete.")
