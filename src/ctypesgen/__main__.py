@@ -82,6 +82,7 @@ def main_impl(args, given_argv):
     if args.cpp:
         # split while preserving quotes
         args.cpp = shlex.split(args.cpp)
+        assert shutil.which(args.cpp[0]), f"Given pre-processor {args.cpp[0]!r} is not available."
     else:
         if shutil.which("gcc"):
             args.cpp = ["gcc", "-E"]
