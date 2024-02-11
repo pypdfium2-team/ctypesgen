@@ -1,6 +1,21 @@
-## Developer Notes on Code Design
+# Developer Notes on Code Design
 
-#### Newline Guidelines for the Python Printer
+
+## Offensive vs. Defensive Programming
+
+New and revised code shall intensely use offensive programming patterns (assertions, fail-fast strategies). Avoid error masking (e.g. missing input files or modules should raise an exception, instead of guarded access and continuation).
+
+Of course, it depends on the circumstances: In some cases, being defensive and continuing on errors can also make sense (e.g. parser errors are fairly common and may not impact the output, so they are not a valid reason to abort processing).
+
+Originally, ctypesgen code was written in an overly defensive fashion.
+There may still be parts of this legacy lurking around, but we'll want to gradually migrate these.
+
+Background reading:
+* https://en.wikipedia.org/wiki/Defensive_programming#Offensive_programming
+* https://github.com/ctypesgen/ctypesgen/issues/202
+
+
+## Newline Guidelines for the Python Printer
 
 - Use \n only as separator between two known present strings.
 - The general guideline is to use leading \n associated to the item that needs the padding.
