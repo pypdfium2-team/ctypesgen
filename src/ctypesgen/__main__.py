@@ -24,7 +24,11 @@ from ctypesgen import (
 
 def main(given_argv=sys.argv[1:]):
     args = get_parser().parse_args(given_argv)
+    postparse(args)
     main_impl(args, given_argv)
+
+def postparse(args):
+    args.cppargs = list( itertools.chain(*args.cppargs) )
 
 
 # -- Pure API entry point (experimental) --
@@ -80,8 +84,6 @@ def main_impl(args, given_argv):
         assert _is_relative_to(args.output, args.linkage_anchor)
     
     if args.cpp:
-        # split while preserving quotes
-        args.cpp = shlex.split(args.cpp)
         assert shutil.which(args.cpp[0]), f"Given pre-processor {args.cpp[0]!r} is not available."
     else:
         if shutil.which("gcc"):
@@ -92,8 +94,6 @@ def main_impl(args, given_argv):
             args.cpp = ["clang", "-E"]
         else:
             raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
-    
-    args.cppargs = list( itertools.chain(*args.cppargs) )
     
     # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
     args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
@@ -308,6 +308,7 @@ def get_parser():
     # Parser options
     parser.add_argument(
         "--cpp",
+        type=shlex.split,
         help="The command to invoke the C preprocessor, including any necessary options. By default, we try to find a supported preprocessor automatically. Example: to always use clang, pass --cpp \"clang -E\".",
     )
     parser.add_argument(
