@@ -15,7 +15,6 @@ def _find_library(name, dirs, search_sys):
     for dir in dirs:
         dir = pathlib.Path(dir)
         if not dir.is_absolute():
-            # NOTE joining an absolute path silently discardy the path before
             dir = (pathlib.Path(__file__).parent / dir).resolve(strict=False)
         for pat in patterns:
             libpath = dir / pat.format(name)
