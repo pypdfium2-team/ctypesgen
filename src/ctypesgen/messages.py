@@ -40,4 +40,4 @@ def warning_message(msg, cls=None):
     log.warning("%s", msg)
 
 def status_message(msg):
-    log.info("Status: %s", msg)
+    log.info("%s", msg)
