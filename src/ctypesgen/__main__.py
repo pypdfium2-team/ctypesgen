@@ -65,11 +65,7 @@ def _get_parser_defaults(parser):
     return defaults
 
 def _get_parser_requires(parser):
-    required = []
-    for action in parser._actions:
-        if action.required:
-            required.append(action.dest)
-    return required
+    return [a.dest for a in parser._actions if a.required]
 
 
 # -- Main implementation --
