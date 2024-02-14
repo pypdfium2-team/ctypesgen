@@ -59,11 +59,11 @@ class Description:
         for req in reqs:
             req.dependents.add(self)
 
-    def error(self, msg, cls=None):
-        self.errors.append((msg, cls))
+    def error(self, msg):
+        self.errors.append(msg)
 
-    def warning(self, msg, cls=None):
-        self.warnings.append((msg, cls))
+    def warning(self, msg):
+        self.warnings.append(msg)
 
     def __repr__(self):
         return f"<Description: {self.casual_name()}>"

@@ -21,7 +21,7 @@ from ctypesgen.descriptions import (
     VariableDescription,
 )
 from ctypesgen.expressions import ConstantExpressionNode
-from ctypesgen.messages import error_message, status_message
+from ctypesgen.messages import log
 from ctypesgen.parser import ctypesparser
 from ctypesgen.parser.cdeclarations import Attrib
 
@@ -97,7 +97,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         else:
             original_string = "#define %s %s" % (name, " ".join(value))
         macro = MacroDescription(name, params, None, src=(filename, lineno))
-        macro.error(f"Could not parse macro '{original_string}'", cls="macro")
+        macro.error(f"Could not parse macro '{original_string}'")
         macro.original_string = original_string
         self.macros.append(macro)
         self.all.append(macro)
@@ -292,7 +292,6 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 macro = MacroDescription(name, "", src)
                 macro.error(
                     f"{macro.casual_name()} has parameters but evaluates to a type. Ctypesgen does not support it.",
-                    cls="macro",
                 )
                 self.macros.append(macro)
                 self.all.append(macro)
@@ -319,11 +318,11 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
 
     def handle_error(self, message, filename, lineno):
         # Called by CParser
-        error_message(f"{filename}:{lineno}: {message}", cls="cparser")
+        log.error(f"{filename}:{lineno}: {message}")
 
     def handle_status(self, message):
         # Called by CParser
-        status_message(message)
+        log.info(message)
 
     def visit_struct(self, struct):
         self.handle_struct(struct, struct.src[0], struct.src[1])

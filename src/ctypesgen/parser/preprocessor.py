@@ -15,7 +15,7 @@ from pathlib import Path
 
 from ctypesgen.parser import pplexer, lex
 from ctypesgen.parser.lex import LexError
-from ctypesgen.messages import warning_message
+from ctypesgen.messages import log
 
 
 IS_WINDOWS = sys.platform.startswith("win")
@@ -110,7 +110,7 @@ class PreprocessorParser:
                 deletor(x) if x in params else unfound.append(x)
             crossout = unfound
         if crossout:
-            warning_message(f"No defaults to remove for {crossout!r}")
+            log.warning(f"No defaults to remove for {crossout!r}")
         
         return flags_dict
     

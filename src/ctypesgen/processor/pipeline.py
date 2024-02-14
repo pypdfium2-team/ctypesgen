@@ -31,11 +31,7 @@ the errors that print_errors_encountered() has flagged.
 """
 
 from ctypesgen.descriptions import MacroDescription
-from ctypesgen.messages import (
-    error_message,
-    status_message,
-    warning_message,
-)
+from ctypesgen.messages import log
 from ctypesgen.processor.dependencies import find_dependencies
 from ctypesgen.processor.operations import (
     automatically_typedef_structs,
@@ -51,7 +47,7 @@ from ctypesgen.processor.operations import (
 def process(data, options):
     # FIXME(pipeline) can we do fix_conflicting_names() and check_symbols() after we know the decision of symbols with include rule "if_needed", to avoid unnecessary operations?
     
-    status_message("Processing description list.")
+    log.info("Processing description list.")
     
     find_dependencies(data, options)
     automatically_typedef_structs(data, options)
@@ -113,30 +109,30 @@ def print_errors_encountered(data, opts):
         # printing warnings.
         if desc.included or opts.show_all_errors:
             if opts.show_long_errors or len(desc.errors) + len(desc.warnings) <= 2:
-                for error, cls in desc.errors:
+                for error in desc.errors:
                     # Macro errors will always be displayed as warnings.
                     if isinstance(desc, MacroDescription):
                         if opts.show_macro_warnings:
-                            warning_message(error, cls)
+                            log.warning(error)
                     else:
-                        error_message(error, cls)
-                for warning, cls in desc.warnings:
-                    warning_message(warning, cls)
+                        log.error(error)
+                for warning in desc.warnings:
+                    log.warning(warning)
 
             else:
                 if desc.errors:
-                    error1, cls1 = desc.errors[0]
-                    error_message(error1, cls1)
+                    error1 = desc.errors[0]
+                    log.error(error1)
                     numerrs = len(desc.errors) - 1
                     numwarns = len(desc.warnings)
                     if numwarns:
-                        error_message(f"{numerrs} more errors and {numwarns} more warnings for {desc.casual_name()}")
+                        log.error(f"{numerrs} more errors and {numwarns} more warnings for {desc.casual_name()}")
                     else:
-                        error_message(f"{numerrs} more errors for {desc.casual_name()}")
+                        log.error(f"{numerrs} more errors for {desc.casual_name()}")
                 else:
-                    warning1, cls1 = desc.warnings[0]
-                    warning_message(warning1, cls1)
-                    warning_message(f"{len(desc.warnings)-1} more errors for {desc.casual_name()}")
+                    warning1 = desc.warnings[0]
+                    log.warning(warning1)
+                    log.warning(f"{len(desc.warnings)-1} more errors for {desc.casual_name()}")
         if desc.errors:
             # process() will recalculate to take this into account
             desc.include_rule = "never"

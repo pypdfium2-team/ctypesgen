@@ -16,7 +16,7 @@ from ctypesgen.descriptions import (
     StructDescription,
     TypedefDescription,
 )
-from ctypesgen.messages import warning_message, status_message
+from ctypesgen.messages import log
 
 
 # Processor functions
@@ -88,7 +88,7 @@ def fix_conflicting_names(data, opts):
     other important names, fix_conflicting_names() adds underscores to resolve
     the name conflict."""
     
-    status_message("Looking for conflicting names...")
+    log.info("Looking for conflicting names...")
     
     our_names = {"_libs", "_libs_info"}
     # probably includes a bit more than we actually use ...
@@ -150,7 +150,6 @@ def fix_conflicting_names(data, opts):
             struct.members[i] = (f"{name}_", type)
             struct.warning(
                 f"Member '{name}' of {struct.casual_name()} has been renamed to '{name}_' because it has the same name as a Python keyword.",
-                cls="rename",
             )
 
     # Macro arguments may be have names that conflict with Python keywords.
@@ -162,7 +161,6 @@ def fix_conflicting_names(data, opts):
             if param not in keyword.kwlist: continue
             macro.error(
                 f"One of the params to {macro.casual_name()}, '{param}', has the same name as a Python keyword. {macro.casual_name()} will be excluded.",
-                cls="name-conflict",
             )
             macro.include_rule = "never"
             break  # params loop
@@ -174,7 +172,7 @@ def free_library(lib_handle):
     # https://github.com/python/cpython/issues/58802
     # On Windows, we have to free libraries explicitly so the backing file may be deleted afterwards (the test suite does this).
     # While we're at it, also free libraries on other platforms for consistency.
-    status_message(f"Freeing library handle {lib_handle} ...")
+    log.info(f"Freeing library handle {lib_handle} ...")
     if sys.platform.startswith("win32"):
         ctypes_backend.FreeLibrary(lib_handle)
     else:
@@ -184,7 +182,7 @@ def free_library(lib_handle):
 def check_symbols(data, opts):
     
     if opts.no_load_library or not opts.library or opts.dllclass == "pythonapi":
-        status_message(f"No library loading.")
+        log.info(f"No library loading.")
         return
     
     try:
@@ -197,8 +195,8 @@ def check_symbols(data, opts):
         )
         library = libraryloader._libs[opts.library]
     except ImportError as e:
-        warning_message(e)
-        warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
+        log.warning(e)
+        log.warning(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.")
         return
     
     try:
@@ -207,8 +205,8 @@ def check_symbols(data, opts):
         free_library(library._handle); del library
     
     if missing_symbols:
-        warning_message(f"Some symbols could not be found:\n{missing_symbols}", cls="other")
+        log.warning(f"Some symbols could not be found:\n{missing_symbols}")
         if not opts.guard_symbols:
-            warning_message("Missing symbols will be excluded due to --no-symbol-guards")
+            log.warning("Missing symbols will be excluded due to --no-symbol-guards")
             for s in missing_symbols:
                 s.include_rule = "never"

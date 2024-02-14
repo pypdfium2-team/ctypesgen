@@ -85,7 +85,7 @@ class CtypesTypeVisitor:
     def visit_typedef(self, name):
         pass
 
-    def visit_error(self, error, cls):
+    def visit_error(self, error):
         pass
 
     def visit_identifier(self, identifier):
@@ -105,8 +105,8 @@ def visit_type_and_collect_info(ctype):
         def visit_typedef(self, typedef):
             typedefs.append(typedef)
 
-        def visit_error(self, error, cls):
-            errors.append((error, cls))
+        def visit_error(self, error):
+            errors.append(error)
 
         def visit_identifier(self, identifier):
             identifiers.append(identifier)
@@ -141,12 +141,12 @@ class CtypesType:
     def __repr__(self):
         return f"<Ctype ({type(self).__name__}) '{self.py_string()}'>"
 
-    def error(self, message, cls=None):
-        self.errors.append((message, cls))
+    def error(self, message):
+        self.errors.append(message)
 
     def visit(self, visitor):
-        for error, cls in self.errors:
-            visitor.visit_error(error, cls)
+        for error in self.errors:
+            visitor.visit_error(error)
 
 
 class CtypesSimple(CtypesType):

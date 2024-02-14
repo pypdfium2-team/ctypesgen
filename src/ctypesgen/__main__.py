@@ -9,13 +9,13 @@ import itertools
 from pathlib import Path
 
 from ctypesgen import (
-    messages as msgs,
     parser as core_parser,
     processor,
     version,
     printer_python,
     printer_json,
 )
+from ctypesgen.messages import log
 
 
 # -- Argparse-based entry point --
@@ -104,10 +104,10 @@ def main_impl(args, given_argv):
     if not data:
         raise RuntimeError("No target members found.")
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
-    msgs.status_message(f"Printing to {args.output}.")
+    log.info(f"Printing to {args.output}.")
     printer(args.output, args, data, given_argv)
     
-    msgs.status_message("Wrapping complete.")
+    log.info("Wrapping complete.")
 
 
 # -- Helper functions for main_impl() --
@@ -134,13 +134,13 @@ def find_symbols_in_modules(modnames, outpath, anchor):
             diff = tight_anchor.parts[len(anchor.parts):]
             import_path = ".".join(["", *diff, modname[n_dots:]])
             if modname != import_path:
-                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
+                log.info(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
             with tmp_searchpath(anchor.parent):
                 module = importlib.import_module(import_path, anchor.name)
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
-        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
+        log.info(f"Symbols found in {module.__name__!r}: {module_syms}")
         symbols.update(module_syms)
     
     return symbols

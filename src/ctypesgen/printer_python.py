@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
 from ctypesgen.expressions import ExpressionNode
-from ctypesgen.messages import warning_message, status_message
+from ctypesgen.messages import log
 
 
 CTYPESGEN_DIR = Path(__file__).resolve().parent
@@ -54,7 +54,7 @@ class WrapperPrinter:
                     self.print_loader(opts)
                     self.print_library(opts)
             else:
-                warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
+                log.warning("No library name specified. Assuming pure headers without binary symbols.")
             
             self.file.write("\n\n\n")
             with self.paragraph_ctx("header members"):
@@ -140,10 +140,10 @@ _register_library(
         else:
             loader_txt = self.EXT_LOADER.read_text()
             if name_define in loader_txt:
-                status_message("Library already loaded in shared file, won't rewrite.")
+                log.info("Library already loaded in shared file, won't rewrite.")
             else:
                 # we need to share libraries in a common file to build same-library headers separately while loading the library only once
-                status_message("Adding library loader to shared file.")
+                log.info("Adding library loader to shared file.")
                 self.EXT_LOADER.write_text(f"{loader_txt}\n\n{content}\n")
     
     

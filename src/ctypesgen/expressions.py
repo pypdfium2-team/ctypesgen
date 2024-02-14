@@ -4,9 +4,9 @@ class is ExpressionNode. ExpressionNode's most useful method is py_string(),
 which returns a Python string representing that expression.
 """
 
-import warnings
 import keyword
 
+from ctypesgen.messages import log
 from ctypesgen.ctypedescs import (
     CtypesPointer,
     CtypesSimple,
@@ -33,15 +33,15 @@ class EvaluationContext:
     """Interface for evaluating expression nodes."""
 
     def evaluate_identifier(self, name):
-        warnings.warn(f"Attempt to evaluate identifier '{name}' failed")
+        log.warning(f"Attempt to evaluate identifier '{name}' failed")
         return 0
 
     def evaluate_sizeof(self, object):
-        warnings.warn(f"Attempt to evaluate sizeof object '{object}' failed")
+        log.warning(f"Attempt to evaluate sizeof object '{object}' failed")
         return 0
 
     def evaluate_parameter(self, name):
-        warnings.warn(f"Attempt to evaluate parameter '{name}' failed")
+        log.warning(f"Attempt to evaluate parameter '{name}' failed")
         return 0
 
 
@@ -49,8 +49,8 @@ class ExpressionNode:
     def __init__(self):
         self.errors = []
 
-    def error(self, message, cls=None):
-        self.errors.append((message, cls))
+    def error(self, message):
+        self.errors.append(message)
 
     def __repr__(self):
         try:
@@ -60,8 +60,8 @@ class ExpressionNode:
         return f"<{type(self).__name__}: {string}>"
 
     def visit(self, visitor):
-        for error, cls in self.errors:
-            visitor.visit_error(error, cls)
+        for error in self.errors:
+            visitor.visit_error(error)
 
 
 class ConstantExpressionNode(ExpressionNode):
@@ -303,7 +303,7 @@ class UnsupportedExpressionNode(ExpressionNode):
     def __init__(self, message):
         ExpressionNode.__init__(self)
         self.message = message
-        self.error(message, "unsupported-type")
+        self.error(message)
 
     def evaluate(self, context):
         raise ValueError(f"Tried to evaluate an unsupported expression node: {self.message}")

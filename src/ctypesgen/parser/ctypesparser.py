@@ -148,7 +148,7 @@ class CtypesParser(CParser):
                 else:
                     error = f"Ctypes does not support adding additional specifiers to typedefs, such as '{name}'"
                 t = CtypesTypedef(name)
-                t.error(error, cls="unsupported-type")
+                t.error(error)
 
             if declarator and declarator.bitfield:
                 t = CtypesBitfield(t, declarator.bitfield)

@@ -127,11 +127,11 @@ def find_dependencies(data, opts):
                 unresolvables.append(f"identifier '{ident}'")
 
         for u in unresolvables:
-            errors.append((f"{desc.casual_name()} depends on an unknown {u}.", None))
+            errors.append(f"{desc.casual_name()} depends on an unknown {u}.")
 
-        for err, cls in errors:
+        for err in errors:
             err += f" {desc.casual_name()} will not be output"
-            desc.error(err, cls=cls)
+            desc.error(err)
 
     def add_to_lookup_table(desc, kind):
         """Add `desc` to the lookup table so that other descriptions that use
