@@ -48,7 +48,7 @@ def module_from_code(name, python_code):
 
 COUNTER = 0
 
-def generate(header=None, args=[], lang="py", cpp=MAIN_CPP):
+def generate(header=None, args=[], lang="py", cpp=MAIN_CPP, allow_gnuc=True):
     
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
@@ -66,6 +66,7 @@ def generate(header=None, args=[], lang="py", cpp=MAIN_CPP):
         cmdargs += ["-i", tmp_in]
     
     if cpp: cmdargs += ["--cpp", cpp]
+    if allow_gnuc: cmdargs += ["-X", "__GNUC__"]
     cmdargs += ["--output-language", lang] + args
     
     try:

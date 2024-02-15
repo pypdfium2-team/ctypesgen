@@ -930,12 +930,12 @@ class TestDefUndef(unittest.TestCase):
     @requires_gcc
     def test_default_undef(self):
         # this actually works because the def/undef are taken over into the output, so we won't get a "no target members" exception.
-        m = generate("", ["--symbol-rules", "yes=__GNUC__"], cpp=f"gcc -E")
+        m = generate("", ["--symbol-rules", "yes=__GNUC__"], cpp=f"gcc -E", allow_gnuc=False)
         self.assertFalse(hasattr(m, "__GNUC__"))
     
     @requires_gcc
     def test_override_default_undef(self):
-        m = generate("", ["-X", "__GNUC__", "--symbol-rules", "yes=__GNUC__"], cpp=f"gcc -E")
+        m = generate("", ["--symbol-rules", "yes=__GNUC__"], cpp=f"gcc -E", allow_gnuc=True)
         self.assertIsInstance(m.__GNUC__, int)  # this will be the GCC major version
     
     def test_default_def(self):
