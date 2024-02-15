@@ -48,7 +48,7 @@ def module_from_code(name, python_code):
 
 COUNTER = 0
 
-def generate(header=None, args=[], lang="py", cpp=MAIN_CPP, allow_gnuc=True):
+def generate(header=None, args=[], lang="py", cpp=MAIN_CPP, allow_gnuc=False):
     
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
