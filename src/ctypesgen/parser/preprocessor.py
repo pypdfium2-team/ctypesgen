@@ -15,7 +15,7 @@ from pathlib import Path
 
 from ctypesgen.parser import pplexer, lex
 from ctypesgen.parser.lex import LexError
-from ctypesgen.messages import warning_message
+from ctypesgen.messages import warning_message, status_message
 
 
 IS_WINDOWS = sys.platform.startswith("win")
@@ -141,8 +141,13 @@ class PreprocessorParser:
             cmd,
             universal_newlines=False,  # binary
             stdout=subprocess.PIPE,
-            check=not IS_WINDOWS,
         )
+        if pp.returncode != 0:
+            msg = f"Pre-processor returned non-zero exit code {pp.returncode}"
+            if self.options.preproc_errcheck:
+                raise RuntimeError(msg)
+            else:
+                warning_message(msg)
         
         if IS_MAC:
             ppout = pp.stdout.decode("utf-8", errors="replace")

@@ -167,6 +167,34 @@ def _is_relative_to(path, other):
         return path == other or other in path.parents
 
 
+# -- Argument Parser (Backports) --
+
+if sys.version_info >= (3, 9):
+    from argparse import BooleanOptionalAction
+
+else:
+    # backport, adapted from argparse sources
+    class BooleanOptionalAction (argparse.Action):
+        def __init__(self, option_strings, dest, **kwargs):
+            
+            _option_strings = []
+            for option_string in option_strings:
+                _option_strings.append(option_string)
+                
+                if option_string.startswith('--'):
+                    option_string = '--no-' + option_string[2:]
+                    _option_strings.append(option_string)
+            
+            super().__init__(option_strings=_option_strings, dest=dest, nargs=0, **kwargs)
+        
+        def __call__(self, parser, namespace, values, option_string=None):
+            if option_string in self.option_strings:
+                setattr(namespace, self.dest, not option_string.startswith('--no-'))
+        
+        def format_usage(self):
+            return ' | '.join(self.option_strings)
+
+
 # -- Argument Parser ---
 
 def generic_path_t(p):
@@ -187,7 +215,7 @@ def input_dir_t(p):
 def get_parser():
     
     # FIXME argparse parameters are not ordered consistently...
-    # TODO consider BooleanOptionalAction (with compat backport)
+    # TODO expand use of BooleanOptionalAction
     
     parser = argparse.ArgumentParser(prog="ctypesgen")
     
@@ -339,6 +367,12 @@ def get_parser():
         "--preproc-savepath",
         metavar="FILENAME",
         help="Save preprocessor output to the specified FILENAME",
+    )
+    parser.add_argument(
+        "--preproc-errcheck",
+        action=BooleanOptionalAction,
+        help="Whether to fail fast if the preprocessor returned a non-zero exit code. Defaults to True, unless on Windows.",
+        default=not sys.platform.startswith("win"),
     )
     parser.add_argument(
         "--optimize-lexer",
