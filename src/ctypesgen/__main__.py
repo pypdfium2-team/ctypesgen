@@ -276,7 +276,7 @@ def get_parser():
         action="extend",
         default=[],
         metavar="MODULE",
-        help="Use symbols from python module MODULE (system or local import). For local import, either as dot-prefixed import relative to the output file, or as absolute import. Local imports need --no-embed-templates and --linkage-anchor. Local absolute imports also need  adding the parent dir to PYTHONPATH.",
+        help="Use symbols from python module MODULE (site-packages or local import). For local import, either as dot-prefixed import relative to the output file, or as absolute import. Local imports need --no-embed-templates and --linkage-anchor. Local absolute imports also need adding the parent dir to PYTHONPATH.",
     )
     parser.add_argument(
         "--linkage-anchor",
