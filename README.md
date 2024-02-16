@@ -39,22 +39,39 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 #### Binding against the Python API
 
 ```bash
-printf "import ctypes\nPyTypeObject = ctypes.POINTER(None)\n" > overrides.py
+cat >"overrides.py" <<END
+import ctypes
+
+class PyTypeObject (ctypes.Structure): pass
+class PyObject (ctypes.Structure): pass
+
+def POINTER(obj):
+    if obj is PyObject: return ctypes.py_object
+    return ctypes.POINTER(obj)
+END
+
 ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --all-headers -m .overrides --linkage-anchor . -o ctypes_python.py
 ```
-(substituting `3.X` with your system's python version). Minimal test:
+substituting `3.X` with your system's python version.
+
+Minimal test (run in python console):
 ```python
 from ctypes import *
 from ctypes_python import *
 
 v = Py_GetVersion()
 v = cast(v, c_char_p).value.decode("utf-8")
-print(v)
+v
+
+Py_IncRef(v)
+Py_DecRef(v)
 ```
+
 It should yield something like
 ```
 3.11.6 (main, Oct  3 2023, 00:00:00) [GCC 12.3.1 20230508 (Red Hat 12.3.1-1)]
 ```
+
 and the same as `sys.version`:
 ```python
 import sys
