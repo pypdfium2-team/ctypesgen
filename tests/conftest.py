@@ -39,8 +39,8 @@ def ctypesgen_main(args, echo=True):
     return ctypesgen.__main__.main(args)
 
 def module_from_code(name, python_code):
-    file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
-    python_code = file_spoof + python_code
+    # file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
+    # python_code = file_spoof + python_code
     module = types.ModuleType(name)
     exec(python_code, module.__dict__)
     return module
