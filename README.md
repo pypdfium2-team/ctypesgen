@@ -120,4 +120,16 @@ Note, it is important to verify the resulting merge commit for correctness - aut
 
 ### Bugs
 
-Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues.
+Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues. However, please note our response policy below.
+
+
+### Contributions
+<!-- Inspired by bluesky's contribution rules: https://github.com/bluesky-social/indigo -->
+
+> We may accept contributions, but only if our code quality expectations are met.
+
+__Policy__:
+* We may not respond to your issue or PR.
+* We may close an issue or PR without much feedback.
+* We may lock discussions or contributions if our attention is getting DDOSed.
+* Do not expect us to help much with usage. We are not a code writing service.
