@@ -55,6 +55,9 @@ from . import expressions
 # Helper modules
 from . import messages
 
+# Entry points
+from .__main__ import main, api_main
+
 __version__ = version.VERSION.partition("-")[-1]
 VERSION = __version__
 PYPDFIUM2_SPECIFIC = True

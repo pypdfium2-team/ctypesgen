@@ -7,6 +7,7 @@ import contextlib
 import argparse
 import itertools
 from pathlib import Path
+from pprint import pformat
 
 from ctypesgen import (
     messages as msgs,
@@ -16,7 +17,9 @@ from ctypesgen import (
     printer_python,
     printer_json,
 )
-
+from ctypesgen.printer_python import (
+    txtpath, PRIVATE_PATHS,
+)
 
 # -- Argparse-based entry point --
 
@@ -25,7 +28,8 @@ from ctypesgen import (
 def main(given_argv=sys.argv[1:]):
     args = get_parser().parse_args(given_argv)
     postparse(args)
-    main_impl(args, given_argv)
+    cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
+    main_impl(args, cmd_str)
 
 def postparse(args):
     args.cppargs = list( itertools.chain(*args.cppargs) )
@@ -49,9 +53,11 @@ def api_main(args):
     real_args = defaults.copy()
     real_args.update(args)
     real_args = argparse.Namespace(**real_args)
-    given_argv = "Unknown API Call".split(" ")  # FIXME
     
-    return main_impl(real_args, given_argv=given_argv)
+    args_str = str(pformat(args))
+    for p, x in PRIVATE_PATHS:
+        args_str = args_str.replace(p, x)
+    return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
 
 
 # Adapted from https://stackoverflow.com/a/59395868/15547292
@@ -70,7 +76,7 @@ def _get_parser_requires(parser):
 
 # -- Main implementation --
 
-def main_impl(args, given_argv):
+def main_impl(args, cmd_str):
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
     
@@ -105,7 +111,7 @@ def main_impl(args, given_argv):
         raise RuntimeError("No target members found.")
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
     msgs.status_message(f"Printing to {args.output}.")
-    printer(args.output, args, data, given_argv)
+    printer(args.output, args, data, cmd_str)
     
     msgs.status_message("Wrapping complete.")
 
