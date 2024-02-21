@@ -54,30 +54,46 @@ ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --a
 ```
 substituting `3.X` with your system's python version.
 
-Minimal test (run in python console):
+Small test:
 ```python
+import sys
 from ctypes import *
 from ctypes_python import *
 
+# Get a string from a Python C API function
 v = Py_GetVersion()
 v = cast(v, c_char_p).value.decode("utf-8")
-v
+print(v)
+print(v == sys.version)  # True
 
-Py_IncRef(v)
-Py_DecRef(v)
+# Convert back and forth between Native vs. C view of an object
+class Test:
+    def __init__(self, a):
+        self.a = a
+
+t = Test(a=123)
+tc_ptr = cast(id(t), POINTER(PyObject_))
+tc = tc_ptr.contents
+print(tc.ob_refcnt)  # 1
+Py_IncRef(t)
+print(tc.ob_refcnt)  # 2 (incremented)
+Py_DecRef(t)
+print(tc.ob_refcnt)  # 1 (decremented)
+t_back = cast(tc_ptr, py_object).value
+print(t_back.a)
+print(tc.ob_refcnt)  # 2 (new reference from t_back)
 ```
 
 It should yield something like
 ```
 3.11.6 (main, Oct  3 2023, 00:00:00) [GCC 12.3.1 20230508 (Red Hat 12.3.1-1)]
+True
+1
+2
+1
+123
+2
 ```
-
-and the same as `sys.version`:
-```python
-import sys
-print(v == sys.version)  # True
-```
-
 
 ### Known Limitations
 
