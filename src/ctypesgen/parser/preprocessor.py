@@ -129,12 +129,12 @@ class PreprocessorParser:
     def parse(self, filename):
         """Parse a file and save its output"""
         
-        cmd = [*self.options.cpp, "-dD"]
+        cmd = [*self.options.cpp, filename, "-dD"]
         flags_dict = self._get_default_flags()
         cmd += self._serialize_flags_dict(flags_dict)
         for p in self.options.include_search_paths:
             cmd += ["-I", p]
-        cmd += self.options.cppargs + [filename]
+        cmd += self.options.cppargs
         self.cparser.handle_status(' '.join([shlex.quote(c) for c in cmd]))
 
         pp = subprocess.run(
