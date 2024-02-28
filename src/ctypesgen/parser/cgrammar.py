@@ -192,8 +192,6 @@ def p_string_literal(p):
     p[0] = expressions.ConstantExpressionNode(p[1])
 
 
-# FIXME(geisserml) any way to avoid unnecessary brackets ?
-
 def p_multi_string_literal(p):
     """ multi_string_literal : string_literal
                              | macro_param
@@ -246,7 +244,7 @@ def p_postfix_expression(p):
 
     elif p[2] == "[":
         p[0] = expressions.BinaryExpressionNode(
-            "array access", (lambda a, b: a[b]), "(%s [%s])", (True, False), p[1], p[3]
+            "array access", (lambda a, b: a[b]), "%s[%s]", (True, False), p[1], p[3]
         )
 
     elif p[2] == "(":
@@ -257,12 +255,12 @@ def p_postfix_expression(p):
 
     elif p[2] == ".":
         p[0] = expressions.AttributeExpressionNode(
-            (lambda x, a: getattr(x, a)), "(%s.%s)", p[1], p[3]
+            (lambda x, a: getattr(x, a)), "%s.%s", p[1], p[3]
         )
 
     elif p[2] == "->":
         p[0] = expressions.AttributeExpressionNode(
-            (lambda x, a: getattr(x.contents, a)), "(%s.contents.%s)", p[1], p[3]
+            (lambda x, a: getattr(x.contents, a)), "%s.contents.%s", p[1], p[3]
         )
 
     elif p[2] == "++":
@@ -324,11 +322,13 @@ def p_volatile_opt(p):
     """
 
 
+# FIXME(geisserml) any way to avoid unnecessary brackets ?
+
 prefix_ops_dict = {
     "++": ("increment", (lambda x: x + 1), "(%s + 1)", False),
     "--": ("decrement", (lambda x: x - 1), "(%s - 1)", False),
     "&": ("reference ('&')", None, "pointer(%s)", True),
-    "*": ("dereference ('*')", None, "(%s[0])", True),
+    "*": ("dereference ('*')", None, "%s[0]", True),
     "+": ("unary '+'", (lambda x: x), "%s", True),
     "-": ("negation", (lambda x: -x), "(-%s)", False),
     "~": ("inversion", (lambda x: ~x), "(~%s)", False),
