@@ -42,27 +42,19 @@ def remove_NULL(data, options):
             macro.include_rule = "never"
 
 
-def _path_endswith(full, suffix):
-    return full.parts[-len(suffix.parts):] == suffix.parts
-
-def _matches_sys_header(p, sys_headers):
-    return any(_path_endswith(p, Path(h)) for h in sys_headers)
-
-
 def mask_external_members(data, opts):
     """mask_external_members() removes descriptions if they came from files
     outside of the header files specified from the command line."""
+    # Naively match against header names rather than full paths to avoid relying on pre-processor path expansion details
+    # e.g. pcpp does not generally output full paths (integrating pcpp with ctypesgen is experimental)
+    input_header_names = [Path(h).name for h in opts.headers + opts.system_headers]
     for desc in data.all:
         if desc.src[0] == "<command line>":
-            # FIXME(geisserml) I don't understand the intent behind this clause. When does <command line> occur?
             desc.include_rule = "if_needed"
         elif desc.src[0] == "<built-in>" and not opts.builtin_symbols:
             desc.include_rule = "if_needed"
-        else:
-            # pre-reqs: opts.headers = list of resolved Path objects & pre-processor outputs full source paths
-            p = Path(desc.src[0])
-            if not (p in opts.headers or _matches_sys_header(p, opts.system_headers) or opts.all_headers):
-                desc.include_rule = "if_needed"
+        elif not (Path(desc.src[0]).name in input_header_names or opts.all_headers):
+            desc.include_rule = "if_needed"
 
 
 def remove_macros(data, opts):
