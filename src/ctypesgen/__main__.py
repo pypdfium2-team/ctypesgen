@@ -104,11 +104,13 @@ def main_impl(args, cmd_str):
     # Figure out what names will be defined by linked-in python modules
     args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)
     
-    data = core_parser.parse(args.headers, args)
-    processor.process(data, args)
-    data = [(k, d) for k, d in data.output_order if d.included]
+    raw_data = core_parser.parse(args.headers, args)
+    processor.process(raw_data, args)
+    data = [(k, d) for k, d in raw_data.output_order if d.included]
     if not data:
-        raise RuntimeError("No target members found.")
+        if raw_data.all:
+            msgs.status_message(f"Non-included members - perhaps you meant to run with --all-headers?\n" f"{raw_data.all}")
+        raise RuntimeError("No included target members - output would be empty.")
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
     msgs.status_message(f"Printing to {args.output}.")
     printer(args.output, args, data, cmd_str)
