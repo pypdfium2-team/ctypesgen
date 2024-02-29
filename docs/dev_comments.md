@@ -3,14 +3,13 @@
 
 ## Offensive vs. Defensive Programming
 
-New and revised code shall intensely use offensive programming patterns (assertions, fail-fast strategies). Avoid error masking (e.g. missing input files or modules should raise an exception, instead of guarded access and continuation).
+New and revised code shall use offensive programming patterns (assertions, fail-fast strategies). Avoid error masking (e.g. missing input files or modules should raise an exception, instead of guarded access and continuation).
 
-Of course, it depends on the circumstances: In some cases, being defensive and continuing on errors can also make sense (e.g. parser errors are fairly common and may not impact the output, so they are not a valid reason to abort processing).
+Of course, it depends on the circumstances: In some cases, being robust and continuing on errors can also make sense (e.g. parser syntax issues in some indirect header commonly don't impact the output, so they are not a valid reason to abort processing).
 
 Originally, ctypesgen code was written in an overly defensive fashion.
-There may still be parts of this legacy lurking around, but we'll want to gradually migrate these.
 
-Background reading:
+See also:
 * https://en.wikipedia.org/wiki/Defensive_programming#Offensive_programming
 * https://github.com/ctypesgen/ctypesgen/issues/202
 
