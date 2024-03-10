@@ -1,4 +1,5 @@
 import shutil
+import functools
 from pathlib import Path
 from textwrap import indent
 from contextlib import contextmanager
@@ -21,16 +22,20 @@ def ParagraphCtxFactory(file):
             file.write(f"\n# -- End {txt} --")
     return paragraph_ctx
 
-PRIVATE_PATHS = [(str(Path.home()), "~")]
-if Path.cwd() != Path("/"):  # don't strip unix root
-    PRIVATE_PATHS += [(str(Path.cwd()), ".")]
-# sort descending by length to avoid interference
-PRIVATE_PATHS.sort(key=lambda x: len(x[0]), reverse=True)
+
+@functools.lru_cache(maxsize=1)
+def get_priv_paths():
+    priv_paths = [(str(Path.home()), "~")]
+    if Path.cwd() != Path("/"):  # don't strip unix root
+        priv_paths += [(str(Path.cwd()), ".")]
+    # sort descending by length to avoid interference
+    priv_paths.sort(key=lambda x: len(x[0]), reverse=True)
+    return priv_paths
 
 def txtpath(s):
     # Returns a path string suitable for embedding into the output, with private paths stripped
     s = str(s)
-    for p, x in PRIVATE_PATHS:
+    for p, x in get_priv_paths():
         if s.startswith(p):
             return x + s[len(p):]
     return s

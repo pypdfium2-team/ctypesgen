@@ -18,7 +18,7 @@ from ctypesgen import (
     printer_json,
 )
 from ctypesgen.printer_python import (
-    txtpath, PRIVATE_PATHS,
+    txtpath, get_priv_paths,
 )
 
 # -- Argparse-based entry point --
@@ -26,6 +26,7 @@ from ctypesgen.printer_python import (
 # API callers beware: argparse can raise SystemExit - you might want to try/except guard against this.
 
 def main(given_argv=sys.argv[1:]):
+    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
     args = get_parser().parse_args(given_argv)
     postparse(args)
     cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
@@ -42,6 +43,7 @@ def postparse(args):
 
 def api_main(args):
     
+    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
     parser = get_parser()
     
     required_args = _get_parser_requires(parser)
@@ -55,7 +57,7 @@ def api_main(args):
     real_args = argparse.Namespace(**real_args)
     
     args_str = str(pformat(args))
-    for p, x in PRIVATE_PATHS:
+    for p, x in get_priv_paths():
         args_str = args_str.replace(p, x)
     return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
 
