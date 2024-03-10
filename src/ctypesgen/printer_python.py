@@ -34,6 +34,7 @@ def get_priv_paths():
 
 def txtpath(s):
     # Returns a path string suitable for embedding into the output, with private paths stripped
+    # FIXME if e.g. Path.home() is /home/a, this would wrongly strip from /home/alice as well - need a tighter matching strategy
     s = str(s)
     for p, x in get_priv_paths():
         if s.startswith(p):
@@ -198,6 +199,8 @@ _register_library(
         if struct.opaque:
             self.file.write(pad + "pass")
             return
+        
+        # FIXME(geisserml) The two blocks below look like they do evaluation work that doesn't belong in the printer, but in an earlier part of the control flow...
         
         # is this supposed to be packed?
         if struct.attrib.get("packed", False):
