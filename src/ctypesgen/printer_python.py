@@ -25,21 +25,21 @@ def ParagraphCtxFactory(file):
 
 @functools.lru_cache(maxsize=1)
 def get_priv_paths():
-    priv_paths = [(str(Path.home()), "~")]
+    priv_paths = [(Path.home(), "~")]
     if Path.cwd() != Path("/"):  # don't strip unix root
-        priv_paths += [(str(Path.cwd()), ".")]
+        priv_paths += [(Path.cwd(), ".")]
     # sort descending by length to avoid interference
-    priv_paths.sort(key=lambda x: len(x[0]), reverse=True)
+    priv_paths.sort(key=lambda x: len(str(x[0])), reverse=True)
     return priv_paths
 
-def txtpath(s):
+def txtpath(p):
     # Returns a path string suitable for embedding into the output, with private paths stripped
-    # FIXME if e.g. Path.home() is /home/a, this would wrongly strip from /home/alice as well - need a tighter matching strategy
-    s = str(s)
-    for p, x in get_priv_paths():
-        if s.startswith(p):
-            return x + s[len(p):]
-    return s
+    p = Path(p)
+    for strip_p, x in get_priv_paths():
+        # should be equivalent to `p.is_relative_to(strip_p)` or `p.parts[:len(strip_p.parts)] == strip_p.parts`
+        if strip_p in p.parents or p == strip_p:
+            return x + str(p)[len(str(strip_p)):]
+    return str(p)
 
 
 # Important: Concerning newlines handling, please read docs/dev_comments.md

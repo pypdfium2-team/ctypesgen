@@ -58,7 +58,7 @@ def api_main(args):
     
     args_str = str(pformat(args))
     for p, x in get_priv_paths():
-        args_str = args_str.replace(p, x)
+        args_str = args_str.replace(str(p), x)
     return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
 
 
