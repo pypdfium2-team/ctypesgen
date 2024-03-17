@@ -27,7 +27,7 @@ def ParagraphCtxFactory(file):
 def get_priv_paths():
     priv_paths = [(Path.home(), "~")]
     if Path.cwd() != Path("/"):  # don't strip unix root
-        priv_paths += [(Path.cwd(), ".")]
+        priv_paths.insert(0, (Path.cwd(), "."))
     # sort descending by length to avoid interference
     priv_paths.sort(key=lambda x: len(str(x[0])), reverse=True)
     return priv_paths
