@@ -3,8 +3,8 @@ requires = ["setuptools>=64", "setuptools_scm>=7.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ctypesgen"
-description = "Python wrapper generator for ctypes"
+name = "pypdfium2-ctypesgen"
+description = "Python wrapper generator for ctypes (pypdfium2-fork)"
 license = { text = "BSD-2-Clause" }
 classifiers = [
     "License :: OSI Approved :: BSD License",
@@ -13,6 +13,9 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3 :: Only",
     "Development Status :: 4 - Beta",
     "Operating System :: OS Independent",
@@ -26,10 +29,10 @@ dynamic = ["readme", "version"]
 requires-python = ">=3.7"
 
 [project.urls]
-Homepage = "https://github.com/ctypesgen/ctypesgen"
-Repository = "https://github.com/ctypesgen/ctypesgen.git"
-Issues = "https://github.com/ctypesgen/ctypesgen/issues"
-Changelog = "https://github.com/ctypesgen/ctypesgen/blob/master/CHANGELOG.md"
+Homepage = "https://github.com/pypdfium2-team/ctypesgen"
+Repository = "https://github.com/pypdfium2-team/ctypesgen.git"
+Issues = "https://github.com/pypdfium2-team/ctypesgen/issues"
+Changelog = "https://github.com/pypdfium2-team/ctypesgen/blob/master/CHANGELOG.md"
 
 [project.scripts]
 ctypesgen = "ctypesgen.__main__:main"
