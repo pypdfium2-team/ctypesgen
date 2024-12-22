@@ -263,27 +263,19 @@ _register_library(
         self._srcinfo(typedef.src)
         self.file.write(f"{typedef.name} = {typedef.ctype.py_string()}")
     
-    
     def print_macro(self, macro):
         self._srcinfo(macro.src)
         # important: must check precisely against None because params may be an empty list for a func macro
-        if macro.params is None:
-            self._print_simple_macro(macro)
-        else:
-            self._print_func_macro(macro)
-    
-    def _print_simple_macro(self, macro):
-        entry = f"{macro.name} = {macro.expr.py_string(True)}"
-        if self.opts.guard_macros:
-            entry = self._try_except_wrap(entry)
-        self.file.write(entry)
-    
-    def _print_func_macro(self, macro):
-        self.file.write(
-            f"def {macro.name}({', '.join(macro.params)}):"
-            f"\n    return {macro.expr.py_string(True)}"
-        )
-    
+        if macro.params is None:  # simple macro
+            entry = f"{macro.name} = {macro.expr.py_string(True)}"
+            if self.opts.guard_macros:
+                entry = self._try_except_wrap(entry)
+            self.file.write(entry)
+        else:  # func macro
+            self.file.write(
+                f"def {macro.name}({', '.join(macro.params)}):"
+                f"\n    return {macro.expr.py_string(True)}"
+            )
     
     def print_undef(self, undef):
         self._srcinfo(undef.src)
