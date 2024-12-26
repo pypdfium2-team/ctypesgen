@@ -98,8 +98,8 @@ class WrapperPrinter:
         pad = " "*4
         return f"try:\n{indent(entry, pad)}\nexcept:\n{pad}pass"
     
-    def _srcinfo(self, src):
-        fp, lineno = src
+    def _srcinfo(self, obj):
+        fp, lineno = obj.src
         if fp in ("<built-in>", "<command line>"):
             self.file.write(f"# {fp}\n")
         else:
@@ -151,7 +151,7 @@ _register_library(
     
     def print_function(self, function):
         assert self.opts.library, "Binary symbol requires --library LIBNAME"
-        self._srcinfo(function.src)
+        self._srcinfo(function)
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
@@ -178,7 +178,7 @@ _register_library(
     
     def print_variable(self, variable):
         assert self.opts.library, "Binary symbol requires --library LIBNAME"
-        self._srcinfo(variable.src)
+        self._srcinfo(variable)
         entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
@@ -191,7 +191,7 @@ _register_library(
     
     
     def print_struct(self, struct):
-        self._srcinfo(struct.src)
+        self._srcinfo(struct)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
         self.file.write(f"class {struct.variety}_{struct.tag} ({base}):")
         pad = "\n" + " "*4
@@ -252,19 +252,19 @@ _register_library(
     
     def print_enum(self, enum):
         # NOTE values of enumerator are output as constants
-        self._srcinfo(enum.src)
+        self._srcinfo(enum)
         self.file.write(f"enum_{enum.tag} = c_int")
     
     def print_constant(self, constant):
-        self._srcinfo(constant.src)
+        self._srcinfo(constant)
         self.file.write(f"{constant.name} = {constant.value.py_string(False)}")
     
     def print_typedef(self, typedef):
-        self._srcinfo(typedef.src)
+        self._srcinfo(typedef)
         self.file.write(f"{typedef.name} = {typedef.ctype.py_string()}")
     
     def print_macro(self, macro):
-        self._srcinfo(macro.src)
+        self._srcinfo(macro)
         # important: must check precisely against None because params may be an empty list for a func macro
         if macro.params is None:  # simple macro
             entry = f"{macro.name} = {macro.expr.py_string(True)}"
@@ -278,7 +278,7 @@ _register_library(
             )
     
     def print_undef(self, undef):
-        self._srcinfo(undef.src)
+        self._srcinfo(undef)
         name = undef.macro.py_string(False)
         entry = f"del {name}"
         if self.opts.guard_macros:
