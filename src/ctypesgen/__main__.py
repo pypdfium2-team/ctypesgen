@@ -479,6 +479,12 @@ def get_parser():
         action="store_false",
         help="Do not wrap macros in try/except.",
     )
+    parser.add_argument(
+        "--no-srcinfo",
+        dest="add_srcinfo",
+        action="store_false",
+        help="Skip adding comments indicating header source file and line number of symbols. This may be useful for cleaner diffs of tracked bindings. (If you wish to know the origin of a symbol, grep for it in the input headers).",
+    )
 
     # Error options
     parser.add_argument(
