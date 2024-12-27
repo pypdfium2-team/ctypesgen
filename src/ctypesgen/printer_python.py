@@ -138,11 +138,12 @@ _register_library(
         if opts.embed_templates:
             self.file.write(f"\n\n\n{content}")
         else:
+            # we need to share libraries in a common file to build same-library headers separately while loading the library only once
+            # FIXME reading EXT_LOADER and searching for a string pattern each time is dirty -- a dedicated json status file to track state might be cleaner
             loader_txt = self.EXT_LOADER.read_text()
             if name_define in loader_txt:
                 status_message("Library already loaded in shared file, won't rewrite.")
             else:
-                # we need to share libraries in a common file to build same-library headers separately while loading the library only once
                 status_message("Adding library loader to shared file.")
                 self.EXT_LOADER.write_text(f"{loader_txt}\n\n{content}\n")
     
