@@ -90,11 +90,17 @@ class CtypesParser(CParser):
 
         if specifier.declarations:
             members = []
+            
+            # FAM (flexible array member) at end of struct should be handled as zero-sized array (see GH issue 219)
+            last_declarator = specifier.declarations[-1].declarator
+            if last_declarator and last_declarator.array and last_declarator.array.size is None:
+                last_declarator.array.size = ConstantExpressionNode(0)
+            
             for declaration in specifier.declarations:
-                t = self.get_ctypes_type(
-                    declaration.type, declaration.declarator, check_qualifiers=True
-                )
                 declarator = declaration.declarator
+                t = self.get_ctypes_type(
+                    declaration.type, declarator, check_qualifiers=True
+                )
                 if declarator is None:
                     # Anonymous field in nested union/struct (C11/GCC).
                     name = None
