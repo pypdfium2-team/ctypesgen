@@ -190,6 +190,9 @@ _register_library(
     
     
     def print_struct(self, struct):
+        
+        # input produced by CtypesParser.make_struct_from_specifier()
+        
         self._srcinfo(struct)
         base = {"union": "Union", "struct": "Structure"}[struct.variety]
         self.file.write(f"class {struct.variety}_{struct.tag} ({base}):")

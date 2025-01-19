@@ -38,9 +38,10 @@ def ctypesgen_main(args, echo=True):
         print(str_args, file=sys.stderr)
     return ctypesgen.__main__.main(args)
 
-def module_from_code(name, python_code):
-    # file_spoof = f"__file__ = '{TEST_DIR/'spoof.py'}'\n\n"
-    # python_code = file_spoof + python_code
+def module_from_code(name, python_code, spoof_dir=None):
+    if spoof_dir:
+        file_spoof = f"__file__ = {str(spoof_dir/'spoof.py')!r}\n\n"
+        python_code = file_spoof + python_code
     module = types.ModuleType(name)
     exec(python_code, module.__dict__)
     return module
@@ -48,7 +49,7 @@ def module_from_code(name, python_code):
 
 COUNTER = 0
 
-def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False):
+def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False, spoof_dir=None):
     
     # Windows notes:
     # - Avoid stdlib tempfiles, they're not usable by anyone except the direct creator, otherwise you'll get permission errors.
@@ -80,7 +81,7 @@ def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False):
             tmp_out.unlink()
     
     if lang.startswith("py"):
-        return module_from_code("tmp_module", content)
+        return module_from_code("tmp_module", content, spoof_dir)
     elif lang == "json":
         return json.loads(content), str(tmp_in)
     else:

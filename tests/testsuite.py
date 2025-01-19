@@ -28,6 +28,7 @@ import ctypes
 import shutil
 import math
 import unittest
+import subprocess
 from contextlib import (
     redirect_stdout,
     redirect_stderr,
@@ -894,7 +895,7 @@ class MacromanEncodeTest(TestCaseWithCleanup):
         self.assertEqual(module.MYSTRING, expected)
 
 
-class TestEmptyHeader(unittest.TestCase):
+class EmptyHeaderTest(unittest.TestCase):
     """ Test how ctypesgen behaves when no members were found. """
     
     @classmethod
@@ -913,9 +914,106 @@ class TestEmptyHeader(unittest.TestCase):
         self.assertFalse(self.outfile.exists())
 
 
+class FAMTest(unittest.TestCase):
+    """
+    Test that flexible array members (FAMs) are handled as zero-sized arrays
+    rather than as pointer types.
+    See GH issue #219. Thanks to @Natanel-Shitrit.
+    """
+    
+    @classmethod
+    def setUpClass(cls):
+        header_str = """
+#include <stdint.h>
+
+// Header struct with flexible array member
+struct msg_header {
+    uint32_t size;        // Total size of the message
+    uint8_t type;         // Type of the message
+    uint8_t payload[];    // Flexible array member
+};
+
+// First message type
+// Note that nesting a struct with FAM may not conform with the C standard,
+// but there are real-world headers in the wild which do this, and compilers
+// seem to tolerate it, so it's still good to handle FAMs properly as
+// zero-sized arrays to avoid wrong offsets in these cases.
+struct msg_type1 {
+    struct msg_header header;
+    uint32_t value1;
+    uint32_t value2;
+    uint8_t extra[];      // Flexible array member for additional data
+};
+
+// Second message type
+struct msg_type2 {
+    struct msg_header header;
+    uint64_t timestamp;
+    uint8_t extra[];      // Flexible array member for additional data
+};
+
+// Union to access either just the header or the complete message
+union message {
+    struct msg_header header;
+    struct msg_type1 type1;
+    struct msg_type2 type2;
+};
+
+// A function declaration with empty array syntax, which should be handled
+// as pointer (not as zero-sized array) here
+void arraytest(int a[]);
+"""
+        
+        # this is some extra work, but build an actual dummy library so we can test the function
+        c_str = """\
+#include "test_fam.h"\n
+void arraytest(int a[]) { };
+"""
+        cls.h_path = TMP_DIR/"test_fam.h"
+        cls.c_path = TMP_DIR/"test_fam.c"
+        cls.h_path.write_text(header_str)
+        cls.c_path.write_text(c_str)
+        libname = "famtest.dll" if sys.platform == "win32" else "libfamtest.so"
+        cls.libpath = TMP_DIR/libname
+        subprocess.run(["gcc", "-shared", "-o", str(cls.libpath), str(cls.c_path)], check=True)
+        cls.module = generate(None, ["-i", cls.h_path, "-l", "famtest", "--compile-libdirs", str(TMP_DIR), "--runtime-libdirs", "."], spoof_dir=TMP_DIR)
+    
+    @classmethod
+    def tearDownClass(cls):
+        if not CLEANUP_OK: return
+        cls.h_path.unlink()
+        cls.c_path.unlink()
+        cls.libpath.unlink()
+    
+    def test_types(self):
+        # make sure the FAM fields are zero-sized arrays
+        m = self.module
+        msg_header_f = dict(m.msg_header._fields_)
+        msg_type1_f = dict(m.msg_type1._fields_)
+        msg_type2_f = dict(m.msg_type2._fields_)
+        self.assertEqual(msg_header_f["payload"], ctypes.c_uint8 * 0)
+        self.assertEqual(msg_type1_f["extra"], ctypes.c_uint8 * 0)
+        self.assertEqual(msg_type2_f["extra"], ctypes.c_uint8 * 0)
+        self.assertEqual(m.arraytest.argtypes, [ctypes.POINTER(ctypes.c_int)])
+    
+    def test_object(self):
+        payload = "0123456789".encode("ascii")
+        size = len(payload)
+        typeval = 1
+        
+        test_data = bytearray(ctypes.c_uint32(size)) + bytearray(ctypes.c_uint8(typeval)) + bytearray(payload)
+        
+        obj = self.module.msg_header.from_buffer(test_data)
+        self.assertEqual(obj.size, size)
+        self.assertEqual(obj.type, typeval)
+        
+        payload_back = (ctypes.c_uint8 * size).from_address(ctypes.addressof(obj.payload))
+        self.assertEqual(payload, bytes(payload_back))
+
+
 requires_gcc = unittest.skipUnless(shutil.which("gcc"), reason="Requires GCC")
 
-class TestDefUndef(unittest.TestCase):
+class DefUndefTest(unittest.TestCase):
     """
     Test handling of defines/undefines passed to ctypesgen.
     Checks order, defaults, and overrides of defaults.

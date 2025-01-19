@@ -228,6 +228,8 @@ class CtypesArray(CtypesType):
 
     def py_string(self, ignore_can_be_ctype=None):
         if self.count is None:
+            # In a function declaration, an empty array is equivalent to a pointer.
+            # For struct FAMs, the ctypesparser changes count None to ConstantExpressionNode(0).
             return "POINTER(%s)" % self.base.py_string()
         if type(self.base) == CtypesArray:
             return "(%s) * int(%s)" % (self.base.py_string(), self.count.py_string(False))
