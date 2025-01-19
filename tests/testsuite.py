@@ -969,13 +969,21 @@ void arraytest(int a[]);
 #include "test_fam.h"\n
 void arraytest(int a[]) { };
 """
-        h_path = TMP_DIR/"test_fam.h"
-        c_path = TMP_DIR/"test_fam.c"
-        h_path.write_text(header_str)
-        c_path.write_text(c_str)
+        cls.h_path = TMP_DIR/"test_fam.h"
+        cls.c_path = TMP_DIR/"test_fam.c"
+        cls.h_path.write_text(header_str)
+        cls.c_path.write_text(c_str)
         libname = "famtest.dll" if sys.platform == "win32" else "libfamtest.so"
-        subprocess.run(["gcc", "-shared", "-o", TMP_DIR/libname, str(c_path)], check=True)
-        cls.module = generate(None, ["-i", h_path, "-l", "famtest", "--runtime-libdirs", "."], spoof_dir=TMP_DIR)
+        cls.libpath = TMP_DIR/libname
+        subprocess.run(["gcc", "-shared", "-o", str(cls.libpath), str(cls.c_path)], check=True)
+        cls.module = generate(None, ["-i", cls.h_path, "-l", "famtest", "--compile-libdirs", str(TMP_DIR), "--runtime-libdirs", "."], spoof_dir=TMP_DIR)
+    
+    @classmethod
+    def tearDownClass(cls):
+        if not CLEANUP_OK: return
+        cls.h_path.unlink()
+        cls.c_path.unlink()
+        cls.libpath.unlink()
     
     def test_types(self):
         # make sure the FAM fields are zero-sized arrays
