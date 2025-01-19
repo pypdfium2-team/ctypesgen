@@ -85,17 +85,14 @@ class CtypesParser(CParser):
             self.type_map.update(ctypes_type_map_python_builtin)
 
     def make_struct_from_specifier(self, specifier):
+        
+        # this method produces the input for the printer
+        
         variety = {True: "union", False: "struct"}[specifier.is_union]
         tag = specifier.tag
 
         if specifier.declarations:
             members = []
-            
-            # FAM (flexible array member) at end of struct should be handled as zero-sized array (see GH issue 219)
-            last_declarator = specifier.declarations[-1].declarator
-            if last_declarator and last_declarator.array and last_declarator.array.size is None:
-                last_declarator.array.size = ConstantExpressionNode(0)
-            
             for declaration in specifier.declarations:
                 declarator = declaration.declarator
                 t = self.get_ctypes_type(
@@ -109,6 +106,12 @@ class CtypesParser(CParser):
                         declarator = declarator.pointer
                     name = declarator.identifier
                 members.append((name, remove_function_pointer(t)))
+            
+            # handle FAM (flexible array member) at end of struct as zero-sized array (see GH issue 219)
+            _, last_ctype = members[-1]
+            if isinstance(last_ctype, CtypesArray) and last_ctype.count is None:
+                last_ctype.count = ConstantExpressionNode(0)
+            
         else:
             members = None
 
