@@ -99,10 +99,10 @@ True
 
 *ctypes*
 * Rare calling conventions other than `cdecl` or `stdcall` are not supported.
-* Non-primitive return types in callbacks are not supported. An affected prototype wouldn't allow for the creation of a function instance, but not break the output as a whole.
 
 *pypdfium2-ctypesgen*
-* The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not support mixed calling conventions, because it does not match the API layer of ctypes.
+* Non-primitive return pointer types in callbacks are not currently supported. In the future, we may want to add back the `UNCHECKED()` template or similar to replace the type with `c_void_p`. See https://github.com/pypdfium2-team/ctypesgen/issues/20
+* The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not currently support mixed calling conventions, because it does not match the API layer of ctypes.
 * We do not support binding to multiple binaries in the same output file. Instead, you'll want to create separate output files sharing the loader template, and possibly use module linking, as described above.
 
 *ctypesgen*
