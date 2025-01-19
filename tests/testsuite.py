@@ -28,6 +28,7 @@ import ctypes
 import shutil
 import math
 import unittest
+import subprocess
 from contextlib import (
     redirect_stdout,
     redirect_stderr,
@@ -922,8 +923,6 @@ class FAMTest(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        # TODO test that functions with empty array (e.g. void arraytest(int a[]);) are still treated as pointers
-        # this is a bit difficult to test here as it would need a real library to extract the function symbol from ...
         header_str = """
 #include <stdint.h>
 
@@ -959,8 +958,24 @@ union message {
     struct msg_type1 type1;
     struct msg_type2 type2;
 };
+
+// A function declaration with empty array syntax, which should be handled
+// as pointer (not as zero-sized array) here
+void arraytest(int a[]);
 """
-        cls.module = generate(header_str)
+        
+        # this is some extra work, but build an actual dummy library so we can test the function
+        c_str = """\
+#include "test_fam.h"\n
+void arraytest(int a[]) { };
+"""
+        h_path = TMP_DIR/"test_fam.h"
+        c_path = TMP_DIR/"test_fam.c"
+        h_path.write_text(header_str)
+        c_path.write_text(c_str)
+        libname = "famtest.dll" if sys.platform == "win32" else "libfamtest.so"
+        subprocess.run(["gcc", "-shared", "-o", TMP_DIR/libname, str(c_path)], check=True)
+        cls.module = generate(None, ["-i", h_path, "-l", "famtest", "--runtime-libdirs", "."], spoof_dir=TMP_DIR)
     
     def test_types(self):
         # make sure the FAM fields are zero-sized arrays
@@ -971,6 +986,7 @@ union message {
         self.assertEqual(msg_header_f["payload"], ctypes.c_uint8 * 0)
         self.assertEqual(msg_type1_f["extra"], ctypes.c_uint8 * 0)
         self.assertEqual(msg_type2_f["extra"], ctypes.c_uint8 * 0)
+        self.assertEqual(m.arraytest.argtypes, [ctypes.POINTER(ctypes.c_int)])
     
     def test_object(self):
         payload = "0123456789".encode("ascii")
