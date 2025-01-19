@@ -107,7 +107,7 @@ class CtypesParser(CParser):
                     name = declarator.identifier
                 members.append((name, remove_function_pointer(t)))
             
-            # handle FAM (flexible array member) at end of struct as zero-sized array (see GH issue 219)
+            # handle FAM (flexible array member) at end of struct as zero-sized array (see GH issue #219)
             _, last_ctype = members[-1]
             if isinstance(last_ctype, CtypesArray) and last_ctype.count is None:
                 last_ctype.count = ConstantExpressionNode(0)
