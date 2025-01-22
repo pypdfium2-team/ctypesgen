@@ -265,7 +265,7 @@ class CtypesFunction(CtypesType):
     def py_string(self, ignore_can_be_ctype=None):
         return "CFUNCTYPE(%s, %s)" % (
             self.restype.py_string(),
-            ", ".join([a.py_string() for a in self.argtypes]),
+            ", ".join(a.py_string() for a in self.argtypes),
         )
 
 

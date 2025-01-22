@@ -161,11 +161,11 @@ def fix_conflicting_names(data, opts):
             break  # params loop
 
 
-# TODO(geisserml) see if we can replace this with our own bindings to the underlying APIs
 import _ctypes as ctypes_backend
 
 def free_library(lib_handle):
     # https://github.com/python/cpython/issues/58802
+    # https://github.com/python/cpython/blob/3.13/Modules/_ctypes/callproc.c
     # On Windows, we have to free libraries explicitly so the backing file may be deleted afterwards (the test suite does this).
     # While we're at it, also free libraries on other platforms for consistency.
     status_message(f"Freeing library handle {lib_handle} ...")
