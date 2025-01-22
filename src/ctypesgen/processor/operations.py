@@ -8,6 +8,7 @@ import re
 import sys
 import ctypes
 import keyword
+import traceback
 from pathlib import Path
 
 from ctypesgen import libraryloader
@@ -160,6 +161,7 @@ def fix_conflicting_names(data, opts):
             break  # params loop
 
 
+# TODO(geisserml) see if we can replace this with our own bindings to the underlying APIs
 import _ctypes as ctypes_backend
 
 def free_library(lib_handle):
@@ -188,8 +190,8 @@ def check_symbols(data, opts):
             search_sys = opts.search_sys,
         )
         library = libraryloader._libs[opts.library]
-    except ImportError as e:
-        warning_message(e)
+    except (ImportError, OSError):
+        traceback.print_exc()
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
