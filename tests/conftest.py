@@ -31,7 +31,7 @@ _init_tmpdir()
 if CLEANUP_OK: atexit.register(_remove_tmpdir)
 
 
-def ctypesgen_main(args, echo=True):
+def ctypesgen_wrapper(args, echo=True):
     args = [str(a) for a in args]
     if echo:
         str_args = ' '.join([shlex.quote(a) for a in ["ctypesgen", *args]])
@@ -73,7 +73,7 @@ def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False, sp
     try:
         tmp_out = TMP_DIR/f"out_bindings_{COUNTER:02d}.{lang}"
         cmdargs += ["-o", tmp_out]
-        ctypesgen_main(cmdargs)
+        ctypesgen_wrapper(cmdargs)
         content = tmp_out.read_text(encoding="utf-8")
     finally:
         if CLEANUP_OK:
@@ -93,7 +93,7 @@ def generate_common():
     _create_common_files()
     _compile_common(common_lib)
     
-    ctypesgen_main(["-i", COMMON_DIR/"common.h", "--no-embed-templates", "--linkage-anchor", COMMON_DIR, "-o", COMMON_DIR/"common.py"])
+    ctypesgen_wrapper(["-i", COMMON_DIR/"common.h", "--no-embed-templates", "--linkage-anchor", COMMON_DIR, "-o", COMMON_DIR/"common.py"])
     for file_name, shared in product(["a", "b"], [False, True]):
         _generate_with_common(file_name, shared)
 
@@ -147,7 +147,7 @@ def _generate_with_common(file_name, shared):
         args += ["--symbol-rules", "yes=mystruct"]
         file_name += "_unshared"
     args += ["-o", COMMON_DIR/f"{file_name}.py"]
-    ctypesgen_main(args)
+    ctypesgen_wrapper(args)
 
 
 def cleanup_common():
