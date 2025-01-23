@@ -13,6 +13,7 @@ import ctypesgen.__main__
 
 
 TEST_DIR = Path(__file__).resolve().parent
+CTYPESGEN_DIR = TEST_DIR.parent
 COMMON_DIR = TEST_DIR/"common"
 TMP_DIR = TEST_DIR/"tmp"
 
