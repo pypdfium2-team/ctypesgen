@@ -40,6 +40,7 @@ def postparse(args):
 
 # Not officially supported. Use at own risk.
 # API callers should prefer to go through argparse-based main() where possible.
+# Part of the reason why this isn't recommended is that no type-checking or conversion is being done; you have to make sure on your own that you pass in the expected types. In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
 
 def api_main(args):
     
