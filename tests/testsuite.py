@@ -693,7 +693,7 @@ typedef struct {
     int a;
 } MyStructT;
 typedef int (*FP_CustomArgtype)(MyStructT* my_struct);
-typedef MyStructT (*FP_CustomRestype)(void);
+typedef MyStructT* (*FP_CustomRestype)(void);
 """
         cls.module = generate(header_str)
 
@@ -713,10 +713,12 @@ typedef MyStructT (*FP_CustomRestype)(void);
         struct = self.module.MyStructT(a=10)
         self.assertEqual(F(struct), 10)
     
-    def test_custom_restype(self):  # xfail
+    @unittest.expectedFailure
+    def test_custom_restype(self):
+        # TODO add back UNCHECKED wrapper, see https://github.com/pypdfium2-team/ctypesgen/issues/20
         """ Test non-primitive restype. Fails because not supported by ctypes. """
-        with self.assertRaises(TypeError, msg="invalid result type for callback function"):
-            F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT())
+        # with self.assertRaises(TypeError, msg="invalid result type for callback function"):
+        F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT())
 
 
 class LongDoubleTest(TestCaseWithCleanup):
