@@ -691,9 +691,9 @@ typedef int (*FP_Primitive)(void* my_value);
 
 typedef struct {
     int a;
-} MyStructT;
-typedef int (*FP_CustomArgtype)(MyStructT* my_struct);
-typedef MyStructT* (*FP_CustomRestype)(void);
+} MyStruct;
+typedef int (*FP_CustomArgtype)(MyStruct* my_struct);
+typedef MyStruct* (*FP_CustomRestype)(MyStruct* my_struct);
 """
         cls.module = generate(header_str)
 
@@ -701,6 +701,7 @@ typedef MyStructT* (*FP_CustomRestype)(void);
         """Test passthrough of primitive value."""
         F = self.module.FP_Primitive(lambda x: x)
         self.assertEqual(F.argtypes, (ctypes.c_void_p,))
+        # make sure the UNCHECKED template did not affect the primitive type
         self.assertEqual(F.restype, ctypes.c_int)
         # ctypes autoconverts int -> c_void_p and c_int -> int
         self.assertEqual(F(100), 100)
@@ -708,17 +709,22 @@ typedef MyStructT* (*FP_CustomRestype)(void);
     def test_custom_argtype(self):
         """Test non-primitive argtype (struct pointer)."""
         F = self.module.FP_CustomArgtype(lambda s: s.contents.a)
-        self.assertEqual(F.argtypes, (ctypes.POINTER(self.module.MyStructT),))
+        self.assertEqual(F.argtypes, (ctypes.POINTER(self.module.MyStruct),))
         self.assertEqual(F.restype, ctypes.c_int)
-        struct = self.module.MyStructT(a=10)
+        struct = self.module.MyStruct(a=10)
         self.assertEqual(F(struct), 10)
     
-    @unittest.expectedFailure
     def test_custom_restype(self):
-        # TODO add back UNCHECKED wrapper, see https://github.com/pypdfium2-team/ctypesgen/issues/20
-        """ Test non-primitive restype. Fails because not supported by ctypes. """
-        # with self.assertRaises(TypeError, msg="invalid result type for callback function"):
-        F = self.module.FP_CustomRestype(lambda _: self.module.MyStructT())
+        """ Test custom pointer result type (UNCHECKED() template). """
+        mod = self.module
+        F = mod.FP_CustomRestype(lambda x: ctypes.addressof(x.contents))
+        self.assertEqual(F.argtypes, (ctypes.POINTER(mod.MyStruct),))
+        # The custom type is transfomred into a primitive type (c_void_p) by ctypesgen, because ctypes does not support custom pointer return types on callbacks
+        self.assertEqual(F.restype, ctypes.c_void_p)
+        struct = mod.MyStruct(a=10)
+        struct_back = mod.MyStruct.from_address( F(struct) )
+        self.assertEqual(struct.a, struct_back.a)
+
 
 
 class LongDoubleTest(TestCaseWithCleanup):

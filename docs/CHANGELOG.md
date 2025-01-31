@@ -31,6 +31,8 @@ See also `--help` for usage details.
 * Symbol regex matching uses `fullmatch()` rather than `match()` (more explicit).
 * Eagerly include direct members with `--system-headers`. This helps lower the need for `--all-headers` (which generally includes a lot more than necessary).
 * Auto-detect default pre-processor.
+* Handle FAMs (Flexible Array members) as zero-sized arrays. See https://github.com/ctypesgen/ctypesgen/issues/219.
+* Changed the `UNCHECKED()` template to only remap non-primitive pointer types, and pass through anything else as-is. This avoids erroneously changing non-pointer types or `None` to `c_void_p`.
 * `-X`: Ability to override arbitrary pre-processor default flags added by ctypesgen.
 * Pass through `-D/-U` in given order, i.e. honor undefines overriding defines, and vice versa.
 

@@ -8,9 +8,19 @@ from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
 from ctypesgen.expressions import ExpressionNode
 from ctypesgen.messages import warning_message, status_message
 
-
 CTYPESGEN_DIR = Path(__file__).resolve().parent
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
+
+UncheckedTemplate = """\
+# AOTW, ctypes does not support non-primitive result types in callbacks,
+# so we remap custom pointer types to unchecked c_void_p.
+def UNCHECKED(t):
+    if hasattr(t, "_type_") and not isinstance(t._type_, str):
+        return ctypes.c_void_p
+    else:
+        return t\
+"""
+
 
 def ParagraphCtxFactory(file):
     @contextmanager
@@ -41,6 +51,10 @@ def txtpath(p):
             return x + str(p)[len(str(strip_p)):]
     return str(p)
 
+def _embed_file_impl(dst_fh, src_fp):
+    with open(src_fp, "r") as src_fh:
+        shutil.copyfileobj(src_fh, dst_fh)
+
 
 # Important: Concerning newlines handling, please read docs/dev_comments.md
 
@@ -66,15 +80,15 @@ class WrapperPrinter:
                 for mod in opts.modules:
                     self.file.write(f"\nfrom {mod} import *")
             
-            if opts.library:
-                if opts.dllclass == "pythonapi":
-                    assert opts.library == "python"
-                    self.file.write("\n\n_libs = {%r: ctypes.pythonapi}" % opts.library)
-                else:
-                    self.print_loader(opts)
-                    self.print_library(opts)
+            if opts.dllclass == "pythonapi":
+                assert opts.library == "python"
+                self.file.write("\n\n_libs = {%r: ctypes.pythonapi}" % opts.library)
             else:
-                warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
+                self.print_loader(opts)
+                if opts.library:
+                    self.print_library(opts)
+                else:
+                    warning_message("No library name specified. Assuming pure headers without binary symbols.", cls="usage")
             
             self.file.write("\n\n\n")
             with self.paragraph_ctx("header members"):
@@ -99,9 +113,9 @@ class WrapperPrinter:
         pass
     
     def _embed_file(self, fp, desc):
-        with self.paragraph_ctx(desc), open(fp, "r") as src_fh:
+        with self.paragraph_ctx(desc):
             self.file.write("\n\n")
-            shutil.copyfileobj(src_fh, self.file)
+            _embed_file_impl(self.file, fp)
     
     def _try_except_wrap(self, entry):
         pad = " "*4
@@ -110,16 +124,22 @@ class WrapperPrinter:
     
     def print_loader(self, opts):
         if opts.embed_templates:
+            if opts.library:
+                self.file.write("\n\n\n")
+                self._embed_file(LIBRARYLOADER_PATH, "library loader")
             self.file.write("\n\n\n")
-            self._embed_file(LIBRARYLOADER_PATH, "loader template")
+            with self.paragraph_ctx("templates"):
+                self.file.write(f"\n\n{UncheckedTemplate}\n")
         else:
             self.EXT_LOADER = opts.linkage_anchor / "_ctg_loader.py"
             if not self.EXT_LOADER.exists():
-                shutil.copyfile(LIBRARYLOADER_PATH, self.EXT_LOADER)
+                with self.EXT_LOADER.open("w") as dst_fh:
+                    _embed_file_impl(dst_fh, LIBRARYLOADER_PATH)
+                    dst_fh.write(f"\n\n{UncheckedTemplate}\n")
             n_dots = len(opts.output.parts) - len(opts.linkage_anchor.parts)
             self.file.write(
-                "\n\n# Shared library handles"
-                f"\nfrom {'.'*n_dots}_ctg_loader import _libs"
+                "\n\n# Shared library handles & templates"
+                f"\nfrom {'.'*n_dots}_ctg_loader import _libs, UNCHECKED"
             )
     
     

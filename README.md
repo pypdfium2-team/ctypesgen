@@ -99,7 +99,7 @@ True
 
 *ctypes*
 * Rare calling conventions other than `cdecl` or `stdcall` are not supported.
-* ctypes cannot handle non-primitive return pointer types in callbacks. In the future, we may want to add back the `UNCHECKED()` template or similar to replace the type with `c_void_p`. See https://github.com/pypdfium2-team/ctypesgen/issues/20
+* ctypes does not support custom pointer result types in callbacks. Therefore, we use a template to remap these to `c_void_p`.
 
 *pypdfium2-ctypesgen*
 * The DLL class is assumed to be `CDLL`, otherwise it needs to be given by the caller. We do not currently support mixed calling conventions, because it does not match the API layer of ctypes.
