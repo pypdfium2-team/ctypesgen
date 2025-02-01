@@ -7,7 +7,7 @@ def _find_library(name, dirs, search_sys):
     
     if sys.platform.startswith(("win32", "cygwin", "msys")):
         patterns = ["{}.dll", "lib{}.dll", "{}"]
-    elif sys.platform.startswith(("darwin", "iOS", "iPadOS")):
+    elif sys.platform.startswith(("darwin", "ios")):
         patterns = ["lib{}.dylib", "{}.dylib", "lib{}.so", "{}.so", "{}"]
     else:  # assume unix pattern or plain name
         patterns = ["lib{}.so", "{}.so", "{}"]
