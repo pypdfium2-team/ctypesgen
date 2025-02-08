@@ -4,8 +4,15 @@ from pathlib import Path
 from textwrap import indent
 from contextlib import contextmanager
 
-from ctypesgen.ctypedescs import CtypesBitfield, CtypesStruct
-from ctypesgen.expressions import ExpressionNode
+from ctypesgen.ctypedescs import (
+    CtypesBitfield,
+    CtypesStruct,
+    CtypesArray,
+)
+from ctypesgen.expressions import (
+    ExpressionNode,
+    ConstantExpressionNode,
+)
 from ctypesgen.messages import warning_message, status_message
 
 CTYPESGEN_DIR = Path(__file__).resolve().parent
@@ -198,6 +205,10 @@ _register_library(
     def print_variable(self, variable):
         assert self.opts.library, "Binary symbol requires --library LIBNAME"
         self._srcinfo(variable)
+        # TODO move this to an earlier part of the control flow
+        # Ideally, empty arrays should always be handled as arrays (not pointers) unless in a function declaration.
+        if isinstance(variable.ctype, CtypesArray) and variable.ctype.count is None:
+            variable.ctype.count = ConstantExpressionNode(0)
         entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
