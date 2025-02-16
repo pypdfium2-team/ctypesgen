@@ -388,7 +388,7 @@ def get_parser():
     parser.add_argument(
         "--optimize-lexer",
         action="store_true",
-        help="Run the lexer in optimized mode by using a pre-compiled lextab file included in the sources. This allows to run ctypesgen in python's optimized mode, which discards docstrings (PLY relies on docstrings for lexer declarations). It may also improve performance, at the cost of disabling most error checking. If the lexer has been changed, re-generate lextab by deleting it and running ctypesgen with this option, in python's normal operating mode. See also chapter '4.13 Optimized mode' of the PLY manual.",
+        help="Run the lexer in optimized mode by using a pre-compiled lextab file included in the sources. This allows to run ctypesgen in python's optimized mode, which discards docstrings (PLY relies on docstrings for lexer declarations). It may also improve performance, at the cost of disabling most error checking. If the lexer has been changed, re-generate lextab.py by deleting it and running ctypesgen with this option, in python's normal operating mode. See also chapter '4.13 Optimized mode' of the PLY manual.",
     )
 
     # Processor options
