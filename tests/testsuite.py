@@ -1019,6 +1019,8 @@ void arraytest(int a[]) { };
         self.assertEqual(obj.size, size)
         self.assertEqual(obj.type, typeval)
         
+        # alternatively:
+        # payload_back = ctypes.cast(obj.payload, ctypes.POINTER(ctypes.c_uint8 * size)).contents
         payload_back = (ctypes.c_uint8 * size).from_address(ctypes.addressof(obj.payload))
         self.assertEqual(payload, bytes(payload_back))
 
