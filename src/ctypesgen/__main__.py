@@ -112,7 +112,7 @@ def main_impl(args, cmd_str):
     data = [(k, d) for k, d in raw_data.output_order if d.included]
     if not data:
         if raw_data.all:
-            msgs.status_message(f"Non-included members - perhaps you meant to run with --all-headers?\n" f"{raw_data.all}")
+            msgs.status_message(f"Non-included members - perhaps you meant to run with --all-headers?\n{raw_data.all}")
         raise RuntimeError("No included target members - output would be empty.")
     printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
     msgs.status_message(f"Printing to {args.output}.")
