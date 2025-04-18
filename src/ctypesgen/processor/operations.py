@@ -70,6 +70,7 @@ def filter_by_regex_rules(data, opts):
         rule_name, symbols_regex = rule_entry.split("=", maxsplit=1)
         if rule_name not in {"never", "if_needed", "yes"}:
             raise ValueError(f"Unknown include rule {rule_name!r}")
+        symbols_regex = "(" + symbols_regex + ")"
         expr = re.compile(symbols_regex)
         for desc in data.all:
             if expr.fullmatch(desc.py_name()):
