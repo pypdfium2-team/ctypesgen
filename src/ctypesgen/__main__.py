@@ -223,12 +223,20 @@ def input_dir_t(p):
     return checked_path_t(p, check=Path.is_dir, exc=FileNotFoundError)
 
 
+class LocalArgumentParser (argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        return arg_line.split()
+
+
 def get_parser():
     
     # FIXME argparse parameters are not ordered consistently...
     # TODO expand use of BooleanOptionalAction
     
-    parser = argparse.ArgumentParser(prog="ctypesgen")
+    parser = LocalArgumentParser(
+        prog="ctypesgen",
+        fromfile_prefix_chars="@",
+    )
     
     if sys.version_info < (3, 8):  # compat
         
