@@ -14,19 +14,10 @@ from ctypesgen.expressions import (
     ConstantExpressionNode,
 )
 from ctypesgen.messages import warning_message, status_message
+from ctypesgen.templates import T_UNCHECKED, T_STRINGS
 
 CTYPESGEN_DIR = Path(__file__).resolve().parent
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
-
-UncheckedTemplate = """\
-# AOTW, ctypes does not support non-primitive result types in callbacks,
-# so we remap custom pointer types to unchecked c_void_p.
-def UNCHECKED(t):
-    if hasattr(t, "_type_") and not isinstance(t._type_, str):
-        return ctypes.c_void_p
-    else:
-        return t\
-"""
 
 
 def ParagraphCtxFactory(file):
@@ -129,6 +120,12 @@ class WrapperPrinter:
         return f"try:\n{indent(entry, pad)}\nexcept:\n{pad}pass"
     
     
+    def write_templates(self, dest):
+        dest.write(f"\n\n{T_UNCHECKED}\n")
+        if self.opts.default_encoding:
+            string_classes = T_STRINGS.format(encoding=self.opts.default_encoding)
+            dest.write(f"\n\n{string_classes}\n")
+    
     def print_loader(self, opts):
         if opts.embed_templates:
             if opts.library:
@@ -136,17 +133,19 @@ class WrapperPrinter:
                 self._embed_file(LIBRARYLOADER_PATH, "library loader")
             self.file.write("\n\n\n")
             with self.paragraph_ctx("templates"):
-                self.file.write(f"\n\n{UncheckedTemplate}\n")
+                self.write_templates(self.file)
         else:
             self.EXT_LOADER = opts.linkage_anchor / "_ctg_loader.py"
             if not self.EXT_LOADER.exists():
-                with self.EXT_LOADER.open("w") as dst_fh:
-                    _embed_file_impl(dst_fh, LIBRARYLOADER_PATH)
-                    dst_fh.write(f"\n\n{UncheckedTemplate}\n")
+                with self.EXT_LOADER.open("w") as dest_fh:
+                    _embed_file_impl(dest_fh, LIBRARYLOADER_PATH)
+                    self.write_templates(dest_fh)
             n_dots = len(opts.output.parts) - len(opts.linkage_anchor.parts)
+            import_path = f"from {'.'*n_dots}_ctg_loader import"
             self.file.write(
                 "\n\n# Shared library handles & templates"
-                f"\nfrom {'.'*n_dots}_ctg_loader import _libs, UNCHECKED"
+                f"\n{import_path} *"
+                f"\n{import_path} _libs"
             )
     
     

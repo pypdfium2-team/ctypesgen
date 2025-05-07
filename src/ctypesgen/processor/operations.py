@@ -84,7 +84,13 @@ def fix_conflicting_names(data, opts):
     
     status_message("Looking for conflicting names...")
     
-    our_names = {"_libs", "_libs_info", "UNCHECKED"}
+    our_names = {
+        "_libs",
+        "_libs_info",
+        "UNCHECKED",
+    }
+    if opts.default_encoding:
+        our_names |= {"String", "ReturnString", "DEFAULT_ENCODING"}
     # probably includes a bit more than we actually use ...
     our_names |= {x for x in dir(ctypes) if not x.startswith("_")}
     
