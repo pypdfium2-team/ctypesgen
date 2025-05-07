@@ -52,7 +52,6 @@ class ReturnString:
         else:
             return self.raw == other
 
-
 class String (ctypes.c_char_p):
     
     @classmethod
