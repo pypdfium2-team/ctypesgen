@@ -1,7 +1,6 @@
 """
 Simple test suite using unittest.
 Aims to test for regressions. Where possible use stdlib to avoid the need to compile C code.
-Requires the `parameterized` package for test parametrization.
 
 Originally written by clach04 (Chris Clark). Restructured by mara004 (geisserml).
 
@@ -34,9 +33,6 @@ from contextlib import (
     redirect_stdout,
     redirect_stderr,
 )
-
-# third-party
-from parameterized import parameterized_class
 
 from ctypesgen import VERSION
 import ctypesgen.__main__ as ctg_main
@@ -73,59 +69,65 @@ class TestCaseWithCleanup(unittest.TestCase):
         del cls.module
 
 
-@parameterized_class(["autostrings"], [(False, True)])
-class StdlibTest(TestCaseWithCleanup):
+def make_stdlib_test(autostrings):
+
+    class StdlibTestImpl(TestCaseWithCleanup):
+            
+        @classmethod
+        def setUpClass(cls):
+            extra_args = []
+            if autostrings:
+                extra_args.append("--default-encoding")
+            cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+", *extra_args])
+
+        def test_getenv_returns_string(self):
+            """ Test string return """
+            if sys.platform == "win32":
+                # Check a variable that is already set
+                # USERNAME is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
+                env_var_name = "USERNAME"
+                expect_result = os.environ[env_var_name]
+                self.assertTrue(expect_result, "this should not be None or empty")
+                # reason for using an existing OS variable is that unless the
+                # MSVCRT dll imported is the exact same one that Python was
+                # built with you can't share structures, see
+                # http://msdn.microsoft.com/en-us/library/ms235460.aspx
+                # "Potential Errors Passing CRT Objects Across DLL Boundaries"
+            else:
+                env_var_name = "HELLO"
+                os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
+                expect_result = "WORLD"
+            
+            if autostrings:
+                result = self.module.getenv(env_var_name)
+            else:
+                result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+                result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
+            self.assertEqual(expect_result, result)
+
+        def test_getenv_returns_null(self):
+            """Related to issue 8. Test getenv of unset variable."""
+            
+            env_var_name = "NOT SET"
+            
+            try:
+                # ensure variable is not set, ignoring not set errors
+                del os.environ[env_var_name]
+            except KeyError:
+                pass
+            
+            if autostrings:
+                result = self.module.getenv(env_var_name)
+            else:
+                result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+                result = ctypes.cast(result_ptr, ctypes.c_char_p).value
+            
+            self.assertEqual(result, None)
     
-    @classmethod
-    def setUpClass(cls):
-        extra_args = []
-        if cls.autostrings:
-            extra_args.append("--default-encoding")
-        cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+", *extra_args])
+    return StdlibTestImpl
 
-    def test_getenv_returns_string(self):
-        """ Test string return """
-        if sys.platform == "win32":
-            # Check a variable that is already set
-            # USERNAME is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
-            env_var_name = "USERNAME"
-            expect_result = os.environ[env_var_name]
-            self.assertTrue(expect_result, "this should not be None or empty")
-            # reason for using an existing OS variable is that unless the
-            # MSVCRT dll imported is the exact same one that Python was
-            # built with you can't share structures, see
-            # http://msdn.microsoft.com/en-us/library/ms235460.aspx
-            # "Potential Errors Passing CRT Objects Across DLL Boundaries"
-        else:
-            env_var_name = "HELLO"
-            os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
-            expect_result = "WORLD"
-        
-        if self.autostrings:
-            result = self.module.getenv(env_var_name)
-        else:
-            result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-            result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
-        self.assertEqual(expect_result, result)
-
-    def test_getenv_returns_null(self):
-        """Related to issue 8. Test getenv of unset variable."""
-        
-        env_var_name = "NOT SET"
-        
-        try:
-            # ensure variable is not set, ignoring not set errors
-            del os.environ[env_var_name]
-        except KeyError:
-            pass
-        
-        if self.autostrings:
-            result = self.module.getenv(env_var_name)
-        else:
-            result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-            result = ctypes.cast(result_ptr, ctypes.c_char_p).value
-        
-        self.assertEqual(result, None)
+StdlibTest = make_stdlib_test(False)
+StdlibTestAutostrings = make_stdlib_test(True)
 
 
 class VariadicFunctionTest(TestCaseWithCleanup):
