@@ -1,17 +1,18 @@
 """
 Simple test suite using unittest.
 Aims to test for regressions. Where possible use stdlib to avoid the need to compile C code.
+Requires the `parameterized` package for test parametrization.
 
 Originally written by clach04 (Chris Clark). Restructured by mara004 (geisserml).
 
-Calling:
+Call:
     python3 -m unittest tests.testsuite
-Calling a specific test only:
+Call a specific test only:
     python3 -m unittest tests.testsuite.[TestCase class].[test name]
     e.g.: python3 -m unittest tests.testsuite.StdBoolTest.test_stdbool_type
 or
-    pytest -v  --showlocals tests/testsuite.py
-    pytest -v  --showlocals tests/testsuite.py::StdBoolTest::test_stdbool_type
+    pytest -v --showlocals tests/testsuite.py
+    pytest -v --showlocals tests/testsuite.py::StdBoolTest::test_stdbool_type
 
 Could use any unitest compatible test runner (nose, etc.)
 
@@ -29,11 +30,13 @@ import ctypes
 import math
 import unittest
 import subprocess
-from pathlib import Path
 from contextlib import (
     redirect_stdout,
     redirect_stderr,
 )
+
+# third-party
+from parameterized import parameterized_class
 
 from ctypesgen import VERSION
 import ctypesgen.__main__ as ctg_main
@@ -70,11 +73,15 @@ class TestCaseWithCleanup(unittest.TestCase):
         del cls.module
 
 
+@parameterized_class(["autostrings"], [(False, True)])
 class StdlibTest(TestCaseWithCleanup):
     
     @classmethod
     def setUpClass(cls):
-        cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"])
+        extra_args = []
+        if cls.autostrings:
+            extra_args.append("--default-encoding")
+        cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+", *extra_args])
 
     def test_getenv_returns_string(self):
         """ Test string return """
@@ -93,21 +100,31 @@ class StdlibTest(TestCaseWithCleanup):
             env_var_name = "HELLO"
             os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
             expect_result = "WORLD"
-
-        result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-        result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
+        
+        if self.autostrings:
+            result = self.module.getenv(env_var_name)
+        else:
+            result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+            result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
         self.assertEqual(expect_result, result)
 
     def test_getenv_returns_null(self):
         """Related to issue 8. Test getenv of unset variable."""
+        
         env_var_name = "NOT SET"
+        
         try:
             # ensure variable is not set, ignoring not set errors
             del os.environ[env_var_name]
         except KeyError:
             pass
-        result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-        result = ctypes.cast(result_ptr, ctypes.c_char_p).value
+        
+        if self.autostrings:
+            result = self.module.getenv(env_var_name)
+        else:
+            result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+            result = ctypes.cast(result_ptr, ctypes.c_char_p).value
+        
         self.assertEqual(result, None)
 
 
