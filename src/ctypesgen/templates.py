@@ -46,7 +46,7 @@ class ReturnString:
     
     def __eq__(self, other):
         if type(self) is type(other):
-            return self is other or self.value == other.raw
+            return self is other or self.value == other.value
         elif isinstance(other, str):
             return self.decoded == other
         else:
