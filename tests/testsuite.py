@@ -1150,3 +1150,16 @@ ctypesgen.api_main(
 """ % (STDLIB_NAME, repr(self.outpath).replace(str(CTYPESGEN_DIR), "."), )
         self.assertEqual(self.module.__doc__, exp_docstring)
         self.assertTrue(hasattr(self.module, "printf"))
+
+
+class AutostringsTest(TestCaseWithCleanup):
+    
+    @classmethod
+    def setUpClass(cls):
+        cls.module = generate(header=None, args=["--system-headers", "string.h", "-l", STDLIB_NAME, "--default-encoding"])
+    
+    def test_strcpy(self):
+        src = "This is a test string."
+        dest = ctypes.create_string_buffer(len(src))
+        ret = self.module.strcpy(dest, src)
+        self.assertEqual(ret, src)
