@@ -134,18 +134,8 @@ Otherwise, you'll have to manually look through the changes and pick what you co
 Note, it is important to verify the resulting merge commit for correctness - automatic merge strategies might produce mistakes!
 
 
-### Bugs
+### Issues / Patches
 
-Oversights or unintentional breakage can happen at times. Feel free to file a bug report if you think a change introduces logical issues. However, please note our response policy below.
+Oversights or unintentional breakage can happen at times. If you think a change introduces logical issues, feel free to file a bug report or submit a patch.
 
-
-### Contributions
-<!-- Inspired by bluesky's contribution rules: https://github.com/bluesky-social/indigo -->
-
-> We may accept contributions, but only if our code quality expectations are met.
-
-__Policy__:
-* We may not respond to your issue or PR.
-* We may close an issue or PR without much feedback.
-* We may lock discussions or contributions if our attention is getting DDOSed.
-* We may not provide much usage support.
+Note though, the response/contributions policy is [basically the same as for pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#response-policy).
