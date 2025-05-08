@@ -10,6 +10,9 @@ def UNCHECKED(t):
         return t\
 """
 
+# TODO Refactor. Consider something like this instead:
+# https://github.com/ctypesgen/ctypesgen/issues/77#issuecomment-570145399
+
 T_STRINGS = """\
 import sys
 import functools
@@ -38,11 +41,17 @@ class ReturnString:
             raise RuntimeError("Null pointer cannot be decoded")
         return self.data.decode(DEFAULT_ENCODING)
     
+    def __bytes__(self):
+        return self.data
+    
     def __str__(self):
         return self.decoded
     
     def __getattr__(self, attr):
-        return getattr(self.decoded, attr)
+        return getattr(self.data, attr)
+    
+    def __hash__(self):
+        return hash(self.data)
     
     def __eq__(self, other):
         if type(self) is type(other):
