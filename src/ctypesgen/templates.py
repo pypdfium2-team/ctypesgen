@@ -25,18 +25,18 @@ DEFAULT_ENCODING = {encoding!r}
 
 class ReturnString:
     
-    def __init__(self, ptr):
-        self.ptr = ptr
+    def __init__(self, raw):
+        self.raw = raw
     
     @cached_property
-    def value(self):
-        return self.ptr.value
+    def data(self):
+        return self.raw.value
     
     @cached_property
     def decoded(self):
-        if self.value is None:
+        if self.data is None:
             raise RuntimeError("Null pointer cannot be decoded")
-        return self.value.decode(DEFAULT_ENCODING)
+        return self.data.decode(DEFAULT_ENCODING)
     
     def __str__(self):
         return self.decoded
@@ -46,11 +46,11 @@ class ReturnString:
     
     def __eq__(self, other):
         if type(self) is type(other):
-            return self is other or self.value == other.value
+            return self is other or self.data == other.data
         elif isinstance(other, str):
             return self.decoded == other
         else:
-            return self.value == other
+            return self.data == other
 
 class String (ctypes.c_char_p):
     
