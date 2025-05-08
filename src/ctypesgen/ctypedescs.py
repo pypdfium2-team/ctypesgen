@@ -56,7 +56,7 @@ ctypes_type_map = {
     ("__uint64", False, 0): "c_uint64",
     ("__uint64_t", False, 0): "c_uint64",
     ("_Bool", True, 0): "c_bool",
-    ("bool", True, 0): "c_bool",
+    ("bool", True, 0): "c_bool",  # C23
 }
 
 ctypes_type_map_python_builtin = {
@@ -249,13 +249,15 @@ class CtypesNoErrorCheck:
 
 
 class CtypesFunction(CtypesType):
-    def __init__(self, restype, parameters, variadic, attrib=dict()):
+    def __init__(self, restype, parameters, variadic, options, attrib=dict()):
         super(CtypesFunction, self).__init__()
         self.restype = restype
         self.errcheck = CtypesNoErrorCheck()
         self.argtypes = [remove_function_pointer(p) for p in parameters]
         self.variadic = variadic
         self.attrib = attrib
+        if options.default_encoding and self.restype.py_string() == "POINTER(c_char)":
+            self.restype = CtypesSpecial("String")
 
     def visit(self, visitor):
         self.restype.visit(visitor)

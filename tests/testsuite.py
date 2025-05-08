@@ -4,14 +4,14 @@ Aims to test for regressions. Where possible use stdlib to avoid the need to com
 
 Originally written by clach04 (Chris Clark). Restructured by mara004 (geisserml).
 
-Calling:
+Call:
     python3 -m unittest tests.testsuite
-Calling a specific test only:
+Call a specific test only:
     python3 -m unittest tests.testsuite.[TestCase class].[test name]
     e.g.: python3 -m unittest tests.testsuite.StdBoolTest.test_stdbool_type
 or
-    pytest -v  --showlocals tests/testsuite.py
-    pytest -v  --showlocals tests/testsuite.py::StdBoolTest::test_stdbool_type
+    pytest -v --showlocals tests/testsuite.py
+    pytest -v --showlocals tests/testsuite.py::StdBoolTest::test_stdbool_type
 
 Could use any unitest compatible test runner (nose, etc.)
 
@@ -29,7 +29,6 @@ import ctypes
 import math
 import unittest
 import subprocess
-from pathlib import Path
 from contextlib import (
     redirect_stdout,
     redirect_stderr,
@@ -70,45 +69,72 @@ class TestCaseWithCleanup(unittest.TestCase):
         del cls.module
 
 
-class StdlibTest(TestCaseWithCleanup):
+def make_stdlib_test(autostrings):
+
+    class StdlibTestImpl(TestCaseWithCleanup):
+            
+        @classmethod
+        def setUpClass(cls):
+            extra_args = []
+            if autostrings:
+                extra_args.append("--default-encoding")
+            cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+", *extra_args])
+
+        def test_getenv_returns_string(self):
+            """ Test string return """
+            
+            if sys.platform == "win32":
+                # Check a variable that is already set
+                # USERNAME is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
+                # The reason for using an existing OS variable is that unless the
+                # MSVCRT dll imported is the exact same one that Python was built
+                # with you can't share structures, see
+                # http://msdn.microsoft.com/en-us/library/ms235460.aspx
+                # "Potential Errors Passing CRT Objects Across DLL Boundaries"
+                env_var_name = "USERNAME"
+                expect_result = os.environ[env_var_name]
+                self.assertTrue(expect_result, "this should not be None or empty")
+            else:
+                env_var_name = "HELLO"
+                os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
+                expect_result = "WORLD"
+            
+            if autostrings:
+                result = self.module.getenv(env_var_name)
+                self.assertIsInstance(result, self.module.ReturnString)
+                self.assertIsInstance(result.ptr, ctypes.c_char_p)
+            else:
+                result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+                result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
+            
+            self.assertEqual(result, expect_result)
+
+
+        def test_getenv_returns_null(self):
+            """Related to issue 8. Test getenv of unset variable."""
+            
+            env_var_name = "NOT SET"
+            
+            try:
+                # ensure variable is not set, ignoring not set errors
+                del os.environ[env_var_name]
+            except KeyError:
+                pass
+            
+            if autostrings:
+                result = self.module.getenv(env_var_name)
+                self.assertIsInstance(result, self.module.ReturnString)
+                self.assertIs(result.value, None)
+            else:
+                result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+                result = ctypes.cast(result_ptr, ctypes.c_char_p).value
+            
+            self.assertEqual(result, None)
     
-    @classmethod
-    def setUpClass(cls):
-        cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+"])
+    return StdlibTestImpl
 
-    def test_getenv_returns_string(self):
-        """ Test string return """
-        if sys.platform == "win32":
-            # Check a variable that is already set
-            # USERNAME is always set (as is windir, ProgramFiles, USERPROFILE, etc.)
-            env_var_name = "USERNAME"
-            expect_result = os.environ[env_var_name]
-            self.assertTrue(expect_result, "this should not be None or empty")
-            # reason for using an existing OS variable is that unless the
-            # MSVCRT dll imported is the exact same one that Python was
-            # built with you can't share structures, see
-            # http://msdn.microsoft.com/en-us/library/ms235460.aspx
-            # "Potential Errors Passing CRT Objects Across DLL Boundaries"
-        else:
-            env_var_name = "HELLO"
-            os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
-            expect_result = "WORLD"
-
-        result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-        result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
-        self.assertEqual(expect_result, result)
-
-    def test_getenv_returns_null(self):
-        """Related to issue 8. Test getenv of unset variable."""
-        env_var_name = "NOT SET"
-        try:
-            # ensure variable is not set, ignoring not set errors
-            del os.environ[env_var_name]
-        except KeyError:
-            pass
-        result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-        result = ctypes.cast(result_ptr, ctypes.c_char_p).value
-        self.assertEqual(result, None)
+StdlibTest = make_stdlib_test(False)
+StdlibTestAutostrings = make_stdlib_test(True)
 
 
 class VariadicFunctionTest(TestCaseWithCleanup):

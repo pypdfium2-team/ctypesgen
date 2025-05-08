@@ -493,6 +493,12 @@ def get_parser():
         action="store_false",
         help="Skip adding comments indicating header source file and line number of symbols. This may be useful for cleaner diffs of tracked bindings. (If you wish to know the origin of a symbol, grep for it in the input headers).",
     )
+    parser.add_argument(
+        "--default-encoding",
+        nargs="?",
+        const="utf-8",
+        help="Implicitly encode/decode strings. If this flag is given without argument, UTF-8 will be assumed. Else, pass the desired encoding as argument to this flag. Warning: Implicit string conversion is problematic, and strongly discouraged. You should not use this option for new code, except perhaps if your C library consistently uses only a single encoding.",
+    )
 
     # Error options
     parser.add_argument(
