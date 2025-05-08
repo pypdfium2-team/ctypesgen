@@ -29,6 +29,7 @@ import ctypes
 import math
 import unittest
 import subprocess
+import functools
 from contextlib import (
     redirect_stdout,
     redirect_stderr,
@@ -48,6 +49,12 @@ from .conftest import (
     CLEANUP_OK,
 )
 from . import json_expects
+
+if sys.version_info < (3, 8):
+    def cached_property(func):
+        return property( functools.lru_cache(maxsize=1)(func) )
+else:
+    cached_property = functools.cached_property
 
 
 # ctypes docs say: "On Windows, find_library() searches along the system search path, and returns the full pathname, but since there is no predefined naming scheme a call like find_library("c") will fail and return None."
@@ -69,16 +76,45 @@ class TestCaseWithCleanup(unittest.TestCase):
         del cls.module
 
 
+def _generate_stdlib(*extra_args):
+    return generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+", *extra_args])
+
+
+# This singleton provides the ability to share generated modules among test cases
+# Though, we don't actually need this ATM.
+
+class _LazyClass:
+    
+    @cached_property
+    def stdlib(self):
+        return _generate_stdlib()
+    
+    @cached_property
+    def stdlib_autostrings(self):
+        return _generate_stdlib("--default-encoding")
+
+Lazy = _LazyClass()
+
+
 def make_stdlib_test(autostrings):
 
-    class StdlibTestImpl(TestCaseWithCleanup):
+    class StdlibTestImpl(unittest.TestCase):
             
         @classmethod
         def setUpClass(cls):
-            extra_args = []
             if autostrings:
-                extra_args.append("--default-encoding")
-            cls.module = generate(header=None, args=["--system-headers", "stdlib.h", "-l", STDLIB_NAME, "--symbol-rules", r"if_needed=__\w+", *extra_args])
+                cls.module = Lazy.stdlib_autostrings
+            else:
+                cls.module = Lazy.stdlib
+        
+        @classmethod
+        def tearDownClass(cls):
+            del cls.module
+            # This class is currently the only caller of the shared stdlib, so we can free the cache here.
+            if autostrings:
+                del Lazy.stdlib_autostrings
+            else:
+                del Lazy.stdlib
 
         def test_getenv_returns_string(self):
             """ Test string return """
