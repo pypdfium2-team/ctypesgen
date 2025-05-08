@@ -29,14 +29,14 @@ class ReturnString:
         self.ptr = ptr
     
     @cached_property
-    def raw(self):
+    def value(self):
         return self.ptr.value
     
     @cached_property
     def decoded(self):
-        if self.raw is None:
+        if self.value is None:
             raise RuntimeError("Null pointer cannot be decoded")
-        return self.raw.decode(DEFAULT_ENCODING)
+        return self.value.decode(DEFAULT_ENCODING)
     
     def __str__(self):
         return self.decoded
@@ -46,11 +46,11 @@ class ReturnString:
     
     def __eq__(self, other):
         if type(self) is type(other):
-            return self is other or self.raw == other.raw
+            return self is other or self.value == other.raw
         elif isinstance(other, str):
             return self.decoded == other
         else:
-            return self.raw == other
+            return self.value == other
 
 class String (ctypes.c_char_p):
     

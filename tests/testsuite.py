@@ -124,7 +124,7 @@ def make_stdlib_test(autostrings):
             if autostrings:
                 result = self.module.getenv(env_var_name)
                 self.assertIsInstance(result, self.module.ReturnString)
-                self.assertIs(result.raw, None)
+                self.assertIs(result.value, None)
             else:
                 result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
                 result = ctypes.cast(result_ptr, ctypes.c_char_p).value
