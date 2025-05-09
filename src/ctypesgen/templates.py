@@ -70,7 +70,6 @@ class String (ctypes.c_char_p):
     @classmethod
     def from_param(cls, obj):
         if isinstance(obj, str):
-            # trust in python strings to be NUL-terminated under the hood
-            obj = obj.encode(DEFAULT_ENCODING)
+            obj = (obj+"\\0").encode(DEFAULT_ENCODING)
         return super().from_param(obj)\
 """
