@@ -137,7 +137,7 @@ def make_stdlib_test(autostrings):
             
             if autostrings:
                 result = self.module.getenv(env_var_name)
-                self.assertIsInstance(result, self.module.ReturnString)
+                self.assertIsInstance(result, self.module.OutputString)
                 self.assertIsInstance(result.raw, ctypes.c_char_p)
             else:
                 result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
@@ -159,7 +159,7 @@ def make_stdlib_test(autostrings):
             
             if autostrings:
                 result = self.module.getenv(env_var_name)
-                self.assertIsInstance(result, self.module.ReturnString)
+                self.assertIsInstance(result, self.module.OutputString)
                 self.assertIs(result.data, None)
             else:
                 result_ptr = self.module.getenv(env_var_name.encode("utf-8"))

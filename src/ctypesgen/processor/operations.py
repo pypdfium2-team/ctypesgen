@@ -90,7 +90,7 @@ def fix_conflicting_names(data, opts):
         "UNCHECKED",
     }
     if opts.default_encoding:
-        our_names |= {"String", "ReturnString", "DEFAULT_ENCODING"}
+        our_names |= {"String", "OutputString", "ReturnString", "DEFAULT_ENCODING"}
     # probably includes a bit more than we actually use ...
     our_names |= {x for x in dir(ctypes) if not x.startswith("_")}
     

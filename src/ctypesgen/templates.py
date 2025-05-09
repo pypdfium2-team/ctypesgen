@@ -26,7 +26,7 @@ else:
 
 DEFAULT_ENCODING = {encoding!r}
 
-class ReturnString:
+class OutputString:
     
     def __init__(self, raw):
         self.raw = raw
@@ -65,11 +65,15 @@ class String (ctypes.c_char_p):
     
     @classmethod
     def _check_retval_(cls, result):
-        return ReturnString(result)
+        return OutputString(result)
     
     @classmethod
     def from_param(cls, obj):
         if isinstance(obj, str):
             obj = (obj+"\\0").encode(DEFAULT_ENCODING)
-        return super().from_param(obj)\
+        return super().from_param(obj)
+
+# not internally used, retained for compatibility
+def ReturnString(obj, func=None, arguments=None):
+    return String.from_param(obj)\
 """
