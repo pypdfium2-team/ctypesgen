@@ -494,10 +494,12 @@ def get_parser():
         help="Skip adding comments indicating header source file and line number of symbols. This may be useful for cleaner diffs of tracked bindings. (If you wish to know the origin of a symbol, grep for it in the input headers).",
     )
     parser.add_argument(
+        # TODO If possible, add support for multibyte encodings (e.g. UTF-16, UTF-32). Leverage c_wchar_p, or maybe a raw type and array view (read until the terminator manually). The latter would imply rewriting the template anew.
+        # FIXME Our template may not be sufficiently backwards-compatible with the original ctypesgen. In particular, the use of a separate wrapper class OutputString means a change of the caller-facing return type. Also, I'm not sure how to support the string dunder methods without brining back the old bloat.
         "--default-encoding",
         nargs="?",
         const="utf-8",
-        help="Implicitly encode/decode strings. If this flag is given without argument, UTF-8 will be assumed. Else, pass the desired encoding as argument to this flag. Warning: Implicit string conversion is problematic, and strongly discouraged. You should not use this option for new code, except perhaps if your C library consistently uses only a single encoding.",
+        help="Implicitly encode input strings, and wrap return strings. If this option is given, defaults to UTF-8. Warning: Implicit string conversion is problematic, and strongly discouraged. You should not use this option for new code, except perhaps if your C library consistently uses only a single encoding. The encoding is theoretically configurable, but limited by the underlying use of c_char_p, which assumes a single-byte NUL terminator.",
     )
 
     # Error options
