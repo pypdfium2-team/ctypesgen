@@ -263,7 +263,7 @@ def get_parser():
         nargs="+",
         action="extend",
         type=input_file_t,
-        default=[],
+        default=[],  # FIXME perilous
         help="Sequence of header files",
     )
     parser.add_argument(
@@ -282,7 +282,7 @@ def get_parser():
         "--system-headers",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="HEADER",
         # pypdfium2-team change: eagerly include members
         help="Include and bind against members from system header HEADER, with '.h' suffix (e.g. stdio.h, stdlib.h, python3.X/Python.h). Will be translated to a <...> style include and passed to the pre-processor. Provided for portability. If the full path is known, it may be preferable to use the regular --headers option.",
@@ -293,7 +293,7 @@ def get_parser():
         dest="modules",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="MODULE",
         help="Use symbols from python module MODULE (site-packages or local import). For local import, either as dot-prefixed import relative to the output file, or as absolute import. Local imports need --no-embed-templates and --linkage-anchor. Local absolute imports also need adding the parent dir to PYTHONPATH.",
     )
@@ -307,7 +307,7 @@ def get_parser():
         dest="include_search_paths",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="INCLUDEDIR",
         help="add INCLUDEDIR as a directory to search for headers",
     )
@@ -315,7 +315,7 @@ def get_parser():
         "-L", "--universal-libdirs",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="LIBDIR",
         help="Add LIBDIR to the search path (both compile-time and run-time)",
     )
@@ -323,7 +323,7 @@ def get_parser():
         "--compile-libdirs",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="LIBDIR",
         help="Add LIBDIR to the compile-time library search path.",
     )
@@ -331,7 +331,7 @@ def get_parser():
         "--runtime-libdirs",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="LIBDIR",
         help="Add LIBDIR to the run-time library search path.",
     )
@@ -360,7 +360,7 @@ def get_parser():
         type=lambda n: ("-D", n),
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="NAME",
         help="Add a definition to the preprocessor via commandline",
     )
@@ -370,7 +370,7 @@ def get_parser():
         type=lambda n: ("-U", n),
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="NAME",
         help="Instruct the preprocessor to undefine the specified macro via commandline",
     )
@@ -426,7 +426,7 @@ def get_parser():
         "--symbol-rules",
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         help="Sequence of symbol inclusion rules of format RULE=exp1|exp2|..., where RULE is one of [never, if_needed, yes], followed by a python fullmatch regular expression (multiple REs may be concatenated using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
     )
     parser.add_argument(
@@ -458,7 +458,7 @@ def get_parser():
         type=input_file_t,
         nargs="+",
         action="extend",
-        default=[],
+        default=[],  # FIXME perilous
         metavar="FILENAME",
         help="Add the contents of FILENAME to the end of the wrapper file.",
     )
