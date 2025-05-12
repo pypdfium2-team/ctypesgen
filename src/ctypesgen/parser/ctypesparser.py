@@ -211,7 +211,7 @@ class CtypesParser(CParser):
                 a = a.array
 
         if (
-            self.options.default_encoding
+            self.options.string_template
             and isinstance(t, CtypesPointer)
             and isinstance(t.destination, CtypesSimple)
             and t.destination.name == "char"

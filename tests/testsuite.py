@@ -44,6 +44,7 @@ from .conftest import (
     generate_common,
     ctypesgen_wrapper,
     module_from_code,
+    TEST_DIR,
     TMP_DIR,
     CTYPESGEN_DIR,
     CLEANUP_OK,
@@ -69,6 +70,8 @@ if sys.platform.startswith("linux"):
 else:
     MATHLIB_NAME = STDLIB_NAME
 
+STRING_TEMPLATE = TEST_DIR/"string_template.py"
+
 
 class TestCaseWithCleanup(unittest.TestCase):
     @classmethod
@@ -91,7 +94,7 @@ class _LazyClass:
     
     @cached_property
     def stdlib_autostrings(self):
-        return _generate_stdlib("--default-encoding")
+        return _generate_stdlib("--string-template", str(STRING_TEMPLATE))
 
 Lazy = _LazyClass()
 
@@ -1156,7 +1159,7 @@ class AutostringsTest(TestCaseWithCleanup):
     
     @classmethod
     def setUpClass(cls):
-        cls.module = generate(header=None, args=["--system-headers", "string.h", "-l", STDLIB_NAME, "--default-encoding"])
+        cls.module = generate(header=None, args=["--system-headers", "string.h", "-l", STDLIB_NAME, "--string-template", str(STRING_TEMPLATE)])
     
     def test_strcpy(self):
         src = "This is a test string."

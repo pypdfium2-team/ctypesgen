@@ -256,7 +256,7 @@ class CtypesFunction(CtypesType):
         self.argtypes = [remove_function_pointer(p) for p in parameters]
         self.variadic = variadic
         self.attrib = attrib
-        if options.default_encoding and self.restype.py_string() == "POINTER(c_char)":
+        if options.string_template and self.restype.py_string() == "POINTER(c_char)":
             self.restype = CtypesSpecial("String")
 
     def visit(self, visitor):

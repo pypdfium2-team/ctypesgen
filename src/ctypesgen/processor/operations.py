@@ -89,8 +89,8 @@ def fix_conflicting_names(data, opts):
         "_libs_info",
         "UNCHECKED",
     }
-    if opts.default_encoding:
-        our_names |= {"String", "OutputString", "ReturnString", "DEFAULT_ENCODING"}
+    if opts.string_template:
+        our_names |= {"String"}
     # probably includes a bit more than we actually use ...
     our_names |= {x for x in dir(ctypes) if not x.startswith("_")}
     

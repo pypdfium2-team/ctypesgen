@@ -16,7 +16,7 @@
   - `--allow-gnu-c` replaced by `-X __GNUC__`.
   - More flags changed or renamed.
 * The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
-* The bloated `String` wrapper classes have been removed. By default, no implicit string encoding/decoding (UTF-8) is being done anymore. However, to ease transitioning to this version, a `--default-encoding` option is provided, which uses new, leaner string helpers.
+* The bloated string wrapper classes have been removed. By default, no implicit string encoding/decoding (UTF-8) is being done anymore. However, to ease transitioning to this version, a `--string-template` option is provided, which may be used to plug in a caller-provided string helper.
 * We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
 
 See also `--help` for usage details.
