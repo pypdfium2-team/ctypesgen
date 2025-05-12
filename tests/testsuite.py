@@ -130,21 +130,21 @@ def make_stdlib_test(autostrings):
                 # with you can't share structures, see
                 # http://msdn.microsoft.com/en-us/library/ms235460.aspx
                 # "Potential Errors Passing CRT Objects Across DLL Boundaries"
-                env_var_name = "USERNAME"
-                expect_result = os.environ[env_var_name]
+                varname = "USERNAME"
+                expect_result = os.environ[varname]
                 self.assertTrue(expect_result, "this should not be None or empty")
             else:
-                env_var_name = "HELLO"
-                os.environ[env_var_name] = "WORLD"  # This doesn't work under win32
+                varname = "HELLO"
+                os.environ[varname] = "WORLD"  # This doesn't work under win32
                 expect_result = "WORLD"
             
+            varname_b = varname.encode()
             if autostrings:
-                result = self.module.getenv(env_var_name)
-                self.assertIsInstance(result, self.module.OutputString)
-                self.assertIsInstance(result.raw, ctypes.c_char_p)
+                result = self.module.getenv(varname_b)
             else:
-                result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
-                result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode("utf-8")
+                result_ptr = self.module.getenv(varname_b)
+                result = ctypes.cast(result_ptr, ctypes.c_char_p).value
+            result = result.decode()
             
             self.assertEqual(result, expect_result)
 
@@ -152,20 +152,19 @@ def make_stdlib_test(autostrings):
         def test_getenv_returns_null(self):
             """Related to issue 8. Test getenv of unset variable."""
             
-            env_var_name = "NOT SET"
+            varname = "NOT SET"
+            varname_b = varname.encode()
             
             try:
                 # ensure variable is not set, ignoring not set errors
-                del os.environ[env_var_name]
+                del os.environ[varname]
             except KeyError:
                 pass
             
             if autostrings:
-                result = self.module.getenv(env_var_name)
-                self.assertIsInstance(result, self.module.OutputString)
-                self.assertIs(result.data, None)
+                result = self.module.getenv(varname_b)
             else:
-                result_ptr = self.module.getenv(env_var_name.encode("utf-8"))
+                result_ptr = self.module.getenv(varname_b)
                 result = ctypes.cast(result_ptr, ctypes.c_char_p).value
             
             self.assertEqual(result, None)
@@ -1159,10 +1158,16 @@ class AutostringsTest(TestCaseWithCleanup):
     
     @classmethod
     def setUpClass(cls):
-        cls.module = generate(header=None, args=["--system-headers", "string.h", "-l", STDLIB_NAME, "--string-template", str(STRING_TEMPLATE)])
+        cls.module = generate(header=None, args=["--system-headers", "string.h", "wchar.h", "-l", STDLIB_NAME, "--string-template", str(STRING_TEMPLATE)])
     
     def test_strcpy(self):
-        src = "This is a test string."
+        src = b"This is a test string."
         dest = ctypes.create_string_buffer(len(src))
         ret = self.module.strcpy(dest, src)
+        self.assertEqual(ret, src)
+    
+    def test_wcscpy(self):
+        src = "This is a test string."
+        dest = ctypes.create_unicode_buffer(len(src))
+        ret = self.module.wcscpy(dest, src)
         self.assertEqual(ret, src)

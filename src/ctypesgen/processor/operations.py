@@ -90,7 +90,7 @@ def fix_conflicting_names(data, opts):
         "UNCHECKED",
     }
     if opts.string_template:
-        our_names |= {"String"}
+        our_names |= {"String", "WideString"}
     # probably includes a bit more than we actually use ...
     our_names |= {x for x in dir(ctypes) if not x.startswith("_")}
     

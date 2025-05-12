@@ -214,10 +214,11 @@ class CtypesParser(CParser):
             self.options.string_template
             and isinstance(t, CtypesPointer)
             and isinstance(t.destination, CtypesSimple)
-            and t.destination.name == "char"
-            and t.destination.signed
         ):
-            t = CtypesSpecial("String")
+            if t.destination.name == "char" and t.destination.signed:
+                t = CtypesSpecial("String")
+            elif t.destination.name == "wchar_t":
+                t = CtypesSpecial("WideString")
 
         return t
 

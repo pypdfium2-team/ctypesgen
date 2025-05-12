@@ -497,8 +497,7 @@ def get_parser():
         "--string-template",
         type=input_file_t,
         metavar="FILE",
-        help="Use string template from FILE, implementing the `String` class, which will be used as a substitute for char*. The easiest implementation would be `String = c_char_p`, if all char* point to NUL-terminated data in your application. You can also subclass c_char_p, e.g. to auto-encode input strings.",
-        # We do not currently provide means to override wchar_t*, but this could be added in the future.
+        help="Use string template from FILE, implementing the String and WideString types, which will be used as a substitute for char* or wchar_t*, respectively. If all your data is NUL-terminated, you could use e.g. c_char_p and c_wchar_p (or derivatives thereof).",
     )
 
     # Error options
