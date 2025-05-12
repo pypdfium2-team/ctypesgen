@@ -1059,6 +1059,7 @@ void arraytest(int a[]) { };
         if not CLEANUP_OK: return
         cls.h_path.unlink()
         cls.c_path.unlink()
+        free_library(cls.module._libs["famtest"]._handle)
         cls.libpath.unlink()
     
     def test_types(self):
