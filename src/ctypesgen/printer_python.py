@@ -14,7 +14,7 @@ from ctypesgen.expressions import (
     ConstantExpressionNode,
 )
 from ctypesgen.messages import warning_message, status_message
-from ctypesgen.templates import T_UNCHECKED, T_STRINGS
+from ctypesgen.templates import T_UNCHECKED
 
 CTYPESGEN_DIR = Path(__file__).resolve().parent
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
@@ -122,9 +122,9 @@ class WrapperPrinter:
     
     def write_templates(self, dest):
         dest.write(f"\n\n{T_UNCHECKED}\n")
-        if self.opts.default_encoding:
-            string_classes = T_STRINGS.format(encoding=self.opts.default_encoding)
-            dest.write(f"\n\n{string_classes}\n")
+        if self.opts.string_template:
+            string_template = self.opts.string_template.read_text()
+            dest.write(f"\n\n{string_template}\n")
     
     def print_loader(self, opts):
         if opts.embed_templates:
