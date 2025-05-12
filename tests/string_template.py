@@ -1,3 +1,5 @@
+# this file is being embedded into the bindings, so we assume that ctypes is imported already
+
 import sys
 import functools
 
