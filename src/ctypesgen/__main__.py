@@ -22,66 +22,64 @@ from ctypesgen.printer_python import (
 )
 
 
-def postparse(args):
-    args.cppargs = list( itertools.chain(*args.cppargs) )
+# -- Helper functions for main_impl() --
 
-def main(given_argv=sys.argv[1:]):
-    """
-    Argparse-based API entry point (recommended).
-    Beware: argparse may raise SystemExit - you might want to try/except guard against this.
-    """
-    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
-    args = get_parser().parse_args(given_argv)
-    postparse(args)
-    cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
-    main_impl(args, cmd_str)
+@contextlib.contextmanager
+def tmp_searchpath(path):
+    path = str(path)
+    sys.path.insert(0, path)
+    try:
+        yield
+    finally:
+        popped = sys.path.pop(0)
+        assert popped is path
+
+def _is_relative_to(path, other):
+    # check if 'path' is equal to or contained in 'other'
+    # this implies that 'path' is longer than 'other', and 'other' a directory
+    assert len(path.parts) >= len(other.parts) and other.is_dir()
+    if sys.version_info >= (3, 9):
+        return path.is_relative_to(other)
+    else:
+        return path == other or other in path.parents
+
+def find_symbols_in_modules(modnames, outpath, anchor):
+    
+    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
+    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
+    
+    assert isinstance(modnames, (tuple, list))  # not str
+    assert isinstance(outpath, Path) and outpath.is_absolute()
+    if anchor:
+        assert isinstance(anchor, Path) and anchor.is_absolute()
+    
+    symbols = set()
+    for modname in modnames:
+        
+        n_dots = len(modname) - len(modname.lstrip("."))
+        if not n_dots > 0:
+            module = importlib.import_module(modname)
+        else:
+            tight_anchor = outpath.parents[n_dots-1]
+            assert _is_relative_to(tight_anchor, anchor)
+            diff = tight_anchor.parts[len(anchor.parts):]
+            import_path = ".".join(["", *diff, modname[n_dots:]])
+            if modname != import_path:
+                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
+            with tmp_searchpath(anchor.parent):
+                module = importlib.import_module(import_path, anchor.name)
+        
+        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
+        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
+        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
+        symbols.update(module_syms)
+    
+    return symbols
 
 
-# Adapted from https://stackoverflow.com/a/59395868/15547292
-
-def _get_parser_defaults(parser):
-    defaults = {}
-    for action in parser._actions:
-        if (not action.required and action.default is not argparse.SUPPRESS
-            and action.dest not in ("help", "version")):
-            defaults[action.dest] = action.default
-    return defaults
-
-def _get_parser_requires(parser):
-    return [a.dest for a in parser._actions if a.required]
-
-def api_main(args):
-    """
-    Pure API entry point (experimental).
-    
-    Not officially supported. Use at own risk.
-    API callers should prefer to go through argparse-based main() where possible.
-    
-    Part of the reason why this isn't recommended is that no type-checking or conversion is being done; you have to make sure on your own that you pass in the expected types.
-    In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
-    """
-    
-    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
-    parser = get_parser()
-    
-    required_args = _get_parser_requires(parser)
-    defaults = _get_parser_defaults(parser)
-    print(required_args, defaults, args, sep="\n", file=sys.stderr)
-    
-    assert all(r in args for r in required_args), f"Must provide all required arguments: {required_args}"
-    
-    real_args = defaults.copy()
-    real_args.update(args)
-    real_args = argparse.Namespace(**real_args)
-    
-    args_str = str(pformat(args))
-    for p, x in get_priv_paths():
-        args_str = args_str.replace(str(p), x)
-    return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
-
+# -- Main implementation --
 
 def main_impl(args, cmd_str):
-    """ Main implementation """
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
     
@@ -121,63 +119,6 @@ def main_impl(args, cmd_str):
     printer(args.output, args, data, cmd_str)
     
     msgs.status_message("Wrapping complete.")
-
-
-# -- Helper functions for main_impl() --
-
-def find_symbols_in_modules(modnames, outpath, anchor):
-    
-    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
-    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
-    
-    assert isinstance(modnames, (tuple, list))  # not str
-    assert isinstance(outpath, Path) and outpath.is_absolute()
-    if anchor:
-        assert isinstance(anchor, Path) and anchor.is_absolute()
-    
-    symbols = set()
-    for modname in modnames:
-        
-        n_dots = len(modname) - len(modname.lstrip("."))
-        if not n_dots > 0:
-            module = importlib.import_module(modname)
-        else:
-            tight_anchor = outpath.parents[n_dots-1]
-            assert _is_relative_to(tight_anchor, anchor)
-            diff = tight_anchor.parts[len(anchor.parts):]
-            import_path = ".".join(["", *diff, modname[n_dots:]])
-            if modname != import_path:
-                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
-            with tmp_searchpath(anchor.parent):
-                module = importlib.import_module(import_path, anchor.name)
-        
-        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
-        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
-        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
-        symbols.update(module_syms)
-    
-    return symbols
-
-
-@contextlib.contextmanager
-def tmp_searchpath(path):
-    path = str(path)
-    sys.path.insert(0, path)
-    try:
-        yield
-    finally:
-        popped = sys.path.pop(0)
-        assert popped is path
-
-
-def _is_relative_to(path, other):
-    # check if 'path' is equal to or contained in 'other'
-    # this implies that 'path' is longer than 'other', and 'other' a directory
-    assert len(path.parts) >= len(other.parts) and other.is_dir()
-    if sys.version_info >= (3, 9):
-        return path.is_relative_to(other)
-    else:
-        return path == other or other in path.parents
 
 
 # -- Argument Parser (Backports) --
@@ -527,6 +468,66 @@ def get_parser():
         help="Run ctypesgen with specified debug level (also applies to yacc parser)",
     )
     return parser
+
+
+# -- Entry points and their helper functions --
+
+# Adapted from https://stackoverflow.com/a/59395868/15547292
+
+def _get_parser_defaults(parser):
+    defaults = {}
+    for action in parser._actions:
+        if (not action.required and action.default is not argparse.SUPPRESS
+            and action.dest not in ("help", "version")):
+            defaults[action.dest] = action.default
+    return defaults
+
+def _get_parser_requires(parser):
+    return [a.dest for a in parser._actions if a.required]
+
+def api_main(args):
+    """
+    Pure API entry point (experimental).
+    
+    Not officially supported. Use at own risk.
+    API callers should prefer to go through argparse-based main() where possible.
+    
+    Part of the reason why this isn't recommended is that no type-checking or conversion is being done; you have to make sure on your own that you pass in the expected types.
+    In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
+    """
+    
+    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
+    parser = get_parser()
+    
+    required_args = _get_parser_requires(parser)
+    defaults = _get_parser_defaults(parser)
+    print(required_args, defaults, args, sep="\n", file=sys.stderr)
+    
+    assert all(r in args for r in required_args), f"Must provide all required arguments: {required_args}"
+    
+    real_args = defaults.copy()
+    real_args.update(args)
+    real_args = argparse.Namespace(**real_args)
+    
+    args_str = str(pformat(args))
+    for p, x in get_priv_paths():
+        args_str = args_str.replace(str(p), x)
+    return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
+
+
+def postparse(args):
+    args.cppargs = list( itertools.chain(*args.cppargs) )
+
+def main(given_argv=sys.argv[1:]):
+    """
+    Argparse-based API entry point (recommended).
+    Beware: argparse may raise SystemExit - you might want to try/except guard against this.
+    """
+    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
+    args = get_parser().parse_args(given_argv)
+    postparse(args)
+    cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
+    main_impl(args, cmd_str)
 
 
 # -- Run main() if this script is invoked --
