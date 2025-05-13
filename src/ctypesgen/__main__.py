@@ -57,9 +57,7 @@ def find_symbols_in_modules(modnames, outpath, anchor):
     for modname in modnames:
         
         n_dots = len(modname) - len(modname.lstrip("."))
-        if not n_dots > 0:
-            module = importlib.import_module(modname)
-        else:
+        if n_dots > 0:
             tight_anchor = outpath.parents[n_dots-1]
             assert _is_relative_to(tight_anchor, anchor)
             diff = tight_anchor.parts[len(anchor.parts):]
@@ -68,6 +66,8 @@ def find_symbols_in_modules(modnames, outpath, anchor):
                 msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
             with tmp_searchpath(anchor.parent):
                 module = importlib.import_module(import_path, anchor.name)
+        else:
+            module = importlib.import_module(modname)
         
         module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
         assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
