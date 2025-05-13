@@ -22,105 +22,6 @@ from ctypesgen.printer_python import (
 )
 
 
-# -- Helper functions for main_impl() --
-
-@contextlib.contextmanager
-def tmp_searchpath(path):
-    path = str(path)
-    sys.path.insert(0, path)
-    try:
-        yield
-    finally:
-        popped = sys.path.pop(0)
-        assert popped is path
-
-def _is_relative_to(path, other):
-    # check if 'path' is equal to or contained in 'other'
-    # this implies that 'path' is longer than 'other', and 'other' a directory
-    assert len(path.parts) >= len(other.parts) and other.is_dir()
-    if sys.version_info >= (3, 9):
-        return path.is_relative_to(other)
-    else:
-        return path == other or other in path.parents
-
-def find_symbols_in_modules(modnames, outpath, anchor):
-    
-    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
-    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
-    
-    assert isinstance(modnames, (tuple, list))  # not str
-    assert isinstance(outpath, Path) and outpath.is_absolute()
-    if anchor:
-        assert isinstance(anchor, Path) and anchor.is_absolute()
-    
-    symbols = set()
-    for modname in modnames:
-        
-        n_dots = len(modname) - len(modname.lstrip("."))
-        if n_dots > 0:
-            tight_anchor = outpath.parents[n_dots-1]
-            assert _is_relative_to(tight_anchor, anchor)
-            diff = tight_anchor.parts[len(anchor.parts):]
-            import_path = ".".join(["", *diff, modname[n_dots:]])
-            if modname != import_path:
-                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
-            with tmp_searchpath(anchor.parent):
-                module = importlib.import_module(import_path, anchor.name)
-        else:
-            module = importlib.import_module(modname)
-        
-        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
-        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
-        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
-        symbols.update(module_syms)
-    
-    return symbols
-
-
-# -- Main implementation --
-
-def main_impl(args, cmd_str):
-    
-    assert args.headers or args.system_headers, "Either --headers or --system-headers required."
-    
-    if any(m.startswith(".") for m in args.modules) or not args.embed_templates:
-        assert args.linkage_anchor, "Relative linked modules or --no-embed-templates require --linkage-anchor"
-    if args.linkage_anchor:
-        assert _is_relative_to(args.output, args.linkage_anchor)
-    
-    if args.cpp:
-        assert shutil.which(args.cpp[0]), f"Given pre-processor {args.cpp[0]!r} is not available."
-    else:
-        if shutil.which("gcc"):
-            args.cpp = ["gcc", "-E"]
-        elif shutil.which("cpp"):
-            args.cpp = ["cpp"]
-        elif shutil.which("clang"):
-            args.cpp = ["clang", "-E"]
-        else:
-            raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
-    
-    # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
-    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
-    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
-    
-    # Figure out what names will be defined by linked-in python modules
-    args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)
-    
-    raw_data = core_parser.parse(args.headers, args)
-    processor.process(raw_data, args)
-    data = [(k, d) for k, d in raw_data.output_order if d.included]
-    if not data:
-        if raw_data.all:
-            msgs.status_message(f"Non-included members - perhaps you meant to run with --all-headers?\n{raw_data.all}")
-        raise RuntimeError("No included target members - output would be empty.")
-    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
-    msgs.status_message(f"Printing to {args.output}.")
-    printer(args.output, args, data, cmd_str)
-    
-    msgs.status_message("Wrapping complete.")
-
-
 # -- Argument Parser (Backports) --
 
 if sys.version_info >= (3, 9):
@@ -468,6 +369,105 @@ def get_parser():
         help="Run ctypesgen with specified debug level (also applies to yacc parser)",
     )
     return parser
+
+
+# -- Helper functions for main_impl() --
+
+@contextlib.contextmanager
+def tmp_searchpath(path):
+    path = str(path)
+    sys.path.insert(0, path)
+    try:
+        yield
+    finally:
+        popped = sys.path.pop(0)
+        assert popped is path
+
+def _is_relative_to(path, other):
+    # check if 'path' is equal to or contained in 'other'
+    # this implies that 'path' is longer than 'other', and 'other' a directory
+    assert len(path.parts) >= len(other.parts) and other.is_dir()
+    if sys.version_info >= (3, 9):
+        return path.is_relative_to(other)
+    else:
+        return path == other or other in path.parents
+
+def find_symbols_in_modules(modnames, outpath, anchor):
+    
+    # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
+    # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
+    
+    assert isinstance(modnames, (tuple, list))  # not str
+    assert isinstance(outpath, Path) and outpath.is_absolute()
+    if anchor:
+        assert isinstance(anchor, Path) and anchor.is_absolute()
+    
+    symbols = set()
+    for modname in modnames:
+        
+        n_dots = len(modname) - len(modname.lstrip("."))
+        if n_dots > 0:
+            tight_anchor = outpath.parents[n_dots-1]
+            assert _is_relative_to(tight_anchor, anchor)
+            diff = tight_anchor.parts[len(anchor.parts):]
+            import_path = ".".join(["", *diff, modname[n_dots:]])
+            if modname != import_path:
+                msgs.status_message(f"Resolved runtime import {modname!r} to compile-time {import_path!r} (rerooted from outpath to linkage anchor)")
+            with tmp_searchpath(anchor.parent):
+                module = importlib.import_module(import_path, anchor.name)
+        else:
+            module = importlib.import_module(modname)
+        
+        module_syms = [s for s in dir(module) if not re.fullmatch(r"__\w+__", s)]
+        assert len(module_syms) > 0, f"No symbols found in module {module.__name__!r} - linkage would be pointless"
+        msgs.status_message(f"Symbols found in {module.__name__!r}: {module_syms}")
+        symbols.update(module_syms)
+    
+    return symbols
+
+
+# -- Main implementation --
+
+def main_impl(args, cmd_str):
+    
+    assert args.headers or args.system_headers, "Either --headers or --system-headers required."
+    
+    if any(m.startswith(".") for m in args.modules) or not args.embed_templates:
+        assert args.linkage_anchor, "Relative linked modules or --no-embed-templates require --linkage-anchor"
+    if args.linkage_anchor:
+        assert _is_relative_to(args.output, args.linkage_anchor)
+    
+    if args.cpp:
+        assert shutil.which(args.cpp[0]), f"Given pre-processor {args.cpp[0]!r} is not available."
+    else:
+        if shutil.which("gcc"):
+            args.cpp = ["gcc", "-E"]
+        elif shutil.which("cpp"):
+            args.cpp = ["cpp"]
+        elif shutil.which("clang"):
+            args.cpp = ["clang", "-E"]
+        else:
+            raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
+    
+    # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
+    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
+    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
+    
+    # Figure out what names will be defined by linked-in python modules
+    args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)
+    
+    raw_data = core_parser.parse(args.headers, args)
+    processor.process(raw_data, args)
+    data = [(k, d) for k, d in raw_data.output_order if d.included]
+    if not data:
+        if raw_data.all:
+            msgs.status_message(f"Non-included members - perhaps you meant to run with --all-headers?\n{raw_data.all}")
+        raise RuntimeError("No included target members - output would be empty.")
+    printer = {"py": printer_python, "json": printer_json}[args.output_language].WrapperPrinter
+    msgs.status_message(f"Printing to {args.output}.")
+    printer(args.output, args, data, cmd_str)
+    
+    msgs.status_message("Wrapping complete.")
 
 
 # -- Entry points and their helper functions --
