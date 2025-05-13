@@ -21,28 +21,45 @@ from ctypesgen.printer_python import (
     txtpath, get_priv_paths,
 )
 
-# -- Argparse-based entry point --
 
-# API callers beware: argparse can raise SystemExit - you might want to try/except guard against this.
+def postparse(args):
+    args.cppargs = list( itertools.chain(*args.cppargs) )
 
 def main(given_argv=sys.argv[1:]):
+    """
+    Argparse-based API entry point (recommended).
+    Beware: argparse may raise SystemExit - you might want to try/except guard against this.
+    """
     get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
     args = get_parser().parse_args(given_argv)
     postparse(args)
     cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
     main_impl(args, cmd_str)
 
-def postparse(args):
-    args.cppargs = list( itertools.chain(*args.cppargs) )
 
+# Adapted from https://stackoverflow.com/a/59395868/15547292
 
-# -- Pure API entry point (experimental) --
+def _get_parser_defaults(parser):
+    defaults = {}
+    for action in parser._actions:
+        if (not action.required and action.default is not argparse.SUPPRESS
+            and action.dest not in ("help", "version")):
+            defaults[action.dest] = action.default
+    return defaults
 
-# Not officially supported. Use at own risk.
-# API callers should prefer to go through argparse-based main() where possible.
-# Part of the reason why this isn't recommended is that no type-checking or conversion is being done; you have to make sure on your own that you pass in the expected types. In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
+def _get_parser_requires(parser):
+    return [a.dest for a in parser._actions if a.required]
 
 def api_main(args):
+    """
+    Pure API entry point (experimental).
+    
+    Not officially supported. Use at own risk.
+    API callers should prefer to go through argparse-based main() where possible.
+    
+    Part of the reason why this isn't recommended is that no type-checking or conversion is being done; you have to make sure on your own that you pass in the expected types.
+    In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
+    """
     
     get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
     parser = get_parser()
@@ -63,23 +80,8 @@ def api_main(args):
     return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
 
 
-# Adapted from https://stackoverflow.com/a/59395868/15547292
-
-def _get_parser_defaults(parser):
-    defaults = {}
-    for action in parser._actions:
-        if (not action.required and action.default is not argparse.SUPPRESS
-            and action.dest not in ("help", "version")):
-            defaults[action.dest] = action.default
-    return defaults
-
-def _get_parser_requires(parser):
-    return [a.dest for a in parser._actions if a.required]
-
-
-# -- Main implementation --
-
 def main_impl(args, cmd_str):
+    """ Main implementation """
     
     assert args.headers or args.system_headers, "Either --headers or --system-headers required."
     
