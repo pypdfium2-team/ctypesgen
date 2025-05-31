@@ -149,3 +149,9 @@ Some documentation can be found [here](https://docs.pyglet.org/en/development/in
 Many people have contributed to ctypesgen since.
 
 ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
+
+
+### Related Software of Interest
+
+[ctypeslib2](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
+It has its own parser backend using Clang API. This may be more reliable in a way, at the cost of being impure and tied to a specific compiler.
