@@ -139,3 +139,13 @@ Note, it is important to verify the resulting merge commit for correctness - aut
 Oversights or unintentional breakage can happen at times. If you think a change introduces logical issues, feel free to file a bug report or submit a patch.
 
 Note though, the response/contributions policy is [basically the same as for pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#response-policy).
+
+
+### History and Friends
+
+ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which is still around today, and was originally written by Alex Holkner for C99.
+Some documentation can be found [here](https://docs.pyglet.org/en/development/internal/wraptypes.html).
+
+Many people have contributed to ctypesgen since.
+
+ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
