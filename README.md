@@ -111,29 +111,6 @@ True
 * Linked modules are naively prioritized in dependency resolver and conflicting names handler, i.e. intentional overrides are ignored. The position of includes is not honored; ctypesgen always imports linked modules at top level.
 
 
-### Fork rationale
-
-Trying to get through changes upstream is tedious, with unclear outcome, and often not applicable due to mismatched intents (e.g. regarding backwards compatibility). Also consider that isolating commits in separate branches is not feasible anymore as merge conflicts arise (e.g. due to code cleanups and interfering changes).
-
-Contrast this to a fork, which allows us to keep focused and effect improvements quickly, so as to invest developer time rationally.
-
-However, we would be glad if our work could eventually be merged back upstream once the change set has matured, if upstream can arrange themselves with the radical changes.
-See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
-
-
-### Syncing with upstream
-
-- First, sync the fork's master branch using GitHub's web interface.
-- View changes on [GitHub's compare page](https://github.com/pypdfium2-team/ctypesgen/compare/pypdfium2...master).
-- Pull and merge locally, then push the result.
-
-Last time we had to do this, `git merge origin/master -Xours` did a good job.
-For those parts of ctypesgen that we have barely modified (e.g. the parser core), it should be largely possible to pull in changes as-is.
-Otherwise, you'll have to manually look through the changes and pick what you consider worthwhile on a case by case basis.
-
-Note, it is important to verify the resulting merge commit for correctness - automatic merge strategies might produce mistakes!
-
-
 ### Issues / Patches
 
 Oversights or unintentional breakage can happen at times. If you think a change introduces logical issues, feel free to file a bug report or submit a patch.
@@ -187,3 +164,26 @@ On the other hand, as pcpp maintainer Niall Douglas points out, "if you have to 
 
 Also note that `pcpp` does not seem to expand paths in the source directive, which are used for ctypesgen's symbol inclusion logic (so that only symbols from direct input headers are included by default).
 As of this writing, the matching rules are loose, i.e. using just names rather than full paths, but if this ever changes and you get an empty output, pass `--all-headers` to ctypesgen to forego symbol filtering.
+
+
+### Fork rationale
+
+Trying to get through changes upstream is tedious, with unclear outcome, and often not applicable due to mismatched intents (e.g. regarding backwards compatibility). Also consider that isolating commits in separate branches is not feasible anymore as merge conflicts arise (e.g. due to code cleanups and interfering changes).
+
+Contrast this to a fork, which allows us to keep focused and effect improvements quickly, so as to invest developer time rationally.
+
+However, we would be glad if our work could eventually be merged back upstream once the change set has matured, if upstream can arrange themselves with the radical changes.
+See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
+
+
+### Syncing with upstream
+
+- First, sync the fork's master branch using GitHub's web interface.
+- View changes on [GitHub's compare page](https://github.com/pypdfium2-team/ctypesgen/compare/pypdfium2...master).
+- Pull and merge locally, then push the result.
+
+Last time we had to do this, `git merge origin/master -Xours` did a good job.
+For those parts of ctypesgen that we have barely modified (e.g. the parser core), it should be largely possible to pull in changes as-is.
+Otherwise, you'll have to manually look through the changes and pick what you consider worthwhile on a case by case basis.
+
+Note, it is important to verify the resulting merge commit for correctness - automatic merge strategies might produce mistakes!
