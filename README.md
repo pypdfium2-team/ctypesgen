@@ -143,15 +143,32 @@ Note though, the response/contributions policy is [basically the same as for pyp
 
 ### History and Friends
 
-ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which is still around today, and was originally written by Alex Holkner for C99.
-Some documentation can be found [here](https://docs.pyglet.org/en/development/internal/wraptypes.html).
+- ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which was originally written by Alex Holkner for C99, and is still around today.
+  Some documentation can be found [here](https://docs.pyglet.org/en/development/internal/wraptypes.html). This may still be a valuable source of information even for today's ctypesgen.
 
-Many people have contributed to ctypesgen since.
+- ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
 
-ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
-
-
-### Related Software of Interest
-
-[ctypeslib2](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
+- [ctypeslib2](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
 It has its own parser backend using Clang API. This may be more reliable in a way, at the cost of being impure and tied to a specific compiler.
+
+
+### Future research
+
+Making ctypesgen truly pure-python by use of a pure-python C pre-processor may be a future area of research.
+
+[pcpp](https://github.com/ned14/pcpp) is a pretty good candidate, and can theoretically be used with ctypesgen already, but it is inconvenient to do so, and some issues remain.
+In particular, due to its pure-python nature, `pcpp` does not automatically add the platform-specific include paths and default defines as real compilers do, which causes trouble as soon as system headers come into play.
+
+To try ctypesgen with pcpp anyway, you could do e.g.:
+```bash
+INCLUDE_FLAGS="-I . -I /usr/lib/gcc/x86_64-redhat-linux/12/include -I /usr/local/include -I /usr/include"
+ctypesgen ... --cpp "pcpp --line-directive '#' $INCLUDE_FLAGS"
+```
+
+The default defines can be exported from a real compiler, e.g.:
+```bash
+gcc -dM -E - < /dev/null > ../default_defs.h
+```
+Then add `--passthru-defines ../default_defs.h` to the `pcpp` command.
+
+On the other hand, as pcpp's maintainer Niall Douglas pointed out, "if you have to bother doing that, you might as well have it [the real compiler] do the preprocessing too" ([source](https://github.com/ned14/pcpp/issues/85#issuecomment-1860619214)).
