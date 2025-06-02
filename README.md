@@ -148,13 +148,16 @@ Note though, the response/contributions policy is [basically the same as for pyp
 
 - ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
 
-- [ctypeslib2](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
+- [`ctypeslib2`](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
 It has its own parser backend using Clang API. This may be more reliable in a way, at the cost of being impure and tied to a specific compiler.
+  `ctypeslib2` has some fancy features ctypesgen currently does not, such as taking over Doxygen comments.
+
+- The original `ctypeslib` (by former ctypes maintainer Thomas Heller) used GCC's XML output, but the author is not aware of a maintained version of this codebase. `ctypeslib2` is derived from ctypeslib, but its backend has been thoroughly changed for Clang.
 
 
 ### Future research
 
-Making ctypesgen truly pure-python by use of a pure-python C pre-processor may be a future area of research.
+Making ctypesgen truly pure-python by use of a pure-python C pre-processor is a future area of research.
 
 [pcpp](https://github.com/ned14/pcpp) is a pretty good candidate, and can theoretically be used with ctypesgen already, but it is inconvenient to do so, and some issues remain.
 In particular, due to its pure-python nature, `pcpp` does not automatically add the platform-specific include paths and default defines as real compilers do, which causes trouble as soon as system headers come into play.
@@ -169,6 +172,6 @@ The default defines can be exported from a real compiler, e.g.:
 ```bash
 gcc -dM -E - < /dev/null > ../default_defs.h
 ```
-Then add `--passthru-defines ../default_defs.h` to the `pcpp` command.
+Then add `--passthru-defines ../default_defs.h` to the pcpp command.
 
-On the other hand, as pcpp's maintainer Niall Douglas pointed out, "if you have to bother doing that, you might as well have it [the real compiler] do the preprocessing too" ([source](https://github.com/ned14/pcpp/issues/85#issuecomment-1860619214)).
+On the other hand, as pcpp maintainer Niall Douglas points out, "if you have to bother doing that, you might as well have it [the real compiler] do the preprocessing too" ([source](https://github.com/ned14/pcpp/issues/85#issuecomment-1860619214)).
