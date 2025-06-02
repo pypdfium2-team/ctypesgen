@@ -15,6 +15,8 @@ Here are some notes on our development intents:
 ctypesgen depends on the presence of an external C pre-processor, by default `gcc` or `clang`, as available.
 Alternatively, you may specify a custom pre-processor command using the `--cpp` option (e.g. `--cpp "clang -E"` to always use clang).
 
+Read [below](#future-research) for an experimental pure-python option.
+
 
 ### Tips & Tricks
 
@@ -136,13 +138,13 @@ It has its own parser backend using Clang API. This may be more reliable in a wa
 
 Making ctypesgen truly pure-python by use of a pure-python C pre-processor is a future area of research.
 
-[pcpp](https://github.com/ned14/pcpp) is a pretty good candidate, and can theoretically be used with ctypesgen already, but it is inconvenient to do so, and some issues remain.
+[pcpp](https://github.com/ned14/pcpp) is a pretty good candidate, and can theoretically be used with ctypesgen already, but it is currently inconvenient to do so, and some issues remain.
 In particular, due to its pure-python nature, `pcpp` does not automatically add the platform-specific include paths and default defines as real compilers do, which causes trouble when system headers come into play.
 
 To try ctypesgen with pcpp anyway, you could do e.g. (on RedHat Linux):
 ```bash
 INCLUDE_FLAGS="-I . -I /usr/lib/gcc/x86_64-redhat-linux/12/include -I /usr/local/include -I /usr/include"
-ctypesgen ... --cpp "pcpp --line-directive '#' $INCLUDE_FLAGS"
+ctypesgen --cpp "pcpp --line-directive '#' $INCLUDE_FLAGS" ...
 ```
 You may want to pass `--preproc-savepath ../preproc_out.h` to ctypesgen to save pcpp's output for inspection.
 
