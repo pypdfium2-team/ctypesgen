@@ -170,7 +170,7 @@ As of this writing, the matching rules are loose, i.e. using just names rather t
 <!-- TODO address the issue outlined below -->
 
 An open issue is that pcpp may pass through `# include_next` directives, which currently causes ctypesgen's lexer to fail (any members below an `# include_next` will be missing in the output).
-Either we'd need a way to stop pcpp including these, or make ctypesgen tolerate them, or else filter them out before processing.
+Either we'd need a way for pcpp not to retain these (ideally, by actually processing the include), or make ctypesgen's lexer tolerate them, or else filter them out before processing.
 
 
 ### Fork rationale
