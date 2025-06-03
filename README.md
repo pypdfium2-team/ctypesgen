@@ -167,6 +167,11 @@ On the other hand, as pcpp maintainer Niall Douglas points out, "if you have to 
 Also note that `pcpp` does not seem to expand paths in the source directive, which are used for ctypesgen's symbol inclusion logic (so that only symbols from direct input headers are included by default).
 As of this writing, the matching rules are loose, i.e. using just names rather than full paths, but if this ever changes and you get an empty output, pass `--all-headers` to ctypesgen to forego symbol filtering.
 
+<!-- TODO address the issue outlined below -->
+
+An open issue is that pcpp may pass through `# include_next` directives, which currently causes ctypesgen's lexer to fail (any members below an `# include_next` will be missing in the output).
+Either we'd need a way to stop pcpp including these, or make ctypesgen tolerate them, or else filter them out before processing.
+
 
 ### Fork rationale
 
