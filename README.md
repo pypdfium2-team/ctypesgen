@@ -148,7 +148,7 @@ ctypesgen --cpp "pcpp --line-directive '#' $INCLUDE_FLAGS" ...
 ```
 Pass `--preproc-savepath ../preproc_out.h` to ctypesgen to save pcpp's output for inspection.
 
-Normally, you'd also want `--passthru-defines` to get macro constants, but this currently tends to break ctypesgen's lexer (probably due to whitespace between `#` and `define` that causes ambiguity with line directives).
+Normally, you'd also want to pass `--passthru-defines` to pcpp to get macro constants, but this currently tends to break ctypesgen's lexer (probably due to whitespace between `#` and `define` that causes ambiguity with line directives).
 
 To determine the include paths on your system, consult a compiler:
 ```bash
@@ -168,8 +168,6 @@ On the other hand, as pcpp maintainer Niall Douglas points out, "if you have to 
 
 Also note that `pcpp` does not seem to expand paths in the source directive, which are used for ctypesgen's symbol inclusion logic (so that only symbols from direct input headers are included by default).
 As of this writing, the matching rules are loose, i.e. using just names rather than full paths, but if this ever changes and you get an empty output, pass `--all-headers` to ctypesgen to forego symbol filtering.
-
-<!-- TODO address the issue outlined below -->
 
 Another issue is that pcpp may pass through `# include_next` directives, which causes ctypesgen's lexer to fail (any members below an `# include_next` will be missing in the output).
 There is currently an open PR upstream that will fix this. To install pcpp with this patch already, you can do:
