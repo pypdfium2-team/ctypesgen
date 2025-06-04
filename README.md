@@ -146,7 +146,9 @@ To try ctypesgen with pcpp anyway, you could do e.g. (on RedHat Linux):
 INCLUDE_FLAGS="-I . -I /usr/lib/gcc/x86_64-redhat-linux/12/include -I /usr/local/include -I /usr/include"
 ctypesgen --cpp "pcpp --line-directive '#' $INCLUDE_FLAGS" ...
 ```
-You may want to pass `--preproc-savepath ../preproc_out.h` to ctypesgen to save pcpp's output for inspection.
+Pass `--preproc-savepath ../preproc_out.h` to ctypesgen to save pcpp's output for inspection.
+
+Normally, you'd also want `--passthru-defines` to get macro constants, but this currently tends to break ctypesgen's lexer (probably due to whitespace between `#` and `define` that causes ambiguity with line directives).
 
 To determine the include paths on your system, consult a compiler:
 ```bash
@@ -160,7 +162,7 @@ You may also want to export the default defines from a compiler:
 ```bash
 echo | $COMPILER -dM -E - > ../default_defs.h
 ```
-Then add `--passthru-defines ../default_defs.h` to the pcpp command.
+Then add `../default_defs.h` as positional argument to the pcpp command.
 
 On the other hand, as pcpp maintainer Niall Douglas points out, "if you have to bother doing that, you might as well have it [the real compiler] do the preprocessing too" ([source](https://github.com/ned14/pcpp/issues/85#issuecomment-1860619214)).
 
@@ -169,9 +171,14 @@ As of this writing, the matching rules are loose, i.e. using just names rather t
 
 <!-- TODO address the issue outlined below -->
 
-An open issue is that pcpp may pass through `# include_next` directives, which currently causes ctypesgen's lexer to fail (any members below an `# include_next` will be missing in the output).
-Either we'd need a way for pcpp not to retain these (ideally, by actually processing the include), or make ctypesgen's lexer tolerate them, or else filter them out before processing.
-
+Another issue is that pcpp may pass through `# include_next` directives, which causes ctypesgen's lexer to fail (any members below an `# include_next` will be missing in the output).
+There is currently an open PR upstream that will fix this. To install pcpp with this patch already, you can do:
+```bash
+git clone --recurse-submodules https://github.com/ned14/pcpp
+cd pcpp/
+gh pr checkout 98
+python3 -m pip install --no-build-isolation -v -e .
+```
 
 ### Fork rationale
 
