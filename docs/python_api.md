@@ -15,7 +15,7 @@ def POINTER(obj):
 END
 
 PY_VERSION=$(python3 -c "import sys; v = sys.version_info; print(f'{v.major}.{v.minor}')")
-ctypesgen -l python --dllclass pythonapi --system-headers python$PY_VERSION/Python.h --all-headers -m .overrides --linkage-anchor . -o ctypes_python.py
+PYTHONPATH=. ctypesgen -l python --dllclass pythonapi --system-headers python$PY_VERSION/Python.h --all-headers -m overrides --linkage-anchor . -o ctypes_python.py
 ```
 
 Small test:
