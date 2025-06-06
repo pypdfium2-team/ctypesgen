@@ -27,6 +27,9 @@ See also [`docs/pcpp.md`](docs/pcpp.md) for an experimental pure-python option.
   You could use this to add a header spoofing an external symbol via `typedef void* SYMBOL;` (`c_void_p`) that may be provided by a third-party binding at runtime.
 * If building with `--no-macro-guards` and you encounter broken macros, you may use `--symbol-rules` (see below) or replace them manually. This can be necessary on C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python. In particular, you are likely to run into this with `--all-headers`.
 
+See also [`docs/python_api.md`](docs/python_api.md) for notes on binding to Python's C API.
+
+
 #### Notes on symbol inclusion
 
 * ctypesgen works with the following symbol rules:
@@ -38,64 +41,6 @@ See also [`docs/pcpp.md`](docs/pcpp.md) for an experimental pure-python option.
 * Finally, the `--symbol-rules` option is applied, which can be used to assign symbol rules by regex fullmatch expressions, providing callers with powerful means of control over symbol inclusion.
 * To filter out excess symbols, you'll usually want to use `if_needed` rather than `never` to avoid accidental exclusion of dependants. Use `never` only where this side effect is actually wanted, e.g. to exclude a broken symbol.
 
-#### Binding against the Python API
-
-```bash
-cat >"overrides.py" <<END
-import ctypes
-
-class PyTypeObject (ctypes.Structure): pass
-class PyObject (ctypes.Structure): pass
-
-def POINTER(obj):
-    if obj is PyObject: return ctypes.py_object
-    return ctypes.POINTER(obj)
-END
-
-ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --all-headers -m .overrides --linkage-anchor . -o ctypes_python.py
-```
-substituting `3.X` with your system's python version.
-
-Small test:
-```python
-import sys
-from ctypes import *
-from ctypes_python import *
-
-# Get a string from a Python C API function
-v = Py_GetVersion()
-v = cast(v, c_char_p).value.decode("utf-8")
-print(v)
-print(v == sys.version)  # True
-
-# Convert back and forth between Native vs. C view of an object
-class Test:
-    def __init__(self, a):
-        self.a = a
-
-t = Test(a=123)
-tc_ptr = cast(id(t), POINTER(PyObject_))
-tc = tc_ptr.contents
-print(tc.ob_refcnt)  # 1
-Py_IncRef(t)
-print(tc.ob_refcnt)  # 2 (incremented)
-Py_DecRef(t)
-print(tc.ob_refcnt)  # 1 (decremented)
-t_back = cast(tc_ptr, py_object).value
-print(t_back.a)
-print(tc.ob_refcnt)  # 2 (new reference from t_back)
-```
-
-It should yield something like
-```
-3.11.6 (main, Oct  3 2023, 00:00:00) [GCC 12.3.1 20230508 (Red Hat 12.3.1-1)]
-True
-1
-2
-1
-123
-2
-```
 
 ### Known Limitations
 
