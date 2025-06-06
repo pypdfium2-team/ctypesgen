@@ -122,12 +122,13 @@ class WrapperPrinter:
     
     
     def _print_templates(self, dest):
-        dest.write(f"\n\n{T_UNCHECKED}\n")
+        dest.write(f"\n\n{T_UNCHECKED}")
         if self.opts.string_template:
             string_template = self.opts.string_template.read_text()
-            dest.write(f"\n\n{string_template}\n")
+            dest.write(f"\n\n\n{string_template}")
     
     def print_loader(self, opts):
+        
         if opts.embed_templates:
             if opts.library:
                 self.file.write("\n\n\n")
@@ -135,12 +136,15 @@ class WrapperPrinter:
             self.file.write("\n\n\n")
             with self.paragraph_ctx("templates"):
                 self._print_templates(self.file)
+                self.file.write("\n")
+        
         else:
             self.EXT_LOADER = opts.linkage_anchor / "_ctg_loader.py"
             if not self.EXT_LOADER.exists():
                 with self.EXT_LOADER.open("w") as dest_fh:
                     _embed_file_impl(dest_fh, LIBRARYLOADER_PATH)
                     self._print_templates(dest_fh)
+                    dest_fh.write("\n")
             n_dots = len(opts.output.parts) - len(opts.linkage_anchor.parts)
             import_path = f"from {'.'*n_dots}_ctg_loader import"
             self.file.write(
