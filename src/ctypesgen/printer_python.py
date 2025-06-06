@@ -80,7 +80,8 @@ class WrapperPrinter:
             
             if opts.dllclass == "pythonapi":
                 assert opts.library == "python"
-                self.file.write("\n\n_libs = {%r: ctypes.pythonapi}" % opts.library)
+                self.file.write("\n\n_libs = {%r: ctypes.pythonapi}" % (opts.library, ))
+                self._print_templates(self.file)
             else:
                 self.print_loader(opts)
                 if opts.library:
@@ -120,7 +121,7 @@ class WrapperPrinter:
         return f"try:\n{indent(entry, pad)}\nexcept:\n{pad}pass"
     
     
-    def write_templates(self, dest):
+    def _print_templates(self, dest):
         dest.write(f"\n\n{T_UNCHECKED}\n")
         if self.opts.string_template:
             string_template = self.opts.string_template.read_text()
@@ -133,13 +134,13 @@ class WrapperPrinter:
                 self._embed_file(LIBRARYLOADER_PATH, "library loader")
             self.file.write("\n\n\n")
             with self.paragraph_ctx("templates"):
-                self.write_templates(self.file)
+                self._print_templates(self.file)
         else:
             self.EXT_LOADER = opts.linkage_anchor / "_ctg_loader.py"
             if not self.EXT_LOADER.exists():
                 with self.EXT_LOADER.open("w") as dest_fh:
                     _embed_file_impl(dest_fh, LIBRARYLOADER_PATH)
-                    self.write_templates(dest_fh)
+                    self._print_templates(dest_fh)
             n_dots = len(opts.output.parts) - len(opts.linkage_anchor.parts)
             import_path = f"from {'.'*n_dots}_ctg_loader import"
             self.file.write(
