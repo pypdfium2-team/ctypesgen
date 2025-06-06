@@ -161,45 +161,51 @@ class PreprocessorParser:
         if IS_WINDOWS:
             ppout = ppout.replace("\r\n", "\n")
         
-        # We separate lines to two groups: directives and c-source.  Note that
-        # #pragma directives actually belong to the source category for this.
-        # This is necessary because some source files intermix preprocessor
-        # directives with source--this is not tolerated by ctypesgen's single
-        # grammar.
-        # We put all the source lines first, then all the #define lines.
+        text = ppout
         
-        source_lines = []
-        define_lines = []
+        # NOTE(geisserml) The procedure below is rather displeasing. I couldn't find an evident reason for the separation anymore, and ctypesgen's test suite passes without it, so let's comment this out as long as we don't hear of a counter-example.
+        # That said, improving the parser may be preferable over post-processing if we can help it.
         
-        first_token_reg = re.compile(r"^#\s*([^ ]+)($|\s)")
+#         # We separate lines to two groups: directives and c-source.  Note that
+#         # #pragma directives actually belong to the source category for this.
+#         # This is necessary because some source files intermix preprocessor
+#         # directives with source--this is not tolerated by ctypesgen's single
+#         # grammar.
+#         # We put all the source lines first, then all the #define lines.
+#         
+#         source_lines = []
+#         define_lines = []
+#         
+#         first_token_reg = re.compile(r"^#\s*([^ ]+)($|\s)")
+#         
+#         for line in ppout.splitlines(True):
+#             search = first_token_reg.match(line)
+#             hash_token = search.group(1) if search else None
+#             
+#             if not hash_token or hash_token == "pragma":
+#                 source_lines.append(line)
+#                 # define_lines.append("\n")
+#             
+#             elif hash_token.isdigit():
+#                 # Line number information has to go with both groups
+#                 # NOTE(geisserml) The duplication is nasty, but it's true that both groups need to keep track of the latest line info. It might be possible to skip non-latest lines of the other group, but that's probably more trouble than it's worth.
+#                 source_lines.append(line)
+#                 define_lines.append(line)
+#             
+#             elif hash_token in ("define", "undef"):
+#                 # source_lines.append("\n")
+#                 define_lines.append(line)
+#             
+#             else:  # hash_token.startswith("#"):
+#                 # It's a directive, but not a #define or #undef. Remove it.
+#                 # NOTE(geisserml) Undhandled hash directives will break the lexer, but presumably there aren't any left that a complete pre-processor would emit?
+#                 # pcpp tends to emit unprocessed includes, but this is non-standard behavior.
+#                 warning_message(f"Skip unhandled directive {hash_token!r}")
+#                 # source_lines.append("\n")
+#                 # define_lines.append("\n")
+#         
+#         text = "".join(source_lines + define_lines)
         
-        for line in ppout.splitlines(True):
-            search = first_token_reg.match(line)
-            hash_token = search.group(1) if search else None
-            
-            if not hash_token or hash_token == "pragma":
-                source_lines.append(line)
-                # define_lines.append("\n")
-            
-            elif hash_token.isdigit():
-                # Line number information has to go with both groups
-                # NOTE(geisserml) The duplication is nasty, but it's true that both groups need to keep track of the latest line info. It might be possible to skip non-latest lines of the other group, but that's probably more trouble than it's worth.
-                source_lines.append(line)
-                define_lines.append(line)
-            
-            elif hash_token in ("define", "undef"):
-                # source_lines.append("\n")
-                define_lines.append(line)
-            
-            else:  # hash_token.startswith("#"):
-                # It's a directive, but not a #define or #undef. Remove it.
-                # NOTE(geisserml) Undhandled hash directives will break the lexer, but presumably there aren't any left that a complete pre-processor would emit?
-                # pcpp tends to emit unprocessed includes, but this is non-standard behavior.
-                warning_message(f"Skip unhandled directive {hash_token!r}")
-                # source_lines.append("\n")
-                # define_lines.append("\n")
-        
-        text = "".join(source_lines + define_lines)
         self.lexer.input(text)
         self.output = []
         
