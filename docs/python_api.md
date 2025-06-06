@@ -1,7 +1,9 @@
-#### Binding against the Python C API
+### Binding against the Python C API
+
+ctypesgen can also produce bindings for Python's C API, with some tricks:
 
 ```bash
-cat >"overrides.py" <<END
+cat > "overrides.py" <<END
 import ctypes
 
 class PyTypeObject (ctypes.Structure): pass
@@ -12,9 +14,9 @@ def POINTER(obj):
     return ctypes.POINTER(obj)
 END
 
-ctypesgen -l python --dllclass pythonapi --system-headers python3.X/Python.h --all-headers -m .overrides --linkage-anchor . -o ctypes_python.py
+PY_VERSION=$(python3 -c "import sys; v = sys.version_info; print(f'{v.major}.{v.minor}')")
+ctypesgen -l python --dllclass pythonapi --system-headers python$PY_VERSION/Python.h --all-headers -m .overrides --linkage-anchor . -o ctypes_python.py
 ```
-substituting `3.X` with your system's python version.
 
 Small test:
 ```python
