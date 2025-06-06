@@ -169,8 +169,7 @@ class PreprocessorParser:
 
         first_token_reg = re.compile(r"^#\s*([^ ]+)($|\s)")
 
-        for line in ppout.split("\n"):
-            line += "\n"
+        for line in ppout.splitlines(True):
             search = first_token_reg.match(line)
             hash_token = search.group(1) if search else None
 
