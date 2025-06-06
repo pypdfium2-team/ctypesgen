@@ -136,7 +136,7 @@ class PreprocessorParser:
             cmd += ["-I", p]
         cmd += self.options.cppargs
         self.cparser.handle_status(' '.join([shlex.quote(c) for c in cmd]))
-
+        
         pp = subprocess.run(
             cmd,
             universal_newlines=False,  # binary
@@ -167,33 +167,42 @@ class PreprocessorParser:
         # directives with source--this is not tolerated by ctypesgen's single
         # grammar.
         # We put all the source lines first, then all the #define lines.
-
+        
         source_lines = []
         define_lines = []
-
+        
         first_token_reg = re.compile(r"^#\s*([^ ]+)($|\s)")
-
+        
         for line in ppout.splitlines(True):
             search = first_token_reg.match(line)
             hash_token = search.group(1) if search else None
-
+            
             if not hash_token or hash_token == "pragma":
                 source_lines.append(line)
-                define_lines.append("\n")
-
+                # define_lines.append("\n")
+            
             elif hash_token.isdigit():
                 # Line number information has to go with both groups
+                # NOTE(geisserml) The duplication is nasty, but it's true that both groups need to keep track of the latest line info. It might be possible to skip non-latest lines of the other group, but that's probably more trouble than it's worth.
                 source_lines.append(line)
                 define_lines.append(line)
-
-            else:  # hash_token in ("define", "undef"):
-                source_lines.append("\n")
+            
+            elif hash_token in ("define", "undef"):
+                # source_lines.append("\n")
                 define_lines.append(line)
-
+            
+            else:  # hash_token.startswith("#"):
+                # It's a directive, but not a #define or #undef. Remove it.
+                # NOTE(geisserml) Undhandled hash directives will break the lexer, but presumably there aren't any left that a complete pre-processor would emit?
+                # pcpp tends to emit unprocessed includes, but this is non-standard behavior.
+                warning_message(f"Skip unhandled directive {hash_token!r}")
+                # source_lines.append("\n")
+                # define_lines.append("\n")
+        
         text = "".join(source_lines + define_lines)
         self.lexer.input(text)
         self.output = []
-
+        
         try:
             while True:
                 token = self.lexer.token()
@@ -202,4 +211,6 @@ class PreprocessorParser:
                 else:
                     break
         except LexError as e:
+            # FIXME This will produce an incomplete output, any members after the offending line will be missing.
+            # TODO If possible, skip past the error and continue lexing. In the meantime, we should at least propagate a non-zero return code in the end.
             self.cparser.handle_error("{}; {}".format(e, e.text.partition("\n")[0]), filename, 0)
