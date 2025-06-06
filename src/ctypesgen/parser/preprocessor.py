@@ -149,6 +149,10 @@ class PreprocessorParser:
             else:
                 warning_message(msg)
         
+        if self.options.preproc_savepath:
+            self.cparser.handle_status(f"Saving preprocessor output to {self.options.preproc_savepath}.")
+            self.options.preproc_savepath.write_bytes(pp.stdout)
+        
         if IS_MAC:
             ppout = pp.stdout.decode("utf-8", errors="replace")
         else:
@@ -187,11 +191,6 @@ class PreprocessorParser:
                 define_lines.append(line)
 
         text = "".join(source_lines + define_lines)
-
-        if self.options.preproc_savepath:
-            self.cparser.handle_status(f"Saving preprocessor output to {self.options.preproc_savepath}.")
-            Path(self.options.preproc_savepath).write_text(text)
-
         self.lexer.input(text)
         self.output = []
 

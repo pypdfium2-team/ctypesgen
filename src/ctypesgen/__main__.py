@@ -229,6 +229,7 @@ def get_parser():
     parser.add_argument(
         "--preproc-savepath",
         metavar="FILENAME",
+        type=generic_path_t,
         help="Save preprocessor output to the specified FILENAME",
     )
     parser.add_argument(
