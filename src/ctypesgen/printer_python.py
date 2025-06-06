@@ -53,6 +53,9 @@ def _embed_file_impl(dst_fh, src_fp):
     with open(src_fp, "r") as src_fh:
         shutil.copyfileobj(src_fh, dst_fh)
 
+def noop(*args, **kwargs):
+    pass
+
 
 # Important: Concerning newlines handling, please read docs/dev_comments.md
 
@@ -61,7 +64,9 @@ class WrapperPrinter:
     def __init__(self, outpath, opts, data, cmd_str):
         
         self.opts = opts
-        self._srcinfo = self._srcinfo_on if self.opts.add_srcinfo else self._srcinfo_off
+        
+        if self.opts.no_srcinfo:
+            self._srcinfo = noop
         
         with outpath.open("w", encoding="utf-8") as self.file:
             
@@ -103,13 +108,10 @@ class WrapperPrinter:
             self.file.write("\n")
     
     
-    def _srcinfo_on(self, obj):
+    def _srcinfo(self, obj):
         # NOTE Could skip lineno if `fp in ("<built-in>", "<command line>")`, but this doesn't seem worth the if-check
         fp, lineno = obj.src
         self.file.write(f"# {txtpath(fp)}: {lineno}\n")
-    
-    def _srcinfo_off(self, obj):
-        pass
     
     def _embed_file(self, fp, desc):
         with self.paragraph_ctx(desc):
