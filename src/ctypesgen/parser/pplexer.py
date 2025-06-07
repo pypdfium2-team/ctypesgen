@@ -1,5 +1,5 @@
-"""Preprocess a C source file using gcc and convert the result into
-   a token stream
+"""
+Convert macros into a token stream.
 
 Reference is C99 with additions from C11 and C2x:
 * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
@@ -10,13 +10,9 @@ Reference is C99 with additions from C11 and C2x:
 from ctypesgen.parser.lex import TOKEN
 from ctypesgen.parser import cgrammar
 
-
 tokens = cgrammar.tokens
 keywords = cgrammar.keywords
-
-
 states = [("DEFINE", "exclusive"), ("PRAGMA", "exclusive")]
-
 
 _B_ = r"[0-1]"
 _O_ = r"[0-7]"
@@ -67,7 +63,6 @@ DIRECTIVE = r'\#\s+(?P<lineno>\d+)\s+"(?P<filename>[^"]+)"[ \d]*\n'
 # Numbers represented as int and float types.
 # For all other tokens, type is just str representation.
 
-
 class StringLiteral(str):
     def __new__(cls, value):
         assert value[0] == '"' and value[-1] == '"'
@@ -79,7 +74,6 @@ class StringLiteral(str):
 # --------------------------------------------------------------------------
 # Token declarations
 # --------------------------------------------------------------------------
-
 
 # Assignment operators
 t_ANY_EQUALS = r"="
@@ -120,7 +114,6 @@ t_ANY_LT = r"<"
 t_ANY_GT = r">"
 t_ANY_CONDOP = r"\?"
 
-
 # Delimiters
 t_ANY_PERIOD = r"\."
 t_ANY_LPAREN = r"\("
@@ -133,6 +126,9 @@ t_ANY_RBRACE = r"\}"
 t_ANY_COMMA = r","
 t_ANY_SEMI = r";"
 t_ANY_COLON = r":"
+
+# Whitespace
+t_ANY_ignore = " \t\v\f\r"
 
 
 @TOKEN(DIRECTIVE)
@@ -376,6 +372,3 @@ def t_DEFINE_error(t):
     t.value = t.value[0]
     t.lexer.lexpos += 1  # Skip it if it's an error in a #define
     return t
-
-
-t_ANY_ignore = " \t\v\f\r"
