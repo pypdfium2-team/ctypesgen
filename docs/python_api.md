@@ -6,15 +6,25 @@ ctypesgen can also produce bindings for Python's C API, with some tricks:
 cat > "overrides.py" <<END
 import ctypes
 
-class PyTypeObject (ctypes.Structure): pass
-class PyObject (ctypes.Structure): pass
+class PyTypeObject (ctypes.Structure):
+    pass
 
-def POINTER(obj):
-    if obj is PyObject: return ctypes.py_object
-    return ctypes.POINTER(obj)
+class PyObject (ctypes.Structure):
+    pass
+
+def POINTER(t):
+    if t is PyObject:
+        return ctypes.py_object
+    return ctypes.POINTER(t)
 END
 
-PY_VERSION=$(python3 -c "import sys; v = sys.version_info; print(f'{v.major}.{v.minor}')")
+PY_VERSION=$(python3 - <<END
+import sys
+v = sys.version_info
+print(f"{v.major}.{v.minor}")
+END
+)
+
 PYTHONPATH=. ctypesgen -l python --dllclass pythonapi --system-headers python$PY_VERSION/Python.h --all-headers -m overrides --linkage-anchor . -o ctypes_python.py
 ```
 
@@ -59,3 +69,21 @@ True
 123
 2
 ```
+
+
+#### Known issues
+
+Without the overrides above, we are running into the following issue:
+```pytb
+Traceback (most recent call last):
+  File ".../ctypes_python.py", line 11417, in <module>
+    struct__typeobject._fields_ = [
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: _fields_ is final
+```
+
+This remains to be investigated.
+The error message itself genuinely means nothing to the author, given that assigning to `_fields_` works for any other structs.
+
+With the overrides file, the original structs are retained as `PyTypeObject_` and `PyObject_` (handled by conflicting names resolver), but dependency members use the replacements instead.
+This means, the same declarations seem to work fine as long as they are not used by the other members.
