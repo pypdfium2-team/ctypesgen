@@ -249,13 +249,15 @@ class CtypesNoErrorCheck:
 
 
 class CtypesFunction(CtypesType):
-    def __init__(self, restype, parameters, variadic, options, attrib=dict()):
+    def __init__(self, restype, parameters, variadic, options, attrib=None):
         super(CtypesFunction, self).__init__()
         self.restype = restype
         self.errcheck = CtypesNoErrorCheck()
         self.argtypes = [remove_function_pointer(p) for p in parameters]
         self.variadic = variadic
-        self.attrib = attrib
+        self.attrib = dict() if attrib is None else attrib
+        
+        # FIXME same logic implemented in CtypesParser.get_ctypes_type() already, but does not seem to cover function restypes
         if options.string_template:
             restype_str = self.restype.py_string()
             if restype_str == "POINTER(c_char)":
