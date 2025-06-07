@@ -198,8 +198,8 @@ class PreprocessorParser:
 #             
 #             else:  # hash_token.startswith("#"):
 #                 # It's a directive, but not a #define or #undef. Remove it.
-#                 # NOTE(geisserml) Undhandled hash directives will break the lexer, but presumably there aren't any left that a complete pre-processor would emit?
-#                 # pcpp tends to emit unprocessed includes, but this is non-standard behavior.
+#                 # NOTE(geisserml) Undhandled hash directives will break the lexer, but presumably there aren't any left that a complete pre-processor would emit? pcpp tends to emit unprocessed includes, but this is non-standard behavior.
+#                 # FWIW, a previous maintainer of ctypesgen had actually removed this clause.
 #                 warning_message(f"Skip unhandled directive {hash_token!r}")
 #                 # source_lines.append("\n")
 #                 # define_lines.append("\n")
