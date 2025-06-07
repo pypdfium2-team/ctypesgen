@@ -28,7 +28,26 @@ END
 PYTHONPATH=. ctypesgen -l python --dllclass pythonapi --system-headers python$PY_VERSION/Python.h --all-headers -m overrides --linkage-anchor . -o ctypes_python.py
 ```
 
-Small test:
+#### Known issues
+
+Without the overrides above, we are running into the following issue:
+```pytb
+Traceback (most recent call last):
+  File ".../ctypes_python.py", line 11417, in <module>
+    struct__typeobject._fields_ = [
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: _fields_ is final
+```
+
+This remains to be investigated.
+The error message itself genuinely means nothing to the author, given that assigning to `_fields_` works for any other structs.
+
+With the overrides file, the original structs are retained as `PyTypeObject_` and `PyObject_` (handled by conflicting names resolver), but dependency members use the replacements instead.
+This means, the same declarations seem to work fine as long as they are not used by the other members.
+
+
+#### Small test
+
 ```python
 # (run this in a python console to avoid possible GC interference with the example below)
 import sys
@@ -69,21 +88,3 @@ True
 123
 2
 ```
-
-
-#### Known issues
-
-Without the overrides above, we are running into the following issue:
-```pytb
-Traceback (most recent call last):
-  File ".../ctypes_python.py", line 11417, in <module>
-    struct__typeobject._fields_ = [
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: _fields_ is final
-```
-
-This remains to be investigated.
-The error message itself genuinely means nothing to the author, given that assigning to `_fields_` works for any other structs.
-
-With the overrides file, the original structs are retained as `PyTypeObject_` and `PyObject_` (handled by conflicting names resolver), but dependency members use the replacements instead.
-This means, the same declarations seem to work fine as long as they are not used by the other members.
