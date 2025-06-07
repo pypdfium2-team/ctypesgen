@@ -8,11 +8,9 @@ In particular, due to its pure-python nature, `pcpp` does not automatically add 
 To try ctypesgen with pcpp anyway, you could do e.g. (on RedHat Linux):
 ```bash
 SYSTEM_INCLUDES="-I /usr/lib/gcc/x86_64-redhat-linux/12/include -I /usr/local/include -I /usr/include"
-ctypesgen --cpp "pcpp --line-directive '#' -I . $SYSTEM_INCLUDES" ...
+ctypesgen --cpp "pcpp --line-directive '#' --passthru-defines -I . $SYSTEM_INCLUDES" ...
 ```
 Pass `--preproc-savepath ../preproc_out.h` to ctypesgen to save pcpp's output for inspection.
-
-Normally, you'd also want to pass `--passthru-defines` to pcpp to get macro constants, but this currently tends to break ctypesgen's lexer (probably due to whitespace between `#` and `define` that causes ambiguity with line directives).
 
 To determine the include paths on your system, consult a compiler:
 ```bash
@@ -56,12 +54,10 @@ COMPILER="gcc"  # or clang
 echo | $COMPILER -dM -E - > ../default_defs.h
 # sample include paths - adapt these to your own system
 SYSTEM_INCLUDES="-I /usr/lib/gcc/x86_64-redhat-linux/12/include -I /usr/local/include -I /usr/include"
-ctypesgen --cpp "pcpp --line-directive '#' -I . $SYSTEM_INCLUDES ../default_defs.h" --preproc-savepath ../preproc_out.h -i *.h -o ../bindings.py -l pdfium --compile-libdirs ../../linux_x64/ --runtime-libdirs . --no-symbol-guards --no-macro-guards
+ctypesgen --cpp "pcpp --line-directive '#' --passthru-defines -I . $SYSTEM_INCLUDES ../default_defs.h" --preproc-savepath ../preproc_out.h -i *.h -o ../bindings.py -l pdfium --compile-libdirs ../../linux_x64/ --runtime-libdirs . --no-symbol-guards --no-macro-guards
 ```
 
 You can also test with ghostscript (`cd ..` if you are still working from pypdfium2, else repeat the steps to get default defs and includes):
 ```bash
-ctypesgen --cpp "pcpp --line-directive '#' -I . $SYSTEM_INCLUDES ./default_defs.h" --preproc-savepath ./preproc_out.h -i /usr/include/ghostscript/*.h -o libgs.py -l gs --no-symbol-guards --no-macro-guards
+ctypesgen --cpp "pcpp --line-directive '#' --passthru-defines -I . $SYSTEM_INCLUDES ./default_defs.h" --preproc-savepath ./preproc_out.h -i /usr/include/ghostscript/*.h -o libgs.py -l gs --no-symbol-guards --no-macro-guards
 ```
-
-This will both lack the macros. Again, you can try adding `--passthru-defines` to pcpp but it will not work yet.

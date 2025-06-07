@@ -176,17 +176,11 @@ class PreprocessorParser:
 #         source_lines = []
 #         define_lines = []
 #         
-#         first_token_reg = re.compile(r"^#\s*([^\s]+)(.*)", flags=re.DOTALL)
+#         first_token_reg = re.compile(r"^#\s*([^ ]+)($|\s)")
 #         
 #         for line in ppout.splitlines(True):
 #             match = first_token_reg.match(line)
-#             if match:
-#                 hash_token = match.group(1)
-#                 # dispose of possible whitespace between hash and specifier, the lexer doesn't like this (though a good pre-processor should have normalized this already)
-#                 if hash_token in ("pragma", "define", "undef"):
-#                     line = f"#{hash_token}{match.group(2)}"
-#             else:
-#                 hash_token = None
+#             hash_token = match.group(1) if match else None
 #             
 #             if not hash_token or hash_token == "pragma":
 #                 source_lines.append(line)

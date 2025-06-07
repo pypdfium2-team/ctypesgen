@@ -292,7 +292,7 @@ def t_INITIAL_newline(t):
     return None
 
 
-@TOKEN(r"\#undef")
+@TOKEN(rf"\#{_WS_}*undef")
 def t_INITIAL_pp_undefine(t):
     t.type = "PP_UNDEFINE"
     t.lexer.begin("DEFINE")
@@ -301,7 +301,7 @@ def t_INITIAL_pp_undefine(t):
     return t
 
 
-@TOKEN(r"\#define")
+@TOKEN(rf"\#{_WS_}*define")
 def t_INITIAL_pp_define(t):
     t.type = "PP_DEFINE"
     t.lexer.begin("DEFINE")
@@ -310,7 +310,7 @@ def t_INITIAL_pp_define(t):
     return t
 
 
-@TOKEN(r"\#pragma")
+@TOKEN(rf"\#{_WS_}*pragma")
 def t_INITIAL_pragma(t):
     t.type = "PRAGMA"
     t.lexer.begin("PRAGMA")
