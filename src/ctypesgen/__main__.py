@@ -334,7 +334,7 @@ def get_parser():
     )
     parser.add_argument(
         "--no-srcinfo",
-        action="store_false",
+        action="store_true",
         help="Skip adding comments indicating header source file and line number of symbols. This may be useful for cleaner diffs of tracked bindings. (If you wish to know the origin of a symbol, grep for it in the input headers).",
     )
     parser.add_argument(
