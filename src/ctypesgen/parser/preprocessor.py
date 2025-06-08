@@ -176,7 +176,7 @@ class PreprocessorParser:
 #         source_lines = []
 #         define_lines = []
 #         
-#         first_token_reg = re.compile(r"^#\s*([^ ]+)($|\s)")
+#         first_token_reg = re.compile(r"^#\s*(\S+)($|\s)")
 #         
 #         for line in ppout.splitlines(True):
 #             match = first_token_reg.match(line)

@@ -28,10 +28,10 @@ Then add `../default_defs.h` as positional argument to the pcpp command.
 
 On the other hand, as pcpp maintainer Niall Douglas points out, "if you have to bother doing that, you might as well have it \[gcc\] do the preprocessing too" ([source](https://github.com/ned14/pcpp/issues/85#issuecomment-1860619214)).
 
+<!-- As of June 2025 -->
+
 Also note that `pcpp` does not seem to expand paths in the source directive, which are used for ctypesgen's symbol inclusion logic (so that only symbols from direct input headers are included by default).
 As of this writing, the matching rules are loose, i.e. using just names rather than full paths, but if this ever changes and you get an empty output, pass `--all-headers` to ctypesgen to forego symbol filtering.
-
-<!-- As of June 2025 -->
 
 Another issue is that pcpp may pass through `# include_next` directives, which causes ctypesgen's lexer to fail (any members below an `# include_next` will be missing in the output).
 There is currently an open PR upstream that will fix this. To install pcpp with this patch already, you can do:
