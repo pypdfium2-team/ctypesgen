@@ -16,7 +16,7 @@
   - `--allow-gnu-c` replaced by `-X __GNUC__`.
   - More flags changed or renamed.
 * The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
-* The bloated string wrappers have been removed. By default, no implicit string encoding/decoding is being done anymore, because `char*` is not necessarily a UTF-8 string or even NUL-terminated. However, the `--string-template` option allows callers to plug in their own string helpers (e.g. `c_char_p` in the easiest case, or a custom wrapper).
+* The bloated string wrappers have been removed. By default, no implicit string encoding/decoding is being done anymore, because `char*` is not necessarily a UTF-8 string or even NUL-terminated. However, the `--string-template` option allows to plug in your own string helpers (e.g. `c_char_p`, or a custom wrapper). However, we recommend that new code assume the raw `POINTER(c_char)` and cast/decode on the caller side as necessary.
 * We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
 
 See also `--help` for usage details.
@@ -32,7 +32,7 @@ See also `--help` for usage details.
 * Eagerly include direct members with `--system-headers`. This helps lower the need for `--all-headers` (which generally includes a lot more than necessary).
 * Auto-detect default pre-processor.
 * Handle FAMs (Flexible Array members) as zero-sized arrays. See https://github.com/ctypesgen/ctypesgen/issues/219.
-* Tightened `UNCHECKED()` template to only remap pointer types, and pass through anything else as-is. This avoids erroneously changing non-pointer types or `None` to `c_void_p`.
+* Tightened `UNCHECKED()` template to only remap pointer types, and pass through anything else as-is. This avoids erroneously changing `None` or custom non-pointer types to `c_void_p`.
 * `-X`: Ability to override arbitrary pre-processor default flags added by ctypesgen.
 * Pass through `-D/-U` in given order.
 
