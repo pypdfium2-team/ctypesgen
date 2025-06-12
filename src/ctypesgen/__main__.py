@@ -22,13 +22,13 @@ from ctypesgen.printer_python import (
 )
 
 
-# -- Argument Parser (Backports) --
+# -- Argparse backports and helpers --
 
 if sys.version_info >= (3, 9):
     from argparse import BooleanOptionalAction
 
 else:
-    # backport, adapted from argparse sources
+    # adapted from argparse sources
     class BooleanOptionalAction (argparse.Action):
         def __init__(self, option_strings, dest, **kwargs):
             
@@ -50,6 +50,21 @@ else:
             return ' | '.join(self.option_strings)
 
 
+if sys.version_info < (3, 8):
+    class ExtendAction (argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            items = getattr(namespace, self.dest) or []
+            items.extend(values)
+            setattr(namespace, self.dest, items)
+else:
+    ExtendAction = None
+
+
+class LocalArgumentParser (argparse.ArgumentParser):
+    def convert_arg_line_to_args(self, arg_line):
+        return shlex.split(arg_line)
+
+
 # -- Argument Parser ---
 
 def generic_path_t(p):
@@ -67,29 +82,15 @@ def input_dir_t(p):
     return checked_path_t(p, check=Path.is_dir, exc=FileNotFoundError)
 
 
-class LocalArgumentParser (argparse.ArgumentParser):
-    def convert_arg_line_to_args(self, arg_line):
-        return shlex.split(arg_line)
-
-
 def get_parser():
     
-    # FIXME argparse parameters are not ordered consistently...
-    # TODO expand use of BooleanOptionalAction
+    # TODO order parameters, expand use of BooleanOptionalAction
     
     parser = LocalArgumentParser(
         prog="ctypesgen",
         fromfile_prefix_chars="@",
     )
-    
-    if sys.version_info < (3, 8):  # compat
-        
-        class ExtendAction(argparse.Action):
-            def __call__(self, parser, namespace, values, option_string=None):
-                items = getattr(namespace, self.dest) or []
-                items.extend(values)
-                setattr(namespace, self.dest, items)
-        
+    if ExtendAction is not None:
         parser.register('action', 'extend', ExtendAction)
     
     # Version
@@ -470,7 +471,20 @@ def main_impl(args, cmd_str):
     msgs.status_message("Wrapping complete.")
 
 
-# -- Entry points and their helper functions --
+# -- CLI entrypoint functions and helpers --
+
+def main(given_argv=sys.argv[1:]):
+    """
+    Argparse-based API entry point (recommended).
+    Beware: argparse may raise SystemExit - you might want to try/except guard against this.
+    """
+    # preparation: flush CWD for path stripping
+    get_priv_paths.cache_clear()
+    args = get_parser().parse_args(given_argv)
+    args.cppargs = list( itertools.chain(*args.cppargs) )
+    cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
+    main_impl(args, cmd_str)
+
 
 # Adapted from https://stackoverflow.com/a/59395868/15547292
 
@@ -496,7 +510,8 @@ def api_main(args):
     In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
     """
     
-    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
+    # preparation: refresh CWD for path stripping
+    get_priv_paths.cache_clear()
     parser = get_parser()
     
     required_args = _get_parser_requires(parser)
@@ -513,21 +528,6 @@ def api_main(args):
     for p, x in get_priv_paths():
         args_str = args_str.replace(str(p), x)
     return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
-
-
-def postparse(args):
-    args.cppargs = list( itertools.chain(*args.cppargs) )
-
-def main(given_argv=sys.argv[1:]):
-    """
-    Argparse-based API entry point (recommended).
-    Beware: argparse may raise SystemExit - you might want to try/except guard against this.
-    """
-    get_priv_paths.cache_clear()  # preparation: refresh CWD for path stripping
-    args = get_parser().parse_args(given_argv)
-    postparse(args)
-    cmd_str = " ".join(["ctypesgen"] + [shlex.quote(txtpath(a)) for a in given_argv])
-    main_impl(args, cmd_str)
 
 
 # -- Run main() if this script is invoked --
