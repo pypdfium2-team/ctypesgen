@@ -1,9 +1,0 @@
-- implement --deepen (replacing --all-headers)
-- implement PPH (page per header) mode
-- implement multilib support as drafted?
-- implement configurable/explicit libname patterns to avoid unnecessary looping (e.g. `--libname-patterns win:{}.dll darwin:lib{}.dylib linux:lib{}.so`)
-- add dedicated test for --all-headers rsp. --deepen [inf] to extend coverage
-- revise logging (replace `*_message()` functions with direct logger access)
-- think about overrides (opaque pointers) and relative import inconveniences
-- think about absolute local imports (automatic sys.path and absolute templates import?)
-- think about non-prefixed import of templates (pro: works without package - con: ambiguous, tries to import from system if missing)
