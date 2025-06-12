@@ -226,22 +226,12 @@ _register_library(
         self.file.write(entry)
     
     
-    def print_struct(self, struct):
+    def _handle_struct_extras(self, struct):
         
-        # input produced by CtypesParser.make_struct_from_specifier()
-        
-        self._srcinfo(struct)
-        base = {"union": "Union", "struct": "Structure"}[struct.variety]
-        self.file.write(f"class {struct.variety}_{struct.tag} ({base}):")
-        pad = "\n" + " "*4
-        
-        if struct.opaque:
-            self.file.write(pad + "pass")
-            return
-        
-        # FIXME(geisserml) The two blocks below look like they do evaluation work that doesn't belong in the printer, but in an earlier part of the control flow...
+        # FIXME(geisserml) This looks like evaluation work that doesn't belong to the printer, but to an earlier part of the control flow...
         
         # is this supposed to be packed?
+        aligned = None
         if struct.attrib.get("packed", False):
             aligned = struct.attrib.get("aligned", [1])
             assert len(aligned) == 1, "cgrammar gave more than one arg for aligned attribute"
@@ -249,9 +239,8 @@ _register_library(
             if isinstance(aligned, ExpressionNode):
                 # FIXME for non-constant expression nodes, this will fail
                 aligned = aligned.evaluate(None)
-            self.file.write(pad + f"_pack_ = {aligned}")
         
-        # handle unnamed fields.
+        # handle unnamed fields
         unnamed_fields = []
         names = set([x[0] for x in struct.members])
         n = 1
@@ -269,10 +258,29 @@ _register_library(
                     unnamed_fields.append(name)
                 struct.members[mi] = mem
         
+        return aligned, unnamed_fields
+
+    
+    def print_struct(self, struct):
+        # input produced by CtypesParser.make_struct_from_specifier()
+        
+        self._srcinfo(struct)
+        base = {"union": "Union", "struct": "Structure"}[struct.variety]
+        self.file.write(f"class {struct.variety}_{struct.tag} ({base}):")
+        pad = "\n" + " "*4
+        
+        if struct.opaque:
+            self.file.write(pad + "pass")
+            return
+        
+        aligned, unnamed_fields = self._handle_struct_extras(struct)
+        if aligned is not None:
+            self.file.write(pad + f"_pack_ = {aligned}")
         if len(unnamed_fields) > 0:
             self.file.write(pad + f"_anonymous_ = {unnamed_fields}")
         
         self.file.write(pad + f"__slots__ = {[n for n, _ in struct.members]}")
+    
     
     def print_struct_fields(self, struct):
         # Fields are defined indepedent of the actual class to handle forward declarations, including self-references and cyclic structs
