@@ -55,12 +55,12 @@ def _embed_file_impl(dst_fh, src_fp):
     with open(src_fp, "r") as src_fh:
         shutil.copyfileobj(src_fh, dst_fh)
 
-def _repr_as_tuple(iterable):
+def _as_tuple_contents(iterable):
     sequence = tuple(iterable)
     if len(sequence) == 1:
-        return f"({sequence[0]}, )"
+        return f"{sequence[0]}, "
     else:
-        return f"({', '.join(sequence)})"
+        return f"{', '.join(sequence)}"
 
 
 # Important: Concerning newlines handling, please read docs/dev_comments.md
@@ -194,14 +194,14 @@ _register_library(
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
 {PN} = _libs[{L!r}][{CN!r}]
-{PN}.argtypes = {ATS}
+{PN}.argtypes = ({ATS})
 {PN}.restype = {RT}\
 """
         fields = dict(
             L=self.opts.library,
             CN=function.c_name(),
             PN=function.py_name(),
-            ATS=_repr_as_tuple(a.py_string() for a in function.argtypes),
+            ATS=_as_tuple_contents(a.py_string() for a in function.argtypes),
             RT=function.restype.py_string(),
         )
         if function.errcheck:
