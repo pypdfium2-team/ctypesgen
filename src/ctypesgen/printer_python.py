@@ -109,7 +109,7 @@ class WrapperPrinter:
             
             for fp in opts.inserted_files:
                 self.file.write("\n\n\n")
-                self._embed_file(fp, f"inserted file '{txtpath(fp)}'")
+                self._embed_file(fp, f"inserted file {txtpath(fp)!r}")
             
             self.file.write("\n")
     
@@ -163,9 +163,9 @@ class WrapperPrinter:
     
     
     def print_library(self, opts):
-        name_define = f"name = '{opts.library}'"
+        name_define = f"name = {opts.library!r}"
         content = f"""\
-# Load library '{opts.library}'
+# Load library {opts.library!r}
 
 _register_library(
     {name_define},
@@ -209,7 +209,7 @@ _register_library(
             fields["EC"] = function.errcheck.py_string()
         
         if self.opts.guard_symbols:
-            template = "if hasattr(_libs['{L}'], '{CN}'):\n" + indent(template, prefix=" "*4)
+            template = "if hasattr(_libs[{L!r}], {CN!r}):\n" + indent(template, prefix=" "*4)
         
         self.file.write(template.format(**fields))
     
@@ -221,7 +221,7 @@ _register_library(
         # Ideally, empty arrays should always be handled as arrays (not pointers) unless in a function declaration.
         if isinstance(variable.ctype, CtypesArray) and variable.ctype.count is None:
             variable.ctype.count = ConstantExpressionNode(0)
-        entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
+        entry = "{PN} = ({PS}).in_dll(_libs[{L!r}], {CN!r})".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
             L=self.opts.library,
