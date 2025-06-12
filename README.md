@@ -27,10 +27,11 @@ See also [`docs/pcpp.md`](docs/pcpp.md) for an experimental pure-python option.
   You could use this to add a header spoofing an external symbol via `typedef void* SYMBOL;` (`c_void_p`) that may be provided by a third-party binding at runtime.
 * If building with `--no-macro-guards` and you encounter broken macros, you may use `--symbol-rules` (see below) or replace them manually. This can be necessary on C constructs like `#define NAN (0.0f / 0.0f)` that don't play well with python. In particular, you are likely to run into this with `--all-headers`.
 
-See also [`docs/python_api.md`](docs/python_api.md) for notes on binding to Python's C API.
+Also, check out [`docs/demo/`](docs/demo/) for a minimalistic example of using ctypesgen,
+and [`docs/python_api.md`](docs/python_api.md) on how to produce bindings for Python's C API.
 
 
-#### Notes on symbol inclusion
+#### Symbol inclusion
 
 * ctypesgen works with the following symbol rules:
   - `yes`: The symbol is eagerly included.
