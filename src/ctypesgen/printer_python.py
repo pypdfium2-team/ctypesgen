@@ -20,6 +20,9 @@ CTYPESGEN_DIR = Path(__file__).resolve().parent
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 
+def noop(*args, **kwargs):
+    pass
+
 def ParagraphCtxFactory(file):
     @contextmanager
     def paragraph_ctx(txt):
@@ -29,7 +32,6 @@ def ParagraphCtxFactory(file):
         finally:
             file.write(f"\n# -- End {txt} --")
     return paragraph_ctx
-
 
 @functools.lru_cache(maxsize=1)
 def get_priv_paths():
@@ -53,8 +55,12 @@ def _embed_file_impl(dst_fh, src_fp):
     with open(src_fp, "r") as src_fh:
         shutil.copyfileobj(src_fh, dst_fh)
 
-def noop(*args, **kwargs):
-    pass
+def _repr_as_tuple(iterable):
+    sequence = tuple(iterable)
+    if len(sequence) == 1:
+        return f"({sequence[0]}, )"
+    else:
+        return f"({', '.join(sequence)})"
 
 
 # Important: Concerning newlines handling, please read docs/dev_comments.md
@@ -187,15 +193,15 @@ _register_library(
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
-{PN} = _libs['{L}']['{CN}']
-{PN}.argtypes = [{ATS}]
+{PN} = _libs[{L!r}][{CN!r}]
+{PN}.argtypes = {ATS}
 {PN}.restype = {RT}\
 """
         fields = dict(
             L=self.opts.library,
             CN=function.c_name(),
             PN=function.py_name(),
-            ATS=", ".join([a.py_string() for a in function.argtypes]),
+            ATS=_repr_as_tuple(a.py_string() for a in function.argtypes),
             RT=function.restype.py_string(),
         )
         if function.errcheck:
@@ -279,13 +285,13 @@ _register_library(
         if len(unnamed_fields) > 0:
             self.file.write(pad + f"_anonymous_ = {unnamed_fields}")
         
-        self.file.write(pad + f"__slots__ = {[n for n, _ in struct.members]}")
+        self.file.write(pad + f"__slots__ = {tuple(n for n, _ in struct.members)}")
     
     
     def print_struct_fields(self, struct):
         # Fields are defined indepedent of the actual class to handle forward declarations, including self-references and cyclic structs
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
-        self.file.write("%s_%s._fields_ = [" % (struct.variety, struct.tag))
+        self.file.write("%s_%s._fields_ = (" % (struct.variety, struct.tag))
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
                 self.file.write(
@@ -294,7 +300,7 @@ _register_library(
                 )
             else:
                 self.file.write("\n    ('%s', %s)," % (name, ctype.py_string()))
-        self.file.write("\n]")
+        self.file.write("\n)")
     
     
     def print_enum(self, enum):
