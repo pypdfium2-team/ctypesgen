@@ -264,7 +264,7 @@ _register_library(
                     unnamed_fields.append(name)
                 struct.members[mi] = mem
         
-        return aligned, unnamed_fields
+        return aligned, tuple(unnamed_fields)
 
     
     def print_struct(self, struct):
@@ -292,14 +292,12 @@ _register_library(
         # Fields are defined indepedent of the actual class to handle forward declarations, including self-references and cyclic structs
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
         self.file.write("%s_%s._fields_ = (" % (struct.variety, struct.tag))
+        pad = "\n    "
         for name, ctype in struct.members:
             if isinstance(ctype, CtypesBitfield):
-                self.file.write(
-                    "\n    ('%s', %s, %s),"
-                    % (name, ctype.py_string(), ctype.bitfield.py_string(False))
-                )
+                self.file.write(pad + "(%r, %s, %s)," % (name, ctype.py_string(), ctype.bitfield.py_string(False)))
             else:
-                self.file.write("\n    ('%s', %s)," % (name, ctype.py_string()))
+                self.file.write(pad + "(%r, %s)," % (name, ctype.py_string()))
         self.file.write("\n)")
     
     
