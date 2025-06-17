@@ -255,7 +255,7 @@ _register_library(
             while (name := f"unnamed_{n}") in names:
                 n += 1
             names.add(name)
-            if type(mem_type) is CtypesStruct:
+            if isinstance(mem_type, CtypesStruct):
                 unnamed_fields.append(name)
             struct.members[mi] = (name, mem_type, *mem_other)
         
