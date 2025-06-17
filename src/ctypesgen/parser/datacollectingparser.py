@@ -34,7 +34,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
     """
 
     def __init__(self, headers, options):
-        super(DataCollectingParser, self).__init__(options)
+        super().__init__(options)
         self.headers = headers
         self.options = options
 
@@ -78,7 +78,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 f.write(f'#include "{header}"\n')
             f.flush()
         try:
-            super(DataCollectingParser, self).parse(fname, self.options.debug_level)
+            super().parse(fname, self.options.debug_level)
         finally:
             os.unlink(fname)
 
