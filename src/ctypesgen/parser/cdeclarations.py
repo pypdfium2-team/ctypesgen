@@ -55,14 +55,14 @@ class Pointer(Declarator):
     pointer = None
 
     def __init__(self):
-        super(Pointer, self).__init__()
+        super().__init__()
         self.qualifiers = []
 
     def __repr__(self):
         q = ""
         if self.qualifiers:
             q = "<%s>" % " ".join(self.qualifiers)
-        return "POINTER%s(%r)" % (q, self.pointer) + super(Pointer, self).__repr__()
+        return "POINTER%s(%r)" % (q, self.pointer) + super().__repr__()
 
 
 class Array:
@@ -230,17 +230,17 @@ pragma_pack = PragmaPack()
 class Attrib(dict):
     def __init__(self, *a, **kw):
         if pragma_pack.current:
-            super(Attrib, self).__init__(packed=True, aligned=[pragma_pack.current])
-            super(Attrib, self).update(*a, **kw)
+            super().__init__(packed=True, aligned=[pragma_pack.current])
+            super().update(*a, **kw)
         else:
-            super(Attrib, self).__init__(*a, **kw)
+            super().__init__(*a, **kw)
         self._unalias()
 
     def __repr__(self):
         return f"Attrib({dict(self)})"
 
     def update(self, *a, **kw):
-        super(Attrib, self).update(*a, **kw)
+        super().update(*a, **kw)
         self._unalias()
 
     def _unalias(self):
