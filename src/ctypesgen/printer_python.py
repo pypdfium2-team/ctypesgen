@@ -232,22 +232,9 @@ _register_library(
         self.file.write(entry)
     
     
-    # FIXME(geisserml) This looks like evaluation work that doesn't belong to the printer, but to an earlier part of the control flow...
-    
-    def _gen_unnamed_fields(self, struct):
-        # handle unnamed fields
-        names = set(n for n, *_ in struct.members)
-        n = 1
-        for mi, (mem_name, mem_type, *mem_other) in enumerate(struct.members):
-            if mem_name is not None: continue
-            while (name := f"unnamed_{n}") in names:
-                n += 1
-            names.add(name)
-            if type(mem_type) is CtypesStruct:
-                yield name
-            struct.members[mi] = (name, mem_type, *mem_other)
-    
     def _handle_struct_extras(self, struct):
+        
+        # FIXME(geisserml) This looks like evaluation work that doesn't belong to the printer, but to an earlier part of the control flow...
         
         # is this supposed to be packed?
         aligned = None
@@ -259,10 +246,21 @@ _register_library(
                 # FIXME for non-constant expression nodes, this will fail
                 aligned = aligned.evaluate(None)
         
-        unnamed_fields = tuple( self._gen_unnamed_fields(struct) )
+        # handle unnamed fields
+        unnamed_fields = []
+        names = set(n for n, *_ in struct.members)
+        n = 1
+        for mi, (mem_name, mem_type, *mem_other) in enumerate(struct.members):
+            if mem_name is not None: continue
+            while (name := f"unnamed_{n}") in names:
+                n += 1
+            names.add(name)
+            if type(mem_type) is CtypesStruct:
+                unnamed_fields.append(name)
+            struct.members[mi] = (name, mem_type, *mem_other)
         
-        return aligned, unnamed_fields
-
+        return aligned, tuple(unnamed_fields)
+    
     
     def print_struct(self, struct):
         # input produced by CtypesParser.make_struct_from_specifier()
