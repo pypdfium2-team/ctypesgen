@@ -288,7 +288,7 @@ def anon_struct_tagnum():
 
 class CtypesStruct(CtypesType):
     def __init__(self, tag, attrib, variety, members, src=None):
-        super(CtypesStruct, self).__init__()
+        super().__init__()
         self.tag = tag
         self.attrib = attrib
         self.variety = variety  # "struct" or "union"
@@ -302,7 +302,7 @@ class CtypesStruct(CtypesType):
     
 
     def get_required_types(self):
-        types = super(CtypesStruct, self).get_required_types()
+        types = super().get_required_types()
         types.add((self.variety, self.tag))
         return types
 
@@ -311,7 +311,7 @@ class CtypesStruct(CtypesType):
         if not self.opaque:
             for name, ctype in self.members:
                 ctype.visit(visitor)
-        super(CtypesStruct, self).visit(visitor)
+        super().visit(visitor)
 
     def get_subtypes(self):
         return set() if self.opaque else {m[1] for m in self.members}
