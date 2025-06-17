@@ -83,7 +83,7 @@ class CParser:
     """
 
     def __init__(self, options):
-        super(CParser, self).__init__()
+        super().__init__()
         self.preprocessor_parser = preprocessor.PreprocessorParser(options, self)
         self.parser = yacc.yacc(
             method="LALR",
