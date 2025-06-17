@@ -287,7 +287,7 @@ struct foo {
     def test_stdbool_type(self):
         """Test if bool is parsed correctly"""
         struct_foo = self.module.struct_foo
-        self.assertEqual(struct_foo._fields_, [("is_bar", ctypes.c_bool), ("a", ctypes.c_int)])
+        self.assertEqual(struct_foo._fields_, (("is_bar", ctypes.c_bool), ("a", ctypes.c_int)))
 
 
 class IntTypesTest(TestCaseWithCleanup):
@@ -317,7 +317,7 @@ struct int_types {
         struct_int_types = self.module.struct_int_types
         self.assertEqual(
             struct_int_types._fields_,
-            [
+            (
                 ("t_short", ctypes.c_short),
                 ("t_short_int", ctypes.c_short),
                 ("t_ushort", ctypes.c_ushort),
@@ -329,7 +329,7 @@ struct int_types {
                 ("t_long_long_int", ctypes.c_longlong),
                 ("t_u_long_long_int", ctypes.c_ulonglong),
                 ("t_long_int_u_long", ctypes.c_ulonglong),
-            ],
+            ),
         )
 
 
@@ -629,13 +629,13 @@ typedef struct {
         struct_foo = StructuresTest.module.struct_foo
         self.assertEqual(
             struct_foo._fields_,
-            [
+            (
                 ("a", ctypes.c_int),
                 ("b", ctypes.c_char),
                 ("c", ctypes.c_int),
                 ("d", ctypes.c_int, 15),
                 ("unnamed_1", ctypes.c_int, 17),
-            ],
+            ),
         )
 
     def test_pack(self):
@@ -684,7 +684,7 @@ typedef struct {
         Int = module.Int
         id_struct_t = module.id_struct_t
         self.assertEqual(Int, ctypes.c_int)
-        self.assertEqual(id_struct_t._fields_, [("Int", ctypes.c_int)])
+        self.assertEqual(id_struct_t._fields_, (("Int", ctypes.c_int), ))
 
     def test_anonymous_tag_uniformity(self):
         """Test whether anonymous structs with multiple declarations all resolve
@@ -809,7 +809,7 @@ struct foo {
         module = LongDoubleTest.module
         struct_foo = module.struct_foo
         self.assertEqual(
-            struct_foo._fields_, [("is_bar", ctypes.c_longdouble), ("a", ctypes.c_int)]
+            struct_foo._fields_, (("is_bar", ctypes.c_longdouble), ("a", ctypes.c_int))
         )
 
 
@@ -906,13 +906,13 @@ struct foo {
         struct_foo = ConstantsTest.module.struct_foo
         self.assertEqual(
             struct_foo._fields_,
-            [
+            (
                 ("a", ctypes.c_int),
                 ("b", ctypes.c_char),
                 ("c", ctypes.c_int, 2),
                 ("d", ctypes.c_int, 15),
                 ("unnamed_1", ctypes.c_int, 17),
-            ],
+            ),
         )
 
     def test_character_constants(self):
@@ -1071,7 +1071,7 @@ void arraytest(int a[]) { };
         self.assertEqual(msg_header_f["payload"], ctypes.c_uint8 * 0)
         self.assertEqual(msg_type1_f["extra"], ctypes.c_uint8 * 0)
         self.assertEqual(msg_type2_f["extra"], ctypes.c_uint8 * 0)
-        self.assertEqual(m.arraytest.argtypes, [ctypes.POINTER(ctypes.c_int)])
+        self.assertEqual(m.arraytest.argtypes, (ctypes.POINTER(ctypes.c_int), ))
     
     def test_object(self):
         payload = "0123456789".encode("ascii")

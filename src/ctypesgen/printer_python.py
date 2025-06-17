@@ -20,6 +20,9 @@ CTYPESGEN_DIR = Path(__file__).resolve().parent
 LIBRARYLOADER_PATH = CTYPESGEN_DIR/"libraryloader.py"
 
 
+def noop(*args, **kwargs):
+    pass
+
 def ParagraphCtxFactory(file):
     @contextmanager
     def paragraph_ctx(txt):
@@ -29,7 +32,6 @@ def ParagraphCtxFactory(file):
         finally:
             file.write(f"\n# -- End {txt} --")
     return paragraph_ctx
-
 
 @functools.lru_cache(maxsize=1)
 def get_priv_paths():
@@ -53,8 +55,12 @@ def _embed_file_impl(dst_fh, src_fp):
     with open(src_fp, "r") as src_fh:
         shutil.copyfileobj(src_fh, dst_fh)
 
-def noop(*args, **kwargs):
-    pass
+def _as_tuple_contents(iterable):
+    sequence = tuple(iterable)
+    if len(sequence) == 1:
+        return f"{sequence[0]}, "
+    else:
+        return f"{', '.join(sequence)}"
 
 
 # Important: Concerning newlines handling, please read docs/dev_comments.md
@@ -103,7 +109,7 @@ class WrapperPrinter:
             
             for fp in opts.inserted_files:
                 self.file.write("\n\n\n")
-                self._embed_file(fp, f"inserted file '{txtpath(fp)}'")
+                self._embed_file(fp, f"inserted file {txtpath(fp)!r}")
             
             self.file.write("\n")
     
@@ -157,9 +163,9 @@ class WrapperPrinter:
     
     
     def print_library(self, opts):
-        name_define = f"name = '{opts.library}'"
+        name_define = f"name = {opts.library!r}"
         content = f"""\
-# Load library '{opts.library}'
+# Load library {opts.library!r}
 
 _register_library(
     {name_define},
@@ -187,15 +193,15 @@ _register_library(
         
         # we have to do string based attribute access because the CN might conflict with a python keyword, while the PN is supposed to be renamed
         template = """\
-{PN} = _libs['{L}']['{CN}']
-{PN}.argtypes = [{ATS}]
+{PN} = _libs[{L!r}][{CN!r}]
+{PN}.argtypes = ({ATS})
 {PN}.restype = {RT}\
 """
         fields = dict(
             L=self.opts.library,
             CN=function.c_name(),
             PN=function.py_name(),
-            ATS=", ".join([a.py_string() for a in function.argtypes]),
+            ATS=_as_tuple_contents(a.py_string() for a in function.argtypes),
             RT=function.restype.py_string(),
         )
         if function.errcheck:
@@ -203,7 +209,7 @@ _register_library(
             fields["EC"] = function.errcheck.py_string()
         
         if self.opts.guard_symbols:
-            template = "if hasattr(_libs['{L}'], '{CN}'):\n" + indent(template, prefix=" "*4)
+            template = "if hasattr(_libs[{L!r}], {CN!r}):\n" + indent(template, prefix=" "*4)
         
         self.file.write(template.format(**fields))
     
@@ -215,7 +221,7 @@ _register_library(
         # Ideally, empty arrays should always be handled as arrays (not pointers) unless in a function declaration.
         if isinstance(variable.ctype, CtypesArray) and variable.ctype.count is None:
             variable.ctype.count = ConstantExpressionNode(0)
-        entry = "{PN} = ({PS}).in_dll(_libs['{L}'], '{CN}')".format(
+        entry = "{PN} = ({PS}).in_dll(_libs[{L!r}], {CN!r})".format(
             PN=variable.py_name(),
             PS=variable.ctype.py_string(),
             L=self.opts.library,
@@ -258,7 +264,7 @@ _register_library(
                     unnamed_fields.append(name)
                 struct.members[mi] = mem
         
-        return aligned, unnamed_fields
+        return aligned, tuple(unnamed_fields)
 
     
     def print_struct(self, struct):
@@ -279,22 +285,20 @@ _register_library(
         if len(unnamed_fields) > 0:
             self.file.write(pad + f"_anonymous_ = {unnamed_fields}")
         
-        self.file.write(pad + f"__slots__ = {[n for n, _ in struct.members]}")
+        self.file.write(pad + f"__slots__ = {tuple(n for n, _ in struct.members)}")
     
     
     def print_struct_fields(self, struct):
         # Fields are defined indepedent of the actual class to handle forward declarations, including self-references and cyclic structs
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
-        self.file.write("%s_%s._fields_ = [" % (struct.variety, struct.tag))
-        for name, ctype in struct.members:
-            if isinstance(ctype, CtypesBitfield):
-                self.file.write(
-                    "\n    ('%s', %s, %s),"
-                    % (name, ctype.py_string(), ctype.bitfield.py_string(False))
-                )
+        self.file.write(f"{struct.variety}_{struct.tag}._fields_ = (")
+        pad = "\n    "
+        for name, ct in struct.members:
+            if isinstance(ct, CtypesBitfield):
+                self.file.write(pad + f"({name!r}, {ct.py_string()}, {ct.bitfield.py_string(False)}),")
             else:
-                self.file.write("\n    ('%s', %s)," % (name, ctype.py_string()))
-        self.file.write("\n]")
+                self.file.write(pad + f"({name!r}, {ct.py_string()}),")
+        self.file.write("\n)")
     
     
     def print_enum(self, enum):
