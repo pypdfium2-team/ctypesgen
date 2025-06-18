@@ -248,24 +248,19 @@ _register_library(
         
         # handle unnamed fields
         unnamed_fields = []
-        names = set([x[0] for x in struct.members])
+        names = set(n for n, *_ in struct.members)
         n = 1
-        for mi in range(len(struct.members)):
-            mem = list(struct.members[mi])
-            if mem[0] is None:
-                while True:
-                    name = f"unnamed_{n}"
-                    n += 1
-                    if name not in names:
-                        break
-                mem[0] = name
-                names.add(name)
-                if type(mem[1]) is CtypesStruct:
-                    unnamed_fields.append(name)
-                struct.members[mi] = mem
+        for mi, (mem_name, mem_type, *mem_other) in enumerate(struct.members):
+            if mem_name is not None: continue
+            while (name := f"unnamed_{n}") in names:
+                n += 1
+            names.add(name)
+            if isinstance(mem_type, CtypesStruct):
+                unnamed_fields.append(name)
+            struct.members[mi] = (name, mem_type, *mem_other)
         
         return aligned, tuple(unnamed_fields)
-
+    
     
     def print_struct(self, struct):
         # input produced by CtypesParser.make_struct_from_specifier()
