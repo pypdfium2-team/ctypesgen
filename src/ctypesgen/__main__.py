@@ -399,13 +399,10 @@ def _is_relative_to(path, other):
 
 def find_symbols_in_modules(modnames, outpath, anchor):
     
+    # Important: This function requires callers to pass in absolute (resolved) paths for `outpath` and `anchor` (handled by parser).
+    
     # NOTE(geisserml) Concerning relative imports, I've been unable to find another way than adding the output dir's parent to sys.path, given that the module itself may contain relative imports.
     # It seems like this may be a limitation of python's import system, though technically one would imagine the output dir's path itself should be sufficient.
-    
-    assert isinstance(modnames, (tuple, list))  # not str
-    assert isinstance(outpath, Path) and outpath.is_absolute()
-    if anchor:
-        assert isinstance(anchor, Path) and anchor.is_absolute()
     
     symbols = set()
     for modname in modnames:
