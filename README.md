@@ -66,6 +66,17 @@ Oversights or unintentional breakage can happen at times. If you think a change 
 Note though, the response/contributions policy is [basically the same as for pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#response-policy).
 
 
+### Code Style
+
+The pypdfium2-ctypesgen codebase *intentionally* does not hard wrap long lines.
+You'll want to configure your editor to soft wrap e.g. at 100 columns.
+
+We also intentionally maintain indentation levels. This allows pasting code excerpts into the Python console (REPL), and makes editing more convenient.
+
+Future maintainers, please keep it this way. Also, please do NOT run formatters like Black on this codebase ever again.
+Take care of code style yourself while editing, this tends to yield much smarter results.
+
+
 ### History and Friends
 
 - ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which was originally written by Alex Holkner for C99, and is still around today.
