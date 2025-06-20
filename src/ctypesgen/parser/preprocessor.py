@@ -5,8 +5,7 @@ Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
 """
 
-import os
-import re
+# import re
 import sys
 import copy
 import shlex
@@ -15,7 +14,7 @@ from pathlib import Path
 
 from ctypesgen.parser import pplexer, lex
 from ctypesgen.parser.lex import LexError
-from ctypesgen.messages import warning_message, status_message
+from ctypesgen.messages import warning_message
 
 
 IS_WINDOWS = sys.platform.startswith("win")
@@ -31,14 +30,14 @@ class PreprocessorLexer(lex.Lexer):
         lex.Lexer.__init__(self)
         self.filename = "<input>"
         self.in_define = False
-
+    
     def input(self, data, filename=None):
         if filename:
             self.filename = filename
         self.lasttoken = None
-
+        
         lex.Lexer.input(self, data)
-
+    
     def token(self):
         result = lex.Lexer.token(self)
         if result:
@@ -46,7 +45,7 @@ class PreprocessorLexer(lex.Lexer):
             result.filename = self.filename
         else:
             self.lasttoken = None
-
+        
         return result
 
 
@@ -89,7 +88,7 @@ class PreprocessorParser:
             cls=PreprocessorLexer,
             optimize=options.optimize_lexer,
             lextab="lextab",
-            outputdir=os.path.dirname(__file__),
+            outputdir=str(Path(__file__).parent),
             module=pplexer,
         )
     
@@ -125,7 +124,7 @@ class PreprocessorParser:
                 serialized += [flag, p]
         return serialized
     
-
+    
     def parse(self, filename):
         """Parse a file and save its output"""
         

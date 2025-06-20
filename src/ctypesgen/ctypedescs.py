@@ -77,16 +77,16 @@ ctypes_type_map_python_builtin = {
 class CtypesTypeVisitor:
     def visit_struct(self, struct):
         pass
-
+    
     def visit_enum(self, enum):
         pass
-
+    
     def visit_typedef(self, name):
         pass
-
+    
     def visit_error(self, error, cls):
         pass
-
+    
     def visit_identifier(self, identifier):
         # This one comes from inside ExpressionNodes. There may be
         # ExpressionNode objects in array count expressions.
@@ -136,13 +136,13 @@ def remove_function_pointer(t):
 class CtypesType:
     def __init__(self):
         self.errors = []
-
+    
     def __repr__(self):
         return f"<Ctype ({type(self).__name__}) '{self.py_string()}'>"
-
+    
     def error(self, message, cls=None):
         self.errors.append((message, cls))
-
+    
     def visit(self, visitor):
         for error, cls in self.errors:
             visitor.visit_error(error, cls)
@@ -150,13 +150,13 @@ class CtypesType:
 
 class CtypesSimple(CtypesType):
     """Represents a builtin type, like "char" or "int"."""
-
+    
     def __init__(self, name, signed, longs):
         super().__init__()
         self.name = name
         self.signed = signed
         self.longs = longs
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return ctypes_type_map[(self.name, self.signed, self.longs)]
 
@@ -165,23 +165,23 @@ class CtypesSpecial(CtypesType):
     def __init__(self, name):
         super().__init__()
         self.name = name
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return self.name
 
 
 class CtypesTypedef(CtypesType):
     """Represents a type defined by a typedef."""
-
+    
     def __init__(self, name):
         super().__init__()
         self.name = name
-
+    
     def visit(self, visitor):
         if not self.errors:
             visitor.visit_typedef(self.name)
         super().visit(visitor)
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return self.name
 
@@ -191,11 +191,11 @@ class CtypesBitfield(CtypesType):
         super().__init__()
         self.base = base
         self.bitfield = bitfield
-
+    
     def visit(self, visitor):
         self.base.visit(visitor)
         super().visit(visitor)
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return self.base.py_string()
 
@@ -205,12 +205,12 @@ class CtypesPointer(CtypesType):
         super().__init__()
         self.destination = destination
         self.qualifiers = qualifiers
-
+    
     def visit(self, visitor):
         if self.destination:
             self.destination.visit(visitor)
         super().visit(visitor)
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return "POINTER(%s)" % self.destination.py_string()
 
@@ -220,13 +220,13 @@ class CtypesArray(CtypesType):
         super().__init__()
         self.base = base
         self.count = count
-
+    
     def visit(self, visitor):
         self.base.visit(visitor)
         if self.count:
             self.count.visit(visitor)
         super().visit(visitor)
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         if self.count is None:
             # In a function declaration, an empty array is equivalent to a pointer.
@@ -241,10 +241,10 @@ class CtypesArray(CtypesType):
 class CtypesNoErrorCheck:
     def py_string(self, ignore_can_be_ctype=None):
         return "None"
-
+    
     def __bool__(self):
         return False
-
+    
     __nonzero__ = __bool__
 
 
@@ -264,13 +264,13 @@ class CtypesFunction(CtypesType):
                 self.restype = CtypesSpecial("String")
             elif restype_str == "POINTER(c_wchar)":
                 self.restype = CtypesSpecial("WideString")
-
+    
     def visit(self, visitor):
         self.restype.visit(visitor)
         for a in self.argtypes:
             a.visit(visitor)
         super().visit(visitor)
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return "CFUNCTYPE(UNCHECKED(%s), %s)" % (
             self.restype.py_string(),
@@ -300,22 +300,21 @@ class CtypesStruct(CtypesType):
         if self.anonymous:
             self.tag = f"anon_{self.tag if tag_is_int else anon_struct_tagnum()}"
     
-
     def get_required_types(self):
         types = super().get_required_types()
         types.add((self.variety, self.tag))
         return types
-
+    
     def visit(self, visitor):
         visitor.visit_struct(self)
         if not self.opaque:
             for name, ctype in self.members:
                 ctype.visit(visitor)
         super().visit(visitor)
-
+    
     def get_subtypes(self):
         return set() if self.opaque else {m[1] for m in self.members}
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return f"{self.variety}_{self.tag}"
 
@@ -338,10 +337,10 @@ class CtypesEnum(CtypesType):
         self.enumerators = enumerators
         self.opaque = self.enumerators is None
         self.src = src
-
+    
     def visit(self, visitor):
         visitor.visit_enum(self)
         super().visit(visitor)
-
+    
     def py_string(self, ignore_can_be_ctype=None):
         return f"enum_{self.tag}"

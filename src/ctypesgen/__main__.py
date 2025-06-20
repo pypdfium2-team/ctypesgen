@@ -244,7 +244,7 @@ def get_parser():
         action="store_true",
         help="Run the lexer in optimized mode by using a pre-compiled lextab file included in the sources. This allows to run ctypesgen in python's optimized mode, which discards docstrings (PLY relies on docstrings for lexer declarations). It may also improve performance, at the cost of disabling most error checking. If the lexer has been changed, re-generate lextab.py by deleting it and running ctypesgen with this option, in python's normal operating mode. See also chapter '4.13 Optimized mode' of the PLY manual.",
     )
-
+    
     # Processor options
     parser.add_argument(
         "-a", "--all-headers",
@@ -273,7 +273,7 @@ def get_parser():
         nargs="+",
         action="extend",
         default=[],  # FIXME perilous
-        help="Sequence of symbol inclusion rules of format RULE=exp1|exp2|..., where RULE is one of [never, if_needed, yes], followed by a python fullmatch regular expression (multiple REs may be concatenated using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
+        help="Sequence of symbol inclusion rules of format RULE=exp1|exp2|..., where RULE is one of {never, if_needed, yes}, followed by a python fullmatch regular expression (multiple REs may be concatenated using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
     )
     # TODO convert --no-{stddef,gnu,python}-types to a single option that takes arguments?
     parser.add_argument(
@@ -300,7 +300,7 @@ def get_parser():
         action="store_true",
         help="Do not try to load library during the processing"
     )
-
+    
     # Printer options
     parser.add_argument(
         "--insert-files",
@@ -348,7 +348,7 @@ def get_parser():
         metavar="FILE",
         help="Use string template from FILE, implementing the String and WideString types, which will be used as a substitute for char* or wchar_t*, respectively. If all your data is NUL-terminated, you could use e.g. c_char_p and c_wchar_p, or derivatives thereof (override from_param() or _check_retval_() if desired).",
     )
-
+    
     # Error options
     parser.add_argument(
         "--all-errors",

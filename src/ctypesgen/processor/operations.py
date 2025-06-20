@@ -139,9 +139,9 @@ def fix_conflicting_names(data, opts):
         # TODO(pipeline) ideally, this should also be done for "if_needed" symbols that were resolved to be included
         if desc.include_rule == "yes":
             protected_names[desc.py_name()] = desc.casual_name()
-
+    
     # Names of struct members don't conflict with much, but they can conflict with Python keywords.
-
+    
     for struct in data.structs:
         if struct.opaque: continue  # no members
         for i, (name, type) in enumerate(struct.members):
@@ -152,10 +152,10 @@ def fix_conflicting_names(data, opts):
                 f"Member '{name}' of {struct.casual_name()} has been renamed to '{name}_' because it has the same name as a Python keyword.",
                 cls="rename",
             )
-
+    
     # Macro arguments may be have names that conflict with Python keywords.
     # TODO actually rename parameter
-
+    
     for macro in data.macros:
         if not macro.params: continue  # may be None
         for param in macro.params:

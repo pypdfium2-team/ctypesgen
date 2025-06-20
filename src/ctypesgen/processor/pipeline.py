@@ -76,7 +76,7 @@ def calculate_final_inclusion(data, opts):
     An object with include_rule="if_needed" is included if an object to be included
         requires it and if its requirements can be included.
     """
-
+    
     def can_include_desc(desc):
         if desc.can_include is None:
             if desc.include_rule == "never":
@@ -89,18 +89,18 @@ def calculate_final_inclusion(data, opts):
             else:
                 assert False, f"unknown include rule {desc.include_rule!r}"
         return desc.can_include
-
+    
     def do_include_desc(desc):
         if desc.included:
             return  # We've already been here
         desc.included = True
         for req in desc.requirements:
             do_include_desc(req)
-
+    
     for desc in data.all:
         desc.can_include = None  # None means "Not Yet Decided"
         desc.included = False
-
+    
     for desc in data.all:
         if desc.include_rule == "yes" and can_include_desc(desc):
             do_include_desc(desc)
@@ -122,7 +122,7 @@ def print_errors_encountered(data, opts):
                         error_message(error, cls)
                 for warning, cls in desc.warnings:
                     warning_message(warning, cls)
-
+            
             else:
                 if desc.errors:
                     error1, cls1 = desc.errors[0]

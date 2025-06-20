@@ -32,7 +32,7 @@ def todict(obj, classkey="Klass"):
 class WrapperPrinter:
     def __init__(self, outpath, options, data, argv):
         self.options = options
-
+        
         self.print_library(self.options.library)
         method_table = {
             "function": self.print_function,
@@ -45,7 +45,7 @@ class WrapperPrinter:
             "constant": self.print_constant,
             "undef": self.print_undef,
         }
-
+        
         res = []
         for kind, desc in data:
             item = method_table[kind](desc)
@@ -53,19 +53,19 @@ class WrapperPrinter:
         with outpath.open("w", encoding="utf-8") as fh:
             fh.write(json.dumps(res, sort_keys=True, indent=4))
             fh.write("\n")
-
+    
     def print_library(self, library):
         return {"load_library": library}
-
+    
     def print_constant(self, constant):
         return {"type": "constant", "name": constant.name, "value": constant.value.py_string(False)}
-
+    
     def print_undef(self, undef):
         return {"type": "undef", "value": undef.macro.py_string(False)}
-
+    
     def print_typedef(self, typedef):
         return {"type": "typedef", "name": typedef.name, "ctype": todict(typedef.ctype)}
-
+    
     def print_struct(self, struct):
         res = {"type": struct.variety, "name": struct.tag, "attrib": struct.attrib}
         if not struct.opaque:
@@ -76,10 +76,10 @@ class WrapperPrinter:
                     field["bitfield"] = ctype.bitfield.py_string(False)
                 res["fields"].append(field)
         return res
-
+    
     def print_struct_fields(self, struct):
         pass  # FIXME loses info about forward declarations?
-
+    
     def print_enum(self, enum):
         res = {"type": "enum", "name": enum.tag}
 
@@ -89,7 +89,7 @@ class WrapperPrinter:
                 field = {"name": name, "ctype": todict(ctype)}
                 res["fields"].append(field)
         return res
-
+    
     def print_function(self, function):
         res = {
             "type": "function",
@@ -102,13 +102,13 @@ class WrapperPrinter:
         if self.options.library:
             res["source"] = self.options.library
         return res
-
+    
     def print_variable(self, variable):
         res = {"type": "variable", "ctype": todict(variable.ctype), "name": variable.c_name()}
         if self.options.library:
             res["source"] = self.options.library
         return res
-
+    
     def print_macro(self, macro):
         if macro.params:
             return {
