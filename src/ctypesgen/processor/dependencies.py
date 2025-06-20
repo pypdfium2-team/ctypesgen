@@ -4,7 +4,7 @@ descriptions.
 """
 
 from ctypesgen.descriptions import MacroDescription, UndefDescription
-from ctypesgen.ctypedescs import visit_type_and_collect_info
+from ctypesgen.ctypedescs import CollectingTypeVisitor
 
 
 def find_dependencies(data, opts):
@@ -85,14 +85,10 @@ def find_dependencies(data, opts):
             assert False, f"unknown kind {kind!r}"
 
         cstructs, cenums, ctypedefs, errors, identifiers = [], [], [], [], []
-
         for root in roots:
-            s, e, t, errs, i = visit_type_and_collect_info(root)
-            cstructs.extend(s)
-            cenums.extend(e)
-            ctypedefs.extend(t)
-            errors.extend(errs)
-            identifiers.extend(i)
+            # TODO(geisserml) Check if the same visitor could be used for all iterations. I suspect it can.
+            visitor = CollectingTypeVisitor(cstructs, cenums, ctypedefs, errors, identifiers)
+            root.visit(visitor)
 
         unresolvables = []
 

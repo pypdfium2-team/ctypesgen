@@ -93,36 +93,32 @@ class CtypesTypeVisitor:
         pass
 
 
-def visit_type_and_collect_info(ctype):
+class CollectingTypeVisitor:
     
-    # FIXME(geisserml) distasteful?
+    # TODO(geisserml) check that callers don't make custom assignments to the visitor, then enable
+    # __slots__ = ("structs", "enums", "typedefs", "errors", "identifiers")
     
-    structs = []
-    enums = []
-    typedefs = []
-    errors = []
-    identifiers = []
+    def __init__(self, structs, enums, typedefs, errors, identifiers):
+        self.structs = structs
+        self.enums = enums
+        self.typedefs = typedefs
+        self.errors = errors
+        self.identifiers = identifiers
     
-    class Visitor(CtypesTypeVisitor):
-        def visit_struct(self, struct):
-            structs.append(struct)
-
-        def visit_enum(self, enum):
-            enums.append(enum)
-
-        def visit_typedef(self, typedef):
-            typedefs.append(typedef)
-
-        def visit_error(self, error, cls):
-            errors.append((error, cls))
-
-        def visit_identifier(self, identifier):
-            identifiers.append(identifier)
-
-    v = Visitor()
-    ctype.visit(v)
+    def visit_struct(self, struct):
+        self.structs.append(struct)
     
-    return structs, enums, typedefs, errors, identifiers
+    def visit_enum(self, enum):
+        self.enums.append(enum)
+    
+    def visit_typedef(self, typedef):
+        self.typedefs.append(typedef)
+    
+    def visit_error(self, error, cls):
+        self.errors.append((error, cls))
+    
+    def visit_identifier(self, identifier):
+        self.identifiers.append(identifier)
 
 
 # Remove one level of indirection from function pointer; needed for typedefs
