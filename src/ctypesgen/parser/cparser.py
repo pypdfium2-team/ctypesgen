@@ -97,13 +97,13 @@ class CParser:
         self.parser.cparser = self
 
         self.lexer = CLexer(self)
-        if not options.no_stddef_types:
+        if options.add_stddef_types:
             self.lexer.type_names.add("wchar_t")
             self.lexer.type_names.add("ptrdiff_t")
             self.lexer.type_names.add("size_t")
-        if not options.no_gnu_types:
+        if options.add_gnu_types:
             self.lexer.type_names.add("__builtin_va_list")
-        if sys.platform == "win32" and not options.no_python_types:
+        if sys.platform == "win32" and options.add_python_types:
             self.lexer.type_names.add("__int64")
 
     def parse(self, filename, debug=False):

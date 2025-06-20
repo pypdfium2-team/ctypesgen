@@ -275,19 +275,23 @@ def get_parser():
         default=[],  # FIXME perilous
         help="Sequence of symbol inclusion rules of format RULE=exp1|exp2|..., where RULE is one of [never, if_needed, yes], followed by a python fullmatch regular expression (multiple REs may be concatenated using the vertical line char). Will be applied in order from left to right, after dependency resolution.",
     )
+    # TODO convert --no-{stddef,gnu,python}-types to a single option that takes arguments?
     parser.add_argument(
         "--no-stddef-types",
-        action="store_true",
+        dest="add_stddef_types",
+        action="store_false",
         help="Do not support extra C types from stddef.h",
     )
     parser.add_argument(
         "--no-gnu-types",
-        action="store_true",
+        dest="add_gnu_types",
+        action="store_false",
         help="Do not support extra GNU C types",
     )
     parser.add_argument(
         "--no-python-types",
-        action="store_true",
+        dest="add_python_types",
+        action="store_false",
         help="Do not support extra C types built in to Python",
     )
     # TODO turn into dest="load_library" and "store_false" ?

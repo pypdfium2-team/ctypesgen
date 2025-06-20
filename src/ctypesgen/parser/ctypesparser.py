@@ -83,7 +83,7 @@ class CtypesParser(CParser):
         super().__init__(options)
         self.options = options
         self.type_map = ctypes_type_map
-        if not self.options.no_python_types:
+        if self.options.add_python_types:
             self.type_map.update(ctypes_type_map_python_builtin)
 
     def make_struct_from_specifier(self, specifier):
