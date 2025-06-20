@@ -94,6 +94,15 @@ class CtypesTypeVisitor:
 
 
 def visit_type_and_collect_info(ctype):
+    
+    # FIXME(geisserml) distasteful?
+    
+    structs = []
+    enums = []
+    typedefs = []
+    errors = []
+    identifiers = []
+    
     class Visitor(CtypesTypeVisitor):
         def visit_struct(self, struct):
             structs.append(struct)
@@ -110,13 +119,9 @@ def visit_type_and_collect_info(ctype):
         def visit_identifier(self, identifier):
             identifiers.append(identifier)
 
-    structs = []
-    enums = []
-    typedefs = []
-    errors = []
-    identifiers = []
     v = Visitor()
     ctype.visit(v)
+    
     return structs, enums, typedefs, errors, identifiers
 
 
