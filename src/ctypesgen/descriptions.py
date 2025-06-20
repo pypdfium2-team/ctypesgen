@@ -29,7 +29,6 @@ class Description:
     or macro description. Description is an abstract base class."""
 
     def __init__(self, src=None):
-        super().__init__()
         self.src = src  # A tuple of (filename, lineno)
 
         # If object will be included in output file. Values are "yes", "never",

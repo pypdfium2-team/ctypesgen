@@ -134,7 +134,6 @@ def remove_function_pointer(t):
 
 class CtypesType:
     def __init__(self):
-        super().__init__()
         self.errors = []
 
     def __repr__(self):
