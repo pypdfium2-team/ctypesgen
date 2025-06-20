@@ -59,6 +59,20 @@ and [`docs/python_api.md`](docs/python_api.md) on how to produce bindings for Py
 * Linked modules are naively prioritized in dependency resolver and conflicting names handler, i.e. intentional overrides are ignored. The position of includes is not honored; ctypesgen always imports linked modules at top level.
 
 
+### History and Friends
+
+- ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which was originally written by Alex Holkner for C99, and is still around today.
+  Some documentation can be found [here](https://docs.pyglet.org/en/development/internal/wraptypes.html). This may still be a valuable source of information even for today's ctypesgen.
+
+- ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
+
+- [`ctypeslib2`](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
+It has its own parser backend using Clang API. This may be more reliable in a way, at the cost of being impure and tied to a specific compiler.
+  `ctypeslib2` has some fancy features ctypesgen currently does not, such as taking over Doxygen comments.
+
+- The original `ctypeslib` (by former ctypes maintainer Thomas Heller) used GCC's XML output, but the author is not aware of a maintained version of this codebase. `ctypeslib2` is derived from ctypeslib, but its backend has been thoroughly changed for Clang.
+
+
 ### Issues / Patches
 
 Oversights or unintentional breakage can happen at times. If you think a change introduces logical issues, feel free to file a bug report or submit a patch.
@@ -75,20 +89,6 @@ We also intentionally maintain indentation levels. This allows pasting code exce
 
 Future maintainers, please keep it this way. Also, please do NOT run formatters like Black on this codebase ever again.
 Take care of code style yourself while editing, this tends to yield much smarter results.
-
-
-### History and Friends
-
-- ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which was originally written by Alex Holkner for C99, and is still around today.
-  Some documentation can be found [here](https://docs.pyglet.org/en/development/internal/wraptypes.html). This may still be a valuable source of information even for today's ctypesgen.
-
-- ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
-
-- [`ctypeslib2`](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
-It has its own parser backend using Clang API. This may be more reliable in a way, at the cost of being impure and tied to a specific compiler.
-  `ctypeslib2` has some fancy features ctypesgen currently does not, such as taking over Doxygen comments.
-
-- The original `ctypeslib` (by former ctypes maintainer Thomas Heller) used GCC's XML output, but the author is not aware of a maintained version of this codebase. `ctypeslib2` is derived from ctypeslib, but its backend has been thoroughly changed for Clang.
 
 
 ### Fork rationale
