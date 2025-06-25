@@ -1,3 +1,5 @@
+_**Important:** This repository's actual main branch is `pypdfium2`, whereas `master` is the old upstream codebase. So if you want to use this fork, make sure you are on `pypdfium2`, or a branch derived thereof. This layout has historical reasons, and makes it easier to sync the fork._
+
 # ctypesgen (pypdfium2-team fork)
 
 ctypesgen is a ctypes wrapper generator for Python.
