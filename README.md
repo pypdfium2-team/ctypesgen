@@ -108,6 +108,8 @@ See https://github.com/ctypesgen/ctypesgen/issues/195 for discussion.
 - Pull and merge locally, then push the result.
 
 Last time we had to do this, `git merge origin/master -Xours` did a good job.
+You might also want to ignore whitespace changes, probably by adding `-Xignore-all-space` or something.
+
 For those parts of ctypesgen that we have barely modified (e.g. the parser core), it should be largely possible to pull in changes as-is.
 Otherwise, you'll have to manually look through the changes and pick what you consider worthwhile on a case by case basis.
 
