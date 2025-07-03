@@ -20,6 +20,8 @@ TMP_DIR = TEST_DIR/"tmp"
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
 MAIN_CPP = os.environ.get("CPP", None)
 
+CTG_LIBPATTERN = "{prefix}{name}.{suffix}"
+
 
 def _remove_tmpdir():
     if TMP_DIR.exists(): shutil.rmtree(TMP_DIR)
@@ -138,7 +140,7 @@ def _compile_common(common_lib):
 
 
 def _generate_with_common(file_name, shared):
-    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
+    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR/CTG_LIBPATTERN]
     if shared:
         file_name += "_shared"
         args += ["-m", ".common", "--no-embed-templates", "--linkage-anchor", COMMON_DIR]

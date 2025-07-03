@@ -54,7 +54,7 @@ COMPILER="gcc"  # or clang
 echo | $COMPILER -dM -E - > ../default_defs.h
 # sample include paths - adapt these to your own system
 SYSTEM_INCLUDES="-I /usr/lib/gcc/x86_64-redhat-linux/12/include -I /usr/local/include -I /usr/include"
-ctypesgen --cpp "pcpp --line-directive '#' --passthru-defines -I . $SYSTEM_INCLUDES ../default_defs.h" --preproc-savepath ../preproc_out.h -i *.h -o ../bindings.py -l pdfium --compile-libdirs ../../linux_x64/ --runtime-libdirs . --no-symbol-guards --no-macro-guards
+ctypesgen --cpp "pcpp --line-directive '#' --passthru-defines -I . $SYSTEM_INCLUDES ../default_defs.h" --preproc-savepath ../preproc_out.h -i *.h -o ../bindings.py -l pdfium --ct-libpaths ../../linux_x64/ --rt-libpaths './{prefix}{name}.{suffix}' --no-symbol-guards --no-macro-guards
 ```
 
 You can also test with ghostscript (`cd ..` if you are still working from pypdfium2, else repeat the steps to get default defs and includes):
