@@ -193,7 +193,7 @@ def check_symbols(data, opts):
         libraryloader._register_library(
             name = opts.library,
             dllclass = getattr(ctypes, opts.dllclass),
-            dirs = opts.compile_libdirs,
+            libpaths = opts.ct_libpaths,
             search_sys = opts.search_sys,
         )
         library = libraryloader._libs[opts.library]
@@ -202,6 +202,7 @@ def check_symbols(data, opts):
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")
         return
     
+    # TODO(pipeline): "if_needed" symbols that were resolved to be excluded should be ignored as well
     try:
         missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     finally:

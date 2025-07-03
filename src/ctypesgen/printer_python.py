@@ -170,7 +170,7 @@ class WrapperPrinter:
 _register_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
-    dirs = {opts.runtime_libdirs},
+    libpaths = {opts.rt_libpaths},
     search_sys = {opts.search_sys},
 )\
 """

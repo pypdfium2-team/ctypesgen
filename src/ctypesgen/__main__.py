@@ -157,28 +157,28 @@ def get_parser():
         help="add INCLUDEDIR as a directory to search for headers",
     )
     parser.add_argument(
-        "-L", "--universal-libdirs",
+        "-L", "--univ-libpaths",
         nargs="+",
         action="extend",
         default=[],  # FIXME perilous
-        metavar="LIBDIR",
-        help="Add LIBDIR to the search path (both compile-time and run-time)",
+        metavar="LIBPATH",
+        help="Add LIBPATH to the search (both compile-time and run-time)",
     )
     parser.add_argument(
-        "--compile-libdirs",
+        "--ct-libpaths",
         nargs="+",
         action="extend",
         default=[],  # FIXME perilous
-        metavar="LIBDIR",
-        help="Add LIBDIR to the compile-time library search path.",
+        metavar="LIBPATH",
+        help="Add LIBPATH to the compile-time library search.",
     )
     parser.add_argument(
-        "--runtime-libdirs",
+        "--rt-libpaths",
         nargs="+",
         action="extend",
         default=[],  # FIXME perilous
-        metavar="LIBDIR",
-        help="Add LIBDIR to the run-time library search path.",
+        metavar="LIBPATH",
+        help="Add LIBPATH to the run-time library search.",
     )
     parser.add_argument(
         "--no-system-libsearch",
@@ -452,8 +452,8 @@ def main_impl(args, cmd_str):
             raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
     
     # Important: must not use +=, this would mutate the original object, which is problematic when default=[] is used and ctypesgen called repeatedly from within python
-    args.compile_libdirs = args.compile_libdirs + args.universal_libdirs
-    args.runtime_libdirs = args.runtime_libdirs + args.universal_libdirs
+    args.ct_libpaths = args.ct_libpaths + args.univ_libpaths
+    args.rt_libpaths = args.rt_libpaths + args.univ_libpaths
     
     # Figure out what names will be defined by linked-in python modules
     args.linked_symbols = find_symbols_in_modules(args.modules, args.output, args.linkage_anchor)

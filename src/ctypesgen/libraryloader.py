@@ -3,29 +3,28 @@ import ctypes
 import ctypes.util
 import pathlib
 
-def _find_library(name, dirs, search_sys):
+def _find_library(name, libpaths, search_sys):
     
     if sys.platform.startswith(("win32", "cygwin", "msys")):
-        patterns = ["{}.dll", "lib{}.dll", "{}"]
+        prefix, suffix = "", "dll"
     elif sys.platform.startswith(("darwin", "ios")):
-        patterns = ["lib{}.dylib", "{}.dylib", "lib{}.so", "{}.so", "{}"]
+        prefix, suffix = "lib", "dylib"
     else:  # assume unix pattern or plain name
-        patterns = ["lib{}.so", "{}.so", "{}"]
+        prefix, suffix = "lib", "so"
     
-    for dir in dirs:
-        dir = pathlib.Path(dir)
-        if not dir.is_absolute():
-            dir = (pathlib.Path(__file__).parent / dir).resolve(strict=False)
-        for pat in patterns:
-            libpath = dir / pat.format(name)
-            if libpath.is_file():
-                return str(libpath)
+    for lpath in libpaths:
+        lpath = pathlib.Path(lpath)
+        if not lpath.is_absolute():
+            lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
+        lpath = lpath.parent / lpath.name.format(prefix=prefix, name=name, suffix=suffix)
+        if lpath.is_file():  # XXX
+            return lpath
     
-    libpath = ctypes.util.find_library(name) if search_sys else None
-    if not libpath:
-        raise ImportError(f"Could not find library '{name}' (dirs={dirs}, search_sys={search_sys})")
+    lpath = ctypes.util.find_library(name) if search_sys else None
+    if not lpath:
+        raise ImportError(f"Could not find library '{name}' (libpaths={libpaths}, search_sys={search_sys})")
     
-    return libpath
+    return lpath
 
 _libs_info, _libs = {}, {}
 
