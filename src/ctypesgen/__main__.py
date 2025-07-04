@@ -162,7 +162,7 @@ def get_parser():
         action="extend",
         default=[],  # FIXME perilous
         metavar="LIBPATH",
-        help="Add LIBPATH to the search (both compile-time and run-time)",
+        help="Add LIBPATH to the search (both compile-time and run-time). In the library file name, optional string formatting with curly brackets is supported, with variables: prefix, name, suffix. E.g. to load a library relative to the bindings file, you would do -L './{prefix}{name}.{suffix}'.",
     )
     parser.add_argument(
         "--ct-libpaths",
@@ -170,7 +170,7 @@ def get_parser():
         action="extend",
         default=[],  # FIXME perilous
         metavar="LIBPATH",
-        help="Add LIBPATH to the compile-time library search.",
+        help="Add LIBPATH to the compile-time library search. Formatting works the same as with -L.",
     )
     parser.add_argument(
         "--rt-libpaths",
@@ -178,13 +178,13 @@ def get_parser():
         action="extend",
         default=[],  # FIXME perilous
         metavar="LIBPATH",
-        help="Add LIBPATH to the run-time library search.",
+        help="Add LIBPATH to the run-time library search. Formatting works the same as with -L.",
     )
     parser.add_argument(
         "--no-system-libsearch",
         action="store_false",
         dest="search_sys",
-        help="Deactivate fallback system library search; mandate that the library be contained in the given libdirs instead."
+        help="Deactivate fallback system library search; mandate that the library be contained in the given libpaths instead."
     )
     parser.add_argument(
         "--no-embed-templates",

@@ -163,6 +163,7 @@ class WrapperPrinter:
     
     
     def print_library(self, opts):
+        # TODO if there is more than one libpath, make multiline
         name_define = f"name = {opts.library!r}"
         content = f"""\
 # Load library {opts.library!r}
@@ -170,7 +171,7 @@ class WrapperPrinter:
 _register_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
-    libpaths = {opts.rt_libpaths},
+    libpaths = {tuple(opts.rt_libpaths)},
     search_sys = {opts.search_sys},
 )\
 """

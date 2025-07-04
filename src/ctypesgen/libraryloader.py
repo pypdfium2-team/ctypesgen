@@ -3,20 +3,20 @@ import ctypes
 import ctypes.util
 import pathlib
 
+if sys.platform.startswith(("win32", "cygwin", "msys")):
+    _LIB_PREFIX, _LIB_SUFFIX = "", "dll"
+elif sys.platform.startswith(("darwin", "ios")):
+    _LIB_PREFIX, _LIB_SUFFIX = "lib", "dylib"
+else:  # assume unix pattern or plain name
+    _LIB_PREFIX, _LIB_SUFFIX = "lib", "so"
+
 def _find_library(name, libpaths, search_sys):
-    
-    if sys.platform.startswith(("win32", "cygwin", "msys")):
-        prefix, suffix = "", "dll"
-    elif sys.platform.startswith(("darwin", "ios")):
-        prefix, suffix = "lib", "dylib"
-    else:  # assume unix pattern or plain name
-        prefix, suffix = "lib", "so"
     
     for lpath in libpaths:
         lpath = pathlib.Path(lpath)
         if not lpath.is_absolute():
             lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
-        lpath = lpath.parent / lpath.name.format(prefix=prefix, name=name, suffix=suffix)
+        lpath = lpath.parent / lpath.name.format(prefix=_LIB_PREFIX, name=name, suffix=_LIB_SUFFIX)
         if lpath.is_file():  # XXX
             return lpath
     
