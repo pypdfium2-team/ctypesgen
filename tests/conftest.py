@@ -22,6 +22,13 @@ MAIN_CPP = os.environ.get("CPP", None)
 
 CTG_LIBPATTERN = "{prefix}{name}.{suffix}"
 
+if sys.platform.startswith(("win32", "cygwin", "msys")):
+    LIB_PREFIX, LIB_SUFFIX = "", "dll"
+elif sys.platform.startswith(("darwin", "ios")):
+    LIB_PREFIX, LIB_SUFFIX = "lib", "dylib"
+else:  # assume unix pattern or plain name
+    LIB_PREFIX, LIB_SUFFIX = "lib", "so"
+
 
 def _remove_tmpdir():
     if TMP_DIR.exists(): shutil.rmtree(TMP_DIR)
@@ -92,7 +99,7 @@ def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False, sp
 
 
 def generate_common():
-    common_lib = "libcommon.dll" if sys.platform == "win32" else "libcommon.so"
+    common_lib = CTG_LIBPATTERN.format(prefix=LIB_PREFIX, name="common", suffix=LIB_SUFFIX)
     _create_common_files()
     _compile_common(common_lib)
     
