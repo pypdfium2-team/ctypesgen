@@ -190,13 +190,12 @@ def check_symbols(data, opts):
     
     try:
         libraryloader.__file__ = str(Path.cwd() / "spoofed_ll.py")
-        libraryloader._register_library(
+        library = libraryloader._get_library(
             name = opts.library,
             dllclass = getattr(ctypes, opts.dllclass),
             libpaths = opts.ct_libpaths,
             search_sys = opts.search_sys,
         )
-        library = libraryloader._libs[opts.library]
     except (ImportError, OSError):
         traceback.print_exc()
         warning_message(f"Could not load library '{opts.library}'. Okay, I'll try to load it at runtime instead.", cls="missing-library")

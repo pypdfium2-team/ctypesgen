@@ -168,7 +168,7 @@ class WrapperPrinter:
         content = f"""\
 # Load library {opts.library!r}
 
-_register_library(
+_libs[{opts.library!r}] = _get_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
     libpaths = {tuple(opts.rt_libpaths)},

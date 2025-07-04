@@ -11,7 +11,7 @@ elif sys.platform.startswith(("darwin", "ios")):
 else:  # assume unix pattern or plain name
     _LIB_PREFIX, _LIB_SUFFIX = "lib", "so"
 
-def _find_library(name, dllclass, libpaths, search_sys):
+def _get_library(name, dllclass, libpaths, search_sys):
     
     for lpath in libpaths:
         if os.path.dirname(lpath):
@@ -33,8 +33,4 @@ def _find_library(name, dllclass, libpaths, search_sys):
     
     return dllclass(lpath)
 
-_libs_info, _libs = {}, {}
-
-def _register_library(name, dllclass, **kwargs):
-    _libs[name] = _find_library(name, dllclass, **kwargs)
-    _libs_info[name] = {**kwargs, "path": _libs[name]._name}
+_libs = {}
