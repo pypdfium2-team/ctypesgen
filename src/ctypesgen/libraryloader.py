@@ -1,35 +1,36 @@
 import sys
 import ctypes
 import ctypes.util
+import os.path
 import pathlib
 
-def _find_library(name, dirs, search_sys):
-    
-    if sys.platform.startswith(("win32", "cygwin", "msys")):
-        patterns = ["{}.dll", "lib{}.dll", "{}"]
-    elif sys.platform.startswith(("darwin", "ios")):
-        patterns = ["lib{}.dylib", "{}.dylib", "lib{}.so", "{}.so", "{}"]
-    else:  # assume unix pattern or plain name
-        patterns = ["lib{}.so", "{}.so", "{}"]
-    
-    for dir in dirs:
-        dir = pathlib.Path(dir)
-        if not dir.is_absolute():
-            dir = (pathlib.Path(__file__).parent / dir).resolve(strict=False)
-        for pat in patterns:
-            libpath = dir / pat.format(name)
-            if libpath.is_file():
-                return str(libpath)
-    
-    libpath = ctypes.util.find_library(name) if search_sys else None
-    if not libpath:
-        raise ImportError(f"Could not find library '{name}' (dirs={dirs}, search_sys={search_sys})")
-    
-    return libpath
+if sys.platform.startswith(("win32", "cygwin", "msys")):
+    _LIB_PREFIX, _LIB_SUFFIX = "", "dll"
+elif sys.platform.startswith(("darwin", "ios")):
+    _LIB_PREFIX, _LIB_SUFFIX = "lib", "dylib"
+else:  # assume unix-like naming pattern
+    _LIB_PREFIX, _LIB_SUFFIX = "lib", "so"
 
-_libs_info, _libs = {}, {}
+def _get_library(name, dllclass, libpaths, search_sys):
+    
+    for lpath in libpaths:
+        if os.path.dirname(lpath):
+            lpath = pathlib.Path(lpath)
+            if not lpath.is_absolute():
+                lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
+            lpath = lpath.parent / lpath.name.format(prefix=_LIB_PREFIX, name=name, suffix=_LIB_SUFFIX)
+            if lpath.exists():
+                return dllclass(lpath)
+        else:
+            try:
+                return dllclass(lpath)
+            except OSError:
+                pass
+    
+    lpath = ctypes.util.find_library(name) if search_sys else None
+    if not lpath:
+        raise ImportError(f"Could not find library {name!r} (libpaths={libpaths}, search_sys={search_sys})")
+    
+    return dllclass(lpath)
 
-def _register_library(name, dllclass, **kwargs):
-    libpath = _find_library(name, **kwargs)
-    _libs_info[name] = {**kwargs, "path": libpath}
-    _libs[name] = dllclass(libpath)
+_libs = {}

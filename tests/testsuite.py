@@ -48,6 +48,8 @@ from .conftest import (
     TMP_DIR,
     CTYPESGEN_DIR,
     CLEANUP_OK,
+    CTG_LIBPATTERN,
+    get_libname,
 )
 from . import json_expects
 
@@ -1049,10 +1051,10 @@ void arraytest(int a[]) { };
         cls.c_path = TMP_DIR/"test_fam.c"
         cls.h_path.write_text(header_str)
         cls.c_path.write_text(c_str)
-        libname = "famtest.dll" if sys.platform == "win32" else "libfamtest.so"
+        libname = get_libname("famtest")
         cls.libpath = TMP_DIR/libname
         subprocess.run(["gcc", "-shared", "-o", str(cls.libpath), str(cls.c_path)], check=True)
-        cls.module = generate(None, ["-i", cls.h_path, "-l", "famtest", "--compile-libdirs", str(TMP_DIR), "--runtime-libdirs", "."], spoof_dir=TMP_DIR)
+        cls.module = generate(None, ["-i", cls.h_path, "-l", "famtest", "--ct-libpaths", TMP_DIR/CTG_LIBPATTERN, "--rt-libpaths", f"./{CTG_LIBPATTERN}"], spoof_dir=TMP_DIR)
     
     @classmethod
     def tearDownClass(cls):

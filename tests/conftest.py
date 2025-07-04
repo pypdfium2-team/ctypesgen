@@ -20,6 +20,18 @@ TMP_DIR = TEST_DIR/"tmp"
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
 MAIN_CPP = os.environ.get("CPP", None)
 
+CTG_LIBPATTERN = "{prefix}{name}.{suffix}"
+
+if sys.platform.startswith(("win32", "cygwin", "msys")):
+    LIB_PREFIX, LIB_SUFFIX = "", "dll"
+elif sys.platform.startswith(("darwin", "ios")):
+    LIB_PREFIX, LIB_SUFFIX = "lib", "dylib"
+else:  # assume unix pattern or plain name
+    LIB_PREFIX, LIB_SUFFIX = "lib", "so"
+
+def get_libname(name, pattern=CTG_LIBPATTERN):
+    return pattern.format(prefix=LIB_PREFIX, name=name, suffix=LIB_SUFFIX)
+
 
 def _remove_tmpdir():
     if TMP_DIR.exists(): shutil.rmtree(TMP_DIR)
@@ -90,7 +102,7 @@ def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False, sp
 
 
 def generate_common():
-    common_lib = "libcommon.dll" if sys.platform == "win32" else "libcommon.so"
+    common_lib = get_libname("common")
     _create_common_files()
     _compile_common(common_lib)
     
@@ -138,7 +150,7 @@ def _compile_common(common_lib):
 
 
 def _generate_with_common(file_name, shared):
-    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR]
+    args = ["-i", COMMON_DIR/f"{file_name}.h", "-I", COMMON_DIR, "-l", "common", "-L", COMMON_DIR/CTG_LIBPATTERN]
     if shared:
         file_name += "_shared"
         args += ["-m", ".common", "--no-embed-templates", "--linkage-anchor", COMMON_DIR]
