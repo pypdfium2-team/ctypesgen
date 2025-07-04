@@ -3,11 +3,11 @@
 Python consumer of trivial ctypesgen demo library
 
 pydemolib can be generated via:
-    ctypesgen -i demolib.h -l demo -L './{prefix}{name}.{suffix}' -o pydemolib.py
+    ctypesgen -i libdemo.h -l demo -L './{prefix}{name}.{suffix}' -o pydemolib.py
 """
 
 import sys
-import pydemolib  # generated from demolib.h by ctypesgen
+import pydemolib  # generated from libdemo.h by ctypesgen
 
 
 def do_demo():

@@ -6,12 +6,12 @@ This example shows how to quickly generate bindings for a simple C library using
 
 1. Compile the shared C library
    ```bash
-   gcc -fPIC -shared demolib.c -o libdemo.so
+   gcc -fPIC -shared libdemo.c -o libdemo.so
    ```
 
 2. (Re-)Generate the bindings (or you can just try the pre-generated bindings already present in this directory)
    ```bash
-   ctypesgen -i demolib.h -l demo -L './{prefix}{name}.{suffix}' -o pydemolib.py
+   ctypesgen -i libdemo.h -l demo -L './{prefix}{name}.{suffix}' -o pydemolib.py
    ```
 
 3. Run the app that uses these generated bindings
@@ -28,7 +28,7 @@ This example shows how to quickly generate bindings for a simple C library using
 4. You can also try calling the same code from a C executable
    - Compile test code:
      ```
-     gcc demoapp.c demolib.c demolib.h -o demoapp
+     gcc demoapp.c libdemo.c libdemo.h -o demoapp
      ```
    - Run `./demoapp`
    - Observe the same results as before:
