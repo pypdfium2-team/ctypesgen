@@ -12,7 +12,7 @@ This example shows how to quickly generate bindings for a simple C library using
 
 2. (Re-)Generate the bindings (or you can just try the pre-generated bindings already present in this directory)
    ```bash
-   ctypesgen -i demolib.h -l demolib -L . -o pydemolib.py
+   ctypesgen -i demolib.h -l demolib -L './{name}.{suffix}' -o pydemolib.py
    ```
 
 3. Run the app that uses these generated bindings
