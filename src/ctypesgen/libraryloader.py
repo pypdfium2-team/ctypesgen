@@ -13,17 +13,19 @@ else:  # assume unix pattern or plain name
 
 def _find_library(name, dllclass, libpaths, search_sys):
     
-    for lpath_str in libpaths:
-        lpath = pathlib.Path(lpath_str)
-        have_parent = bool(os.path.dirname(lpath_str))
-        if (not lpath.is_absolute()) and have_parent:
-            lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
-        if have_parent:
+    for lpath in libpaths:
+        if os.path.dirname(lpath):
+            lpath = pathlib.Path(lpath)
+            if not lpath.is_absolute():
+                lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
             lpath = lpath.parent / lpath.name.format(prefix=_LIB_PREFIX, name=name, suffix=_LIB_SUFFIX)
-        try:
-            return dllclass(lpath), lpath
-        except OSError:
-            pass
+            if lpath.exists():
+                return dllclass(lpath), lpath
+        else:
+            try:
+                return dllclass(lpath), lpath
+            except OSError:
+                pass
     
     lpath = ctypes.util.find_library(name) if search_sys else None
     if not lpath:
