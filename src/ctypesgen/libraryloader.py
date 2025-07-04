@@ -8,7 +8,7 @@ if sys.platform.startswith(("win32", "cygwin", "msys")):
     _LIB_PREFIX, _LIB_SUFFIX = "", "dll"
 elif sys.platform.startswith(("darwin", "ios")):
     _LIB_PREFIX, _LIB_SUFFIX = "lib", "dylib"
-else:  # assume unix pattern or plain name
+else:  # assume unix-like naming pattern
     _LIB_PREFIX, _LIB_SUFFIX = "lib", "so"
 
 def _get_library(name, dllclass, libpaths, search_sys):
