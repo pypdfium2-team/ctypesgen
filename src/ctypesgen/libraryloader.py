@@ -12,12 +12,14 @@ else:  # assume unix pattern or plain name
 
 def _find_library(name, libpaths, search_sys):
     
+    # XXX For hardcoded system pdfium, this will fail if it's not a full path (e.g. on Linux). The pain points are path joining and the .is_file() check.
+    
     for lpath in libpaths:
         lpath = pathlib.Path(lpath)
         if not lpath.is_absolute():
             lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
         lpath = lpath.parent / lpath.name.format(prefix=_LIB_PREFIX, name=name, suffix=_LIB_SUFFIX)
-        if lpath.is_file():  # XXX
+        if lpath.is_file():
             return lpath
     
     lpath = ctypes.util.find_library(name) if search_sys else None
