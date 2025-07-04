@@ -86,7 +86,6 @@ def fix_conflicting_names(data, opts):
     
     our_names = {
         "_libs",
-        "_libs_info",
         "UNCHECKED",
     }
     if opts.string_template:
