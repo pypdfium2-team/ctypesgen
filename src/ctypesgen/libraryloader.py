@@ -20,10 +20,10 @@ def _find_library(name, dllclass, libpaths, search_sys):
                 lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
             lpath = lpath.parent / lpath.name.format(prefix=_LIB_PREFIX, name=name, suffix=_LIB_SUFFIX)
             if lpath.exists():
-                return dllclass(lpath), lpath
+                return dllclass(lpath)
         else:
             try:
-                return dllclass(lpath), lpath
+                return dllclass(lpath)
             except OSError:
                 pass
     
@@ -31,11 +31,10 @@ def _find_library(name, dllclass, libpaths, search_sys):
     if not lpath:
         raise ImportError(f"Could not find library {name!r} (libpaths={libpaths}, search_sys={search_sys})")
     
-    return dllclass(lpath), lpath
+    return dllclass(lpath)
 
 _libs_info, _libs = {}, {}
 
 def _register_library(name, dllclass, **kwargs):
-    dll, lpath = _find_library(name, dllclass, **kwargs)
-    _libs[name] = dll
-    _libs_info[name] = {**kwargs, "path": lpath}
+    _libs[name] = _find_library(name, dllclass, **kwargs)
+    _libs_info[name] = {**kwargs, "path": _libs[name]._name}
