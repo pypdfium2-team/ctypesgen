@@ -29,6 +29,9 @@ elif sys.platform.startswith(("darwin", "ios")):
 else:  # assume unix pattern or plain name
     LIB_PREFIX, LIB_SUFFIX = "lib", "so"
 
+def get_libname(name, pattern=CTG_LIBPATTERN):
+    return pattern.format(prefix=LIB_PREFIX, name=name, suffix=LIB_SUFFIX)
+
 
 def _remove_tmpdir():
     if TMP_DIR.exists(): shutil.rmtree(TMP_DIR)
@@ -99,7 +102,7 @@ def generate(header=None, args=(), lang="py", cpp=MAIN_CPP, allow_gnuc=False, sp
 
 
 def generate_common():
-    common_lib = CTG_LIBPATTERN.format(prefix=LIB_PREFIX, name="common", suffix=LIB_SUFFIX)
+    common_lib = get_libname("common")
     _create_common_files()
     _compile_common(common_lib)
     
