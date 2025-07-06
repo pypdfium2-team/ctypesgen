@@ -1,13 +1,13 @@
 /* C consumer of trivial ctypesgen demo library
 
 Build static:
-    cc demoapp.c libdemo.c libdemo.h -o demoapp
+    cc demoapp.c demolib.c demolib.h -o demoapp
 */
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "libdemo.h"
+#include "demolib.h"
 
 int main(int argc, char **argv)
 {
