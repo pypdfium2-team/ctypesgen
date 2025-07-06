@@ -42,14 +42,14 @@ def get_priv_paths():
     priv_paths.sort(key=lambda x: len(str(x[0])), reverse=True)
     return priv_paths
 
-def txtpath(p):
+def txtpath(p_str):
     # Returns a path string suitable for embedding into the output, with private paths stripped
-    p = Path(p)
+    p = Path(p_str)
     for strip_p, x in get_priv_paths():
         # should be equivalent to `p.is_relative_to(strip_p)` or `p.parts[:len(strip_p.parts)] == strip_p.parts`
         if strip_p in p.parents or p == strip_p:
             return x + str(p)[len(str(strip_p)):]
-    return str(p)
+    return p_str
 
 def _embed_file_impl(dst_fh, src_fp):
     with open(src_fp, "r") as src_fh:
