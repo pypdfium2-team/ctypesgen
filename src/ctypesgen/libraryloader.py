@@ -20,7 +20,7 @@ def _get_library(name, dllclass, libpaths, search_sys):
                 lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
             lpath = lpath.parent / lpath.name.format(prefix=_LIB_PREFIX, name=name, suffix=_LIB_SUFFIX)
             if lpath.exists():
-                return dllclass(lpath)
+                return dllclass(str(lpath))
         else:
             try:
                 return dllclass(lpath)
