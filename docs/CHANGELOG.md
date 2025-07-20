@@ -3,6 +3,8 @@
 
 ## Unreleased (v2)
 
+_**NOTE:** Unfortunately, keeping track of differences to the old upstream is difficult and time-taking with a constantly evolving codebase. So, this changelog may be outdated/incomplete. Please check `ctypesgen --help` for current usage info._
+
 - Large-scale rewrite of ctypesgen by `@mara004`, aiming to unbloat, simplify and modernize the codebase.
 - Many issues fixed. See https://github.com/pypdfium2-team/ctypesgen/issues/1 and https://github.com/ctypesgen/ctypesgen/issues/195 and below for an overview.
 
@@ -15,18 +17,15 @@
   - `--no-embed-preamble` renamed to `--no-embed-templates`.
   - `--allow-gnu-c` replaced by `-X __GNUC__`.
   - More flags changed or renamed.
-* The library loader does not implicitly search in the module's relative directory anymore. Add relevant libdirs explicitly.
+* Rewrote library loader. Avoid implicit searches. Take full paths with formatting options, rather than directories. Use standard `ctypes.util.find_library()` means to look for system libraries, rather than bloated custom code. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libraries to runtime. Handle iOS (PEP 730).
 * The bloated string wrappers have been removed. By default, no implicit string encoding/decoding is being done anymore, because `char*` is not necessarily a UTF-8 string or even NUL-terminated. However, the `--string-template` option allows to plug in your own string helpers (e.g. `c_char_p`, or a custom wrapper). However, we recommend that new code assume the raw `POINTER(c_char)` and cast/decode on the caller side as necessary.
 * We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
-
-See also `--help` for usage details.
 
 ### New features and improvements (selection)
 
 * Implemented relative imports with `--link-modules`, and library handle sharing with `--no-embed-templates`. Removed incorrect `POINTER` override that breaks the type system.
 * Prevent assignment of invalid struct fields by setting slots *in the class body*.
 * Slimmed up template by removing many avoidable wrappers.
-* Rewrote library loader. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libdirs to runtime. Handle iOS (PEP 730).
 * Better control over symbol inclusion via `--symbol-rules` (exposes `if_needed` strategy, allows free order of actions).
 * Symbol regex matching uses `fullmatch()` rather than `match()` (more explicit).
 * Eagerly include direct members with `--system-headers`. This helps lower the need for `--all-headers` (which generally includes a lot more than necessary).
