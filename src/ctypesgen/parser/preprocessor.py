@@ -5,7 +5,7 @@ Reference is C99:
   * http://www.open-std.org/JTC1/SC22/WG14/www/docs/n1124.pdf
 """
 
-# import re
+import re
 import sys
 import copy
 import shlex
@@ -162,45 +162,45 @@ class PreprocessorParser:
         
         text = ppout
         
-        # NOTE(geisserml) The procedure below is rather displeasing. I couldn't find an evident reason for the separation anymore, and ctypesgen's test suite passes without it, so let's comment this out as long as we don't hear of a counter-example.
-        # That said, improving the parser may be preferable over post-processing if we can help it.
+        # We separate lines to two groups: directives and c-source. Note that
+        # #pragma directives actually belong to the source category for this.
+        # This is necessary because some source files intermix preprocessor
+        # directives with source - this is not tolerated by ctypesgen's single
+        # grammar.
+        # We put all the source lines first, then all the #define lines.
         
-#         # We separate lines to two groups: directives and c-source.  Note that
-#         # #pragma directives actually belong to the source category for this.
-#         # This is necessary because some source files intermix preprocessor
-#         # directives with source--this is not tolerated by ctypesgen's single
-#         # grammar.
-#         # We put all the source lines first, then all the #define lines.
-#         
-#         source_lines = []
-#         define_lines = []
-#         
-#         first_token_reg = re.compile(r"^#\s*(\S+)($|\s)")
-#         
-#         for line in ppout.splitlines(True):
-#             match = first_token_reg.match(line)
-#             hash_token = match.group(1) if match else None
-#             
-#             if not hash_token or hash_token == "pragma":
-#                 source_lines.append(line)
-#                 # define_lines.append("\n")
-#             
-#             elif hash_token in ("define", "undef"):
-#                 # source_lines.append("\n")
-#                 define_lines.append(line)
-#             
-#             elif hash_token.isdigit():
-#                 # Line number information has to go with both groups
-#                 source_lines.append(line)
-#                 define_lines.append(line)
-#             
-#             else:  # hash_token.startswith("#"):
-#                 # It's a directive, but not a #define or #undef. Remove it.
-#                 warning_message(f"Skip unhandled directive {hash_token!r}")
-#                 # source_lines.append("\n")
-#                 # define_lines.append("\n")
-#         
-#         text = "".join(source_lines + define_lines)
+        # FIXME(geisserml) This process is rather displeasing. Would be nice if the parser could be made work with preprocessor output as-is without need for separation, but I'm not sure that's feasible.
+        
+        source_lines = []
+        define_lines = []
+        
+        first_token_reg = re.compile(r"^#\s*(\S+)($|\s)")
+        
+        for line in ppout.splitlines(True):
+            match = first_token_reg.match(line)
+            hash_token = match.group(1) if match else None
+            
+            if not hash_token or hash_token == "pragma":
+                source_lines.append(line)
+                # define_lines.append("\n")
+            
+            elif hash_token in ("define", "undef"):
+                # source_lines.append("\n")
+                define_lines.append(line)
+            
+            elif hash_token.isdigit():
+                # Line number information has to go with both groups
+                # NOTE(geisserml) True, both groups need to keep track of latest line info. But the duplication this causes is unfortunate all the same.
+                source_lines.append(line)
+                define_lines.append(line)
+            
+            else:  # hash_token.startswith("#"):
+                # It's a directive, but not a #define or #undef. Remove it.
+                warning_message(f"Skip unhandled directive {hash_token!r}")
+                # source_lines.append("\n")
+                # define_lines.append("\n")
+        
+        text = "".join(source_lines + define_lines)
         
         self.lexer.input(text)
         self.output = []
