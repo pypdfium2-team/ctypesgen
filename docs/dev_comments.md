@@ -17,7 +17,7 @@ See also:
 ## Newline Guidelines for the Python Printer
 
 - Use \n only as separator between two known present strings.
-- The general guideline is to use leading \n associated to the item that needs the padding.
+- The general guideline is to use leading \n associated with the item that needs the padding.
 - Blocks written by sub-methods should have neither leading nor trailing \n.
   Instead, it is most flexible to leave the connection work to the printer's root method.
 - The file as a whole shall have exactly one trailing \n, and no leading \n.

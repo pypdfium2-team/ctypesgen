@@ -22,6 +22,8 @@ See also [`docs/pcpp.md`](docs/pcpp.md) for an experimental pure-python option.
 
 ### Tips & Tricks
 
+<!-- TODO update info on relative modules (mention multiple `.`s and --linkage-anchor) -->
+
 * If you have multiple libraries that are supposed to interoperate with shared symbols, first create bindings to any shared headers and then use the `-m / --link-modules` option on dependants. (Otherwise, you'd create duplicate symbols that are formally different types, with need to cast between them.)
   If the module is not installed separately, you may prefix the module name with `.` for a relative import, and share boilerplate code using `--no-embed-templates`. Relative modules will be expected to be present in the output directory at compile time.
   Note, this strategy can also be used to bind to same-library headers separately; however, you'll need to resolve the dependency tree on your own.
@@ -87,7 +89,7 @@ Note though, the response/contributions policy is [basically the same as for pyp
 The pypdfium2-ctypesgen codebase *intentionally* does not hard wrap long lines.
 You'll want to configure your editor to soft wrap e.g. at 100 columns.
 
-We also intentionally maintain indentation levels. This allows pasting code excerpts into the Python console (REPL), and makes editing more convenient.
+We also intentionally maintain indentation levels. This allows to paste code excerpts into the Python console (REPL), and makes editing more convenient.
 
 Future maintainers, please keep it this way. Also, please do NOT run formatters like Black on this codebase ever again.
 Take care of code style yourself while editing, this tends to yield much smarter results.
