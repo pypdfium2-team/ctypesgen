@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         include:
-          # Linux
+          # Linux x86_64
           - os: ubuntu-latest
             python: '3.8'
           - os: ubuntu-latest
@@ -37,11 +37,19 @@ jobs:
             python: '3.12'
           - os: ubuntu-latest
             python: '3.13'
-          # macOS
+          # Linux arm64
+          - os: ubuntu-24.04-arm
+            python: '3.13'
+          # macOS (arm64 and intel)
+          # FIXME macOS fails since the GHA image was updated
           - os: macos-latest
             python: '3.13'
-          # Windows
+          - os: macos-15-intel
+            python: '3.13'
+          # Windows (x86_64 and arm64)
           - os: windows-latest
+            python: '3.13'
+          - os: windows-11-arm
             python: '3.13'
       fail-fast: false
 
@@ -56,12 +64,12 @@ jobs:
       
       - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
-          pip install pytest
-          pip install -e .
+          python -m pip install -U pip
+          python -m pip install pytest
+          python -m pip install -e .
 
       - name: Run Test
-        run: pytest -sv tests/testsuite.py
+        run: python -m pytest -sv tests/testsuite.py
         env:
           CLEANUP_OK: ${{ !inputs.upload_data && 1 || 0 }}
           CPP: ${{ inputs.cpp }}
