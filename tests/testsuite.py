@@ -47,6 +47,7 @@ from .conftest import (
     TMP_DIR,
     CTYPESGEN_DIR,
     CLEANUP_OK,
+    COMPILER,
     CTG_LIBPATTERN,
     get_libname,
 )
@@ -1075,7 +1076,7 @@ void arraytest(int a[]) { };
         libname = get_libname("famtest")
         cls.libpath = TMP_DIR/libname
         
-        subprocess.run(["gcc", "-shared", "-o", str(cls.libpath), str(cls.c_path)], check=True)
+        subprocess.run([COMPILER, "-shared", "-o", str(cls.libpath), str(cls.c_path)], check=True)
         
         args = ["-i", cls.h_path, "-l", "famtest", "--ct-libpaths", TMP_DIR/CTG_LIBPATTERN, "--rt-libpaths", f"./{CTG_LIBPATTERN}"]
         # On Windows, avoid loading the library so the backing file can be deleted within this session.

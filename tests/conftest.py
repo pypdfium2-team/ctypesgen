@@ -19,6 +19,7 @@ TMP_DIR = TEST_DIR/"tmp"
 
 CLEANUP_OK = bool(int(os.environ.get("CLEANUP_OK", "1")))
 MAIN_CPP = os.environ.get("CPP", None)
+COMPILER = "gcc"
 
 CTG_LIBPATTERN = "{prefix}{name}.{suffix}"
 
@@ -150,9 +151,9 @@ void bar(struct mystruct *m) { }
 
 
 def _compile_common(common_lib):
-    subprocess.run(["gcc", "-c", COMMON_DIR/"a.c", "-o", COMMON_DIR/"a.o"])
-    subprocess.run(["gcc", "-c", COMMON_DIR/"b.c", "-o", COMMON_DIR/"b.o"])
-    subprocess.run(["gcc", "-shared", "-o", COMMON_DIR/common_lib, COMMON_DIR/"a.o", COMMON_DIR/"b.o"])
+    subprocess.run([COMPILER, "-c", COMMON_DIR/"a.c", "-o", COMMON_DIR/"a.o"])
+    subprocess.run([COMPILER, "-c", COMMON_DIR/"b.c", "-o", COMMON_DIR/"b.o"])
+    subprocess.run([COMPILER, "-shared", "-o", COMMON_DIR/common_lib, COMMON_DIR/"a.o", COMMON_DIR/"b.o"])
 
 
 def _generate_with_common(file_name, shared):
