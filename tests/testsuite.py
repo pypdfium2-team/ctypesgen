@@ -37,7 +37,6 @@ from contextlib import (
 
 from ctypesgen import VERSION
 import ctypesgen.__main__ as ctg_main
-from ctypesgen.processor.operations import free_library
 from .conftest import (
     cleanup_common,
     generate,
@@ -226,6 +225,19 @@ class MathTest(TestCaseWithCleanup):
     def test_subcall_sin(self):
         """Test math with sin(x) in a macro"""
         self.assertEqual(self.module.sin_plus_y(2, 1), math.sin(2) + 1)
+
+
+import _ctypes as ctypes_backend
+
+def free_library(lib_handle):
+    # https://github.com/python/cpython/issues/58802
+    # https://github.com/python/cpython/blob/3.13/Modules/_ctypes/callproc.c
+    # On Windows, we have to free libraries explicitly so the backing file may be deleted afterwards.
+    print(f"Freeing library handle {lib_handle} ...", file=sys.stderr)
+    if sys.platform.startswith("win32"):
+        ctypes_backend.FreeLibrary(lib_handle)
+    # else:
+    #     ctypes_backend.dlclose(lib_handle)
 
 
 class CommonHeaderTest(unittest.TestCase):
@@ -1051,10 +1063,18 @@ void arraytest(int a[]) { };
         cls.c_path = TMP_DIR/"test_fam.c"
         cls.h_path.write_text(header_str)
         cls.c_path.write_text(c_str)
+        
         libname = get_libname("famtest")
         cls.libpath = TMP_DIR/libname
+        
         subprocess.run(["gcc", "-shared", "-o", str(cls.libpath), str(cls.c_path)], check=True)
-        cls.module = generate(None, ["-i", cls.h_path, "-l", "famtest", "--ct-libpaths", TMP_DIR/CTG_LIBPATTERN, "--rt-libpaths", f"./{CTG_LIBPATTERN}"], spoof_dir=TMP_DIR)
+        
+        args = ["-i", cls.h_path, "-l", "famtest", "--ct-libpaths", TMP_DIR/CTG_LIBPATTERN, "--rt-libpaths", f"./{CTG_LIBPATTERN}"]
+        # On Windows, avoid loading the library so the backing file can be deleted within this session.
+        if sys.platform.startswith("win32"):
+            args.append("--no-load-library")
+        
+        cls.module = generate(None, args, spoof_dir=TMP_DIR)
     
     @classmethod
     def tearDownClass(cls):

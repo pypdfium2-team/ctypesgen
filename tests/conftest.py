@@ -106,7 +106,13 @@ def generate_common():
     _create_common_files()
     _compile_common(common_lib)
     
-    ctypesgen_wrapper(["-i", COMMON_DIR/"common.h", "--no-embed-templates", "--linkage-anchor", COMMON_DIR, "-o", COMMON_DIR/"common.py"])
+    args = ["-i", COMMON_DIR/"common.h", "--no-embed-templates", "--linkage-anchor", COMMON_DIR, "-o", COMMON_DIR/"common.py"]
+    
+    # On Windows, avoid loading the library so the backing file can be deleted within this session.
+    if sys.platform.startswith("win32"):
+        args.append("--no-load-library")
+    
+    ctypesgen_wrapper(args)
     for file_name, shared in product(["a", "b"], [False, True]):
         _generate_with_common(file_name, shared)
 
@@ -160,6 +166,11 @@ def _generate_with_common(file_name, shared):
         args += ["--symbol-rules", "yes=mystruct"]
         file_name += "_unshared"
     args += ["-o", COMMON_DIR/f"{file_name}.py"]
+    
+    # On Windows, avoid loading the library so the backing file can be deleted within this session.
+    if sys.platform.startswith("win32"):
+        args.append("--no-load-library")
+    
     ctypesgen_wrapper(args)
 
 

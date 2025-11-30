@@ -167,20 +167,6 @@ def fix_conflicting_names(data, opts):
             break  # params loop
 
 
-import _ctypes as ctypes_backend
-
-def free_library(lib_handle):
-    # https://github.com/python/cpython/issues/58802
-    # https://github.com/python/cpython/blob/3.13/Modules/_ctypes/callproc.c
-    # On Windows, we have to free libraries explicitly so the backing file may be deleted afterwards (the test suite does this).
-    # While we're at it, also free libraries on other platforms for consistency.
-    status_message(f"Freeing library handle {lib_handle} ...")
-    if sys.platform.startswith("win32"):
-        ctypes_backend.FreeLibrary(lib_handle)
-    else:
-        ctypes_backend.dlclose(lib_handle)
-
-
 def check_symbols(data, opts):
     
     if opts.no_load_library or not opts.library or opts.dllclass == "pythonapi":
@@ -201,10 +187,7 @@ def check_symbols(data, opts):
         return
     
     # TODO(pipeline): "if_needed" symbols that were resolved to be excluded should be ignored as well
-    try:
-        missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
-    finally:
-        free_library(library._handle); del library
+    missing_symbols = {s for s in (data.functions + data.variables) if s.include_rule != "never" and not hasattr(library, s.c_name())}
     
     if missing_symbols:
         warning_message(f"Some symbols could not be found:\n{missing_symbols}", cls="other")
