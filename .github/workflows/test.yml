@@ -64,6 +64,8 @@ jobs:
       
       - name: Install Python dependencies
         run: |
+          python -VV
+          python3 -c "import platform as p; print(p.machine())"
           python -m pip install -U pip
           python -m pip install pytest
           python -m pip install -e .
