@@ -1214,3 +1214,24 @@ class AutostringsTest(TestCaseWithCleanup):
         dest = ctypes.create_unicode_buffer(len(src))
         ret = self.module.wcscpy(dest, src)
         self.assertEqual(ret, src)
+
+
+@unittest.skipUnless(sys.platform.startswith("win32"), "requires Windows")
+class WindowsOnlyMembersTest(TestCaseWithCleanup):
+    """
+    Test that windows-only members are included by default and that windows.h is accessible if we are on a windows host.
+    """
+    
+    @classmethod
+    def setUpClass(cls):
+        header_str = """
+#ifdef _WIN32
+#define THIS_IS_WINDOWS 1
+#include <windows.h>
+#endif  // _WIN32
+"""
+        cls.module = generate(header_str, ["--symbol-rules", "yes=HDC"])
+    
+    def test(self):
+        self.assertEqual(self.module.THIS_IS_WINDOWS, 1)
+        self.assertIs(self.module.HDC, ctypes.c_void_p)
