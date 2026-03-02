@@ -77,7 +77,7 @@ jobs:
       
       - name: Upload generated data
         if: ${{ inputs.upload_data && !cancelled() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: out_${{ matrix.os }}_py${{ matrix.python }}
           path: |
