@@ -444,10 +444,10 @@ def main_impl(args, cmd_str):
     else:
         if shutil.which("gcc"):
             args.cpp = ["gcc", "-E"]
-        elif shutil.which("cpp"):
-            args.cpp = ["cpp"]
         elif shutil.which("clang"):
             args.cpp = ["clang", "-E"]
+        elif shutil.which("cpp"):
+            args.cpp = ["cpp"]
         else:
             raise RuntimeError("C pre-processor auto-detection failed: neither gcc nor clang available.")
     
