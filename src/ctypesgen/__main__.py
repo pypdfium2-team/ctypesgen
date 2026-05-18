@@ -2,12 +2,13 @@ import re
 import sys
 import shlex
 import shutil
+import functools
 import importlib
 import contextlib
 import argparse
 import itertools
 from pathlib import Path
-from pprint import pformat
+from textwrap import indent
 
 from ctypesgen import (
     messages as msgs,
@@ -22,11 +23,25 @@ from ctypesgen.printer_python import (
 )
 
 
-# -- Argparse backports and helpers --
+# -- Backports and helpers --
+
+if sys.version_info < (3, 8):
+    def cached_property(func):
+        return property( functools.lru_cache(maxsize=1)(func) )
+else:
+    cached_property = functools.cached_property
+
+if sys.version_info < (3, 8):
+    class ExtendAction (argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            items = getattr(namespace, self.dest) or []
+            items.extend(values)
+            setattr(namespace, self.dest, items)
+else:
+    ExtendAction = None
 
 if sys.version_info >= (3, 9):
     from argparse import BooleanOptionalAction
-
 else:
     # adapted from argparse sources
     class BooleanOptionalAction (argparse.Action):
@@ -48,16 +63,6 @@ else:
         
         def format_usage(self):
             return ' | '.join(self.option_strings)
-
-
-if sys.version_info < (3, 8):
-    class ExtendAction (argparse.Action):
-        def __call__(self, parser, namespace, values, option_string=None):
-            items = getattr(namespace, self.dest) or []
-            items.extend(values)
-            setattr(namespace, self.dest, items)
-else:
-    ExtendAction = None
 
 
 class LocalArgumentParser (argparse.ArgumentParser):
@@ -487,48 +492,62 @@ def main(given_argv=sys.argv[1:]):
     main_impl(args, cmd_str)
 
 
-# Adapted from https://stackoverflow.com/a/59395868/15547292
+class _ApiParserClass:
+    
+    @cached_property
+    def parser(self):
+        # could be freed once `required` and `defaults` have been retrieved
+        return get_parser()
+    
+    # Adapted from https://stackoverflow.com/a/59395868/15547292
+    
+    @cached_property
+    def required(self):
+        return tuple(a.dest for a in self.parser._actions if a.required)
+    
+    @cached_property
+    def defaults(self):
+        defaults = {}
+        for action in self.parser._actions:
+            if (not action.required and action.default is not argparse.SUPPRESS and action.dest not in ("help", "version")):
+                defaults[action.dest] = action.default
+        return defaults
 
-def _get_parser_defaults(parser):
-    defaults = {}
-    for action in parser._actions:
-        if (not action.required and action.default is not argparse.SUPPRESS
-            and action.dest not in ("help", "version")):
-            defaults[action.dest] = action.default
-    return defaults
+_ApiParser = _ApiParserClass()
 
-def _get_parser_requires(parser):
-    return [a.dest for a in parser._actions if a.required]
 
-def api_main(args):
+def api_main(**kwargs):
     """
-    Pure API entry point (experimental).
+    API entrypoint that circumvents argparse parsing (experimental).
+    
+    Since ctypesgen hands down the argparse args across the pipeline, a truly pure API entrypoint is difficult.
+    The parser is still used to get defaults and required arguments, but no actual parsing will be done.
     
     Not officially supported. Use at own risk.
     API callers should prefer to go through argparse-based main() where possible.
     
     Part of the reason why this isn't recommended is that no type-checking or conversion is being done; you have to make sure on your own that you pass in the expected types.
     In particular, when you pass a string where a list of strings is expetced, you may get the maddest exceptions (because a string is also iterable).
+    Also, unkown parameters will be silently ignored (i.e. beware of typos).
+    
+    Parameters:
+        kwargs:
+            Mapping of argument names and values. The argument names are the dest names of the parser.
     """
     
     # preparation: refresh CWD for path stripping
     get_priv_paths.cache_clear()
-    parser = get_parser()
     
-    required_args = _get_parser_requires(parser)
-    defaults = _get_parser_defaults(parser)
-    print(required_args, defaults, args, sep="\n", file=sys.stderr)
+    #print(_ApiParser.required, _ApiParser.defaults, kwargs, sep="\n", file=sys.stderr)
+    assert all(r in kwargs for r in _ApiParser.required), f"Must provide all required arguments: {_ApiParser.required}"
+    argparse_args = argparse.Namespace(**(_ApiParser.defaults|kwargs))
     
-    assert all(r in args for r in required_args), f"Must provide all required arguments: {required_args}"
-    
-    real_args = defaults.copy()
-    real_args.update(args)
-    real_args = argparse.Namespace(**real_args)
-    
-    args_str = str(pformat(args))
+    args_str = "\n".join(f"{k}={v!r}," for k, v in kwargs.items())
     for p, x in get_priv_paths():
         args_str = args_str.replace(str(p), x)
-    return main_impl(real_args, f"ctypesgen.api_main(\n{args_str}\n)")
+    args_str = indent(args_str, "  ")
+    
+    return main_impl(argparse_args, f"ctypesgen.api_main(\n{args_str}\n)")
 
 
 # -- Run main() if this script is invoked --
