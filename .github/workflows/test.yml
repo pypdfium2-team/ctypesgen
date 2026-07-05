@@ -9,9 +9,6 @@ on:
       cpp:
         default: ''
         type: string
-  # - push
-  # - pull_request
-  # - fork
 
 defaults:
   run:
@@ -22,6 +19,7 @@ jobs:
     name: Python-${{ matrix.python }} ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           # Linux x86_64
@@ -50,7 +48,6 @@ jobs:
             python: '3.13'
           - os: windows-11-arm
             python: '3.13'
-      fail-fast: false
 
     steps:
 
@@ -76,7 +73,7 @@ jobs:
           CPP: ${{ inputs.cpp }}
       
       - name: Upload generated data
-        if: ${{ inputs.upload_data && !cancelled() }}
+        if: ${{ inputs.upload_data }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: out_${{ matrix.os }}_py${{ matrix.python }}
