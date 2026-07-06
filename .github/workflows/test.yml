@@ -14,10 +14,14 @@ defaults:
   run:
     shell: bash
 
+permissions: {}
+
 jobs:
   setup-and-test:
     name: Python-${{ matrix.python }} ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read  # recommended by checkout and setup-python actions
+    
     strategy:
       fail-fast: false
       matrix:
@@ -48,24 +52,26 @@ jobs:
             python: '3.13'
           - os: windows-11-arm
             python: '3.13'
-
+    
+    runs-on: ${{ matrix.os }}
     steps:
-
+      
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
+          pip-install: pytest
       
       - name: Install Python dependencies
         run: |
           python -VV
-          python3 -c "import platform as p; print(p.machine())"
-          python -m pip install -U pip
-          python -m pip install pytest
-          python -m pip install -e .
-
+          python -c "import platform as p; print(p.machine())"
+          python -m pip install -v -e .
+      
       - name: Run Test
         run: python -m pytest -sv tests/testsuite.py
         env:

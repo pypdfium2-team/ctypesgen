@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 geisserml <geisserml@gmail.com>
+# SPDX-License-Identifier: CC-BY-4.0
+
+rules:
+  # Opinions differ on what is or isn't a misfeature. Disable. (FWIW, we like setup-python's pip-install input.)
+  misfeature:
+    disable: true
