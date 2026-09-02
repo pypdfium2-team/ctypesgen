@@ -95,9 +95,9 @@ It has its own parser backend using Clang API. This may be more reliable in a wa
 
 ### Issues / Patches
 
-Oversights or unintentional breakage can happen at times. If you think a change introduces logical issues, feel free to file a bug report or submit a patch.
+If you encounter an oversight, unintentional breakage, or find a change introduced logical issues, please go ahead and file a bug report or propose a patch.
 
-**Note:** The project policy is basically [the same as with pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#policy). In short, the code owner decides, and AI is prohibited.
+**Note:** The project policy is basically [the same as with pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#policy). TLDR the code owner decides, and AI slop is prohibited.
 
 
 ### Code Style
