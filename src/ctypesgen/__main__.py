@@ -11,6 +11,7 @@ from pathlib import Path
 from textwrap import indent
 
 from ctypesgen import (
+    __version__ as VERSION,
     messages as msgs,
     parser as core_parser,
     processor,
@@ -101,7 +102,7 @@ def get_parser():
     parser.add_argument(
         "--version",
         action="version",
-        version="pypdfium2",
+        version=VERSION,
     )
 
     # Parameters

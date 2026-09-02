@@ -40,4 +40,4 @@ parser, processor, and printer modules use to pass information. They are:
 format.
 """
 
-PYPDFIUM2_SPECIFIC = True
+__version__ = "pypdfium2-ctypesgen"
