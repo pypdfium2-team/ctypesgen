@@ -1,5 +1,6 @@
 _**Important:** This repository's actual main branch is `pypdfium2`, whereas `master` is the old upstream codebase. So if you want to use this fork, make sure you are on `pypdfium2`, or a branch derived thereof. This layout has historical reasons, and makes it easier to sync the fork._
 
+
 # ctypesgen (pypdfium2-team fork)
 
 ctypesgen is a ctypes wrapper generator for Python.
@@ -10,6 +11,19 @@ Here are some notes on our development intents:
 * We do not mind API-breaking changes at this time.
 * We endeavor to use plain ctypes as much as possible and keep the template lean.
 * For now, we only envisage to work with ctypesgen's higher-level parts. The parser backend may be out of our scope.
+
+
+### Installation
+
+pypdfium2-ctypesgen does not ship classical python setup code, and is not uploaded to PyPI. This is perfectly intentional.[^setup]
+
+The recommended way of installation is cloning the git repository and prepending ctypesgen's `bin/` to `PATH` and `src/` to `PYTHONPATH`.
+
+If you are a project maintainer, you want to embed ctypesgen into your project's source tree (via manual or automatic cloning, as a git submodule, a plain copy or whatever you prefer). Prepend ctypesgen's `src/` to `sys.path` and invoke it through the `ctypesgen.__main__.main()` entrypoint.
+
+We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developped in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
+
+[^setup]: **Please refrain from filing requests to add setup integration.** It really does not make (much) sense with this project, and we are committed to this alternative approach.
 
 
 ### System Dependencies

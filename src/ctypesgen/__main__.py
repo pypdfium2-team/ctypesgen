@@ -14,7 +14,6 @@ from ctypesgen import (
     messages as msgs,
     parser as core_parser,
     processor,
-    version,
     printer_python,
     printer_json,
 )
@@ -97,13 +96,6 @@ def get_parser():
     )
     if ExtendAction is not None:
         parser.register('action', 'extend', ExtendAction)
-    
-    # Version
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=version.VERSION_NUMBER,
-    )
 
     # Parameters
     parser.add_argument(

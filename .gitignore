@@ -13,6 +13,5 @@ tests/tmp/*
 *.swp
 *~
 
-src/ctypesgen/VERSION
 src/ctypesgen/parser/new_parsetab.py
 src/ctypesgen/parser/parser.out
