@@ -16,7 +16,7 @@ Here are some notes on our development intents:
 
 ### Installation
 
-This flavor of ctypesgen does not contain classical python setup code anymore, and has never been uploaded to PyPI, which is all intentional.[^setup]
+This flavor of ctypesgen does not contain classical python setup code anymore. It is not released to PyPI (and never has been). This is all intentional.[^setup]
 
 To install, we suggest that you simply clone the git repository, and prepend its `bin/` to `PATH` and `src/` to `PYTHONPATH`. You can also just call `./bin/ctypesgen` directly, or symlink it into `~/.local/bin`, or wherever you like :)
 
