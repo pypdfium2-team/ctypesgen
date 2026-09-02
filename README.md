@@ -24,7 +24,7 @@ To install ctypesgen, we suggest that you simply clone the git repository, and p
 If you are a project maintainer, you want to embed ctypesgen into your project's source tree (via manual or automatic cloning, as a git submodule, plain copy, or whatever suits you). Prepend ctypesgen's `src/` to `sys.path` and invoke it through the `ctypesgen.__main__.main()` entrypoint.
 Bundle ctypesgen with your sdists, e.g. via a `MANIFEST.in` `graft` rule.
 
-We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developped in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
+We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developed in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
 
 The test suite runs the accompanying `src/` and is independent of system integration.
 
