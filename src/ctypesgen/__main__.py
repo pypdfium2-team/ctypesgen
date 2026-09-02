@@ -96,6 +96,13 @@ def get_parser():
     )
     if ExtendAction is not None:
         parser.register('action', 'extend', ExtendAction)
+    
+    # Version
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="pypdfium2",
+    )
 
     # Parameters
     parser.add_argument(
