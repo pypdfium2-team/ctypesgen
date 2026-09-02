@@ -25,6 +25,8 @@ Bundle ctypesgen with your sdists, e.g. via a `MANIFEST.in` `graft` rule.
 
 We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developped in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
 
+The test suite runs the accompanying `src/` and is independent of system installation.
+
 [^setup]: **Please refrain from filing requests to add setup integration.** It really does not make (much) sense with this project, and we are committed to this alternative approach.
 
 
