@@ -857,7 +857,7 @@ class CommandParserTest(unittest.TestCase):
         """Test version string reported by CLI"""
         out, err, rc = self._run(["--version"])
         self.assertEqual(rc, 0)
-        self.assertEqual(out.strip(), "pypdfium2")
+        self.assertEqual(out.strip(), "pypdfium2-ctypesgen")
         self.assertEqual(err, "")
 
     def test_help(self):
