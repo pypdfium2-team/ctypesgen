@@ -16,16 +16,17 @@ Here are some notes on our development intents:
 
 ### Installation
 
-pypdfium2-ctypesgen does not ship classical python setup code, and is not uploaded to PyPI. This is perfectly intentional.[^setup]
+pypdfium2-ctypesgen does not ship classical python setup code, and is not uploaded to PyPI.
+This is all intentional.[^setup]
 
-The recommended way of installation is cloning the git repository and prepending ctypesgen's `bin/` to `PATH` and `src/` to `PYTHONPATH`. You can also just call `./bin/ctypesgen` directly, or symlink it into `~/.local/bin`, or wherever you like :)
+To install ctypesgen, we suggest that you simply clone the git repository, and prepend its `bin/` to `PATH` and `src/` to `PYTHONPATH`. You can also just call `./bin/ctypesgen` directly, or symlink it into `~/.local/bin`, or wherever you like :)
 
 If you are a project maintainer, you want to embed ctypesgen into your project's source tree (via manual or automatic cloning, as a git submodule, plain copy, or whatever suits you). Prepend ctypesgen's `src/` to `sys.path` and invoke it through the `ctypesgen.__main__.main()` entrypoint.
 Bundle ctypesgen with your sdists, e.g. via a `MANIFEST.in` `graft` rule.
 
 We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developped in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
 
-The test suite runs the accompanying `src/` and is independent of system installation.
+The test suite runs the accompanying `src/` and is independent of system integration.
 
 [^setup]: **Please refrain from filing requests to add setup integration.** It really does not make (much) sense with this project, and we are committed to this alternative approach.
 
