@@ -1,4 +1,5 @@
-_**Important:** This repository's actual main branch is `pypdfium2`, whereas `master` is the old upstream codebase. So if you want to use this fork, make sure you are on `pypdfium2`, or a branch derived thereof. This layout has historical reasons, and makes it easier to sync the fork._
+> [!IMPORTANT]
+> This repository's actual main branch is `pypdfium2`, whereas `master` is the old upstream codebase. So if you want to use this fork, make sure you are on `pypdfium2`, or a branch derived thereof. This layout has historical reasons, and makes it easier to sync the fork.
 
 
 # ctypesgen (pypdfium2-team fork)
@@ -20,6 +21,7 @@ pypdfium2-ctypesgen does not ship classical python setup code, and is not upload
 The recommended way of installation is cloning the git repository and prepending ctypesgen's `bin/` to `PATH` and `src/` to `PYTHONPATH`.
 
 If you are a project maintainer, you want to embed ctypesgen into your project's source tree (via manual or automatic cloning, as a git submodule, a plain copy or whatever you prefer). Prepend ctypesgen's `src/` to `sys.path` and invoke it through the `ctypesgen.__main__.main()` entrypoint.
+Bundle ctypesgen with your sdists, e.g. via a `MANIFEST.in` `graft` rule.
 
 We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developped in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
 
