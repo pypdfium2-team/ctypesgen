@@ -25,11 +25,31 @@ from ctypesgen.printer_python import (
 
 # -- Backports and helpers --
 
-if sys.version_info < (3, 8):
-    def cached_property(func):
-        return property( functools.lru_cache(maxsize=1)(func) )
-else:
+if sys.version_info >= (3, 8):
     cached_property = functools.cached_property
+else:
+    # copied from pypdfium2's src/pypdfium2_cfg/_shared/stl.py
+    
+    class cached_property:
+        
+        def __init__(self, func):
+            self.func = func
+            self.assigned_name = None
+            self.__doc__ = func.__doc__
+        
+        def __set_name__(self, cls, name):
+            if self.assigned_name is None:
+                self.assigned_name = name
+            else:
+                assert name == self.assigned_name, f"A cached property is tied to one attribute. You cannot assign to both {name!r} and {self.assigned_name!r}."
+        
+        def __get__(self, obj, cls=None):
+            if obj is None:
+                return self
+            value = self.func(obj)
+            name = self.assigned_name  # or self.func.__name__  # py < 3.6
+            setattr(obj, name, value)
+            return value
 
 if sys.version_info < (3, 8):
     class ExtendAction (argparse.Action):
