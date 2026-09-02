@@ -16,10 +16,10 @@ Here are some notes on our development intents:
 
 ### Installation
 
-pypdfium2-ctypesgen does not have classical python setup code, and is not uploaded to PyPI.
+This project does not contain classical python setup code, and is not uploaded to PyPI.
 This is all intentional.[^setup]
 
-To install this version of ctypesgen, we suggest that you simply clone the git repository, and prepend its `bin/` to `PATH` and `src/` to `PYTHONPATH`. You can also just call `./bin/ctypesgen` directly, or symlink it into `~/.local/bin`, or wherever you like :)
+To install this flavor of ctypesgen, we suggest that you simply clone the git repository, and prepend its `bin/` to `PATH` and `src/` to `PYTHONPATH`. You can also just call `./bin/ctypesgen` directly, or symlink it into `~/.local/bin`, or wherever you like :)
 
 If you are a project maintainer, you want to embed ctypesgen into your project's source tree (via manual or automatic cloning, as a git submodule, plain copy, or whatever suits you). Prepend ctypesgen's `src/` to `sys.path` and invoke it through the `ctypesgen.__main__.main()` entrypoint.
 Bundle ctypesgen with your sdists, e.g. via a `MANIFEST.in` include rule.
