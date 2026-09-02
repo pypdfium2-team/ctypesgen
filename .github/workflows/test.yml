@@ -69,7 +69,7 @@ jobs:
         run: |
           python -VV
           python -c "import platform as p; print(p.machine())"
-          python -m pip install pytest
+          python -m pip install pytest  # TODO dependency cooldown
       
       - name: Run Test Suite
         run: python -m pytest -sv tests/testsuite.py
