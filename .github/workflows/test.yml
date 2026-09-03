@@ -64,15 +64,14 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python }}
-          pip-install: pytest
       
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: |
           python -VV
           python -c "import platform as p; print(p.machine())"
-          python -m pip install -v -e .
+          python -m pip install pytest  # TODO dependency cooldown
       
-      - name: Run Test
+      - name: Run Test Suite
         run: python -m pytest -sv tests/testsuite.py
         env:
           CLEANUP_OK: ${{ !inputs.upload_data && 1 || 0 }}

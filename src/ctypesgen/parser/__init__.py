@@ -14,7 +14,7 @@ for more information.
 
 __all__ = ["parse"]
 
-from .datacollectingparser import DataCollectingParser
+from ctypesgen.parser.datacollectingparser import DataCollectingParser
 
 def parse(headers, options):
     parser = DataCollectingParser(headers, options)

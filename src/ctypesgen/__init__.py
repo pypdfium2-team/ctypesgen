@@ -40,24 +40,4 @@ parser, processor, and printer modules use to pass information. They are:
 format.
 """
 
-# Worker modules
-from . import parser
-from . import processor
-from . import printer_python
-from . import printer_json
-from . import version
-
-# Data structure modules
-from . import descriptions
-from . import ctypedescs
-from . import expressions
-
-# Helper modules
-from . import messages
-
-# Entry points
-from .__main__ import main, api_main
-
-__version__ = version.VERSION.partition("-")[-1]
-VERSION = __version__
-PYPDFIUM2_SPECIFIC = True
+__version__ = "pypdfium2-ctypesgen"

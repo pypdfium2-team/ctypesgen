@@ -29,14 +29,13 @@ import ctypes
 import math
 import unittest
 import subprocess
-import functools
 from contextlib import (
     redirect_stdout,
     redirect_stderr,
 )
 
-from ctypesgen import VERSION
 import ctypesgen.__main__ as ctg_main
+from ctypesgen.__main__ import cached_property
 from .conftest import (
     cleanup_common,
     generate,
@@ -52,13 +51,6 @@ from .conftest import (
     get_libname,
 )
 from . import json_expects
-
-if sys.version_info < (3, 8):
-    def cached_property(func):
-        return property( functools.lru_cache(maxsize=1)(func) )
-else:
-    cached_property = functools.cached_property
-
 
 # ctypes docs say: "On Windows, find_library() searches along the system search path, and returns the full pathname, but since there is no predefined naming scheme a call like find_library("c") will fail and return None."
 if sys.platform.startswith("win32"):
@@ -858,7 +850,7 @@ class CommandParserTest(unittest.TestCase):
         """Test version string reported by CLI"""
         out, err, rc = self._run(["--version"])
         self.assertEqual(rc, 0)
-        self.assertEqual(out.strip(), VERSION)
+        self.assertEqual(out.strip(), "pypdfium2-ctypesgen")
         self.assertEqual(err, "")
 
     def test_help(self):

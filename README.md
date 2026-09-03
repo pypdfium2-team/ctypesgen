@@ -1,4 +1,6 @@
-_**Important:** This repository's actual main branch is `pypdfium2`, whereas `master` is the old upstream codebase. So if you want to use this fork, make sure you are on `pypdfium2`, or a branch derived thereof. This layout has historical reasons, and makes it easier to sync the fork._
+> [!IMPORTANT]
+> This repository's actual main branch is `pypdfium2`, whereas `master` is the old upstream codebase. So if you want to use this fork, make sure you are on `pypdfium2`, or a branch derived thereof. This layout has historical reasons, and makes it easier to sync the fork.
+
 
 # ctypesgen (pypdfium2-team fork)
 
@@ -10,6 +12,22 @@ Here are some notes on our development intents:
 * We do not mind API-breaking changes at this time.
 * We endeavor to use plain ctypes as much as possible and keep the template lean.
 * For now, we only envisage to work with ctypesgen's higher-level parts. The parser backend may be out of our scope.
+
+
+### Installation
+
+This flavor of ctypesgen does not contain classical python setup code anymore. It is not released to PyPI (and never has been). This is all intentional.[^setup]
+
+To install, we suggest that you simply clone the git repository, and prepend its `bin/` to `PATH` and `src/` to `PYTHONPATH`. You can also just call `./bin/ctypesgen` directly, or symlink it into `~/.local/bin`, or wherever you like :)
+
+If you are a project maintainer, you want to embed ctypesgen into your project's source tree (via manual or automatic cloning, as a git submodule, plain copy, or whatever suits you). Prepend ctypesgen's `src/` to `sys.path` and invoke it through the `ctypesgen.__main__.main()` entrypoint.
+Bundle ctypesgen with your sdists, e.g. via a `MANIFEST.in` include rule.
+
+We don't currently make releases at all, since pypdfium2 and this ctypesgen fork are developed in sync, but tagging and making GitHub-level releases is theoretically possible and might be done at some future point.
+
+The test suite runs the accompanying `src/` and is independent of system integration.
+
+[^setup]: **Please refrain from filing requests to add setup integration.** It really does not make (much) sense with this project, and we are committed to this alternative approach.
 
 
 ### System Dependencies
@@ -67,21 +85,18 @@ and [`docs/python_api.md`](docs/python_api.md) on how to produce bindings for Py
 
 - ctypesgen has its roots in [`wraptypes`](https://github.com/pyglet/pyglet/tree/master/tools/wraptypes) from pyglet, which was originally written by Alex Holkner for C99, and is still around today.
   Some documentation can be found [here](https://docs.pyglet.org/en/development/internal/wraptypes.html). This may still be a valuable source of information even for today's ctypesgen.
-
 - ctypesgen is also used by the GRASS project, which has its own copy of ctypesgen [here](https://github.com/OSGeo/grass/tree/main/python/libgrass_interface_generator).
-
 - [`ctypeslib2`](https://github.com/trolldbois/ctypeslib) is an independent alternative to ctypesgen.
 It has its own parser backend using Clang API. This may be more reliable in a way, at the cost of being impure and tied to a specific compiler.
   `ctypeslib2` has some fancy features ctypesgen currently does not, such as taking over Doxygen comments.
-
 - The original `ctypeslib` (by former ctypes maintainer Thomas Heller) used GCC's XML output, but the author is not aware of a maintained version of this codebase. `ctypeslib2` is derived from ctypeslib, but its backend has been thoroughly changed for Clang.
 
 
 ### Issues / Patches
 
-Oversights or unintentional breakage can happen at times. If you think a change introduces logical issues, feel free to file a bug report or submit a patch.
+If you encounter an oversight, unintentional breakage, or find a change introduced logical issues, please go ahead and file a bug report or propose a patch.
 
-Note though, the response/contributions policy is [basically the same as for pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#response-policy).
+**Note:** The project policy is basically [the same as with pypdfium2](https://github.com/pypdfium2-team/pypdfium2/?tab=readme-ov-file#policy). TLDR the code owner decides, and AI slop is prohibited.
 
 
 ### Code Style
