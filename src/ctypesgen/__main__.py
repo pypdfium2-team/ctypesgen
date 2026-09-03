@@ -560,7 +560,13 @@ def api_main(**kwargs):
     
     #print(_ApiParser.required, _ApiParser.defaults, kwargs, sep="\n", file=sys.stderr)
     assert all(r in kwargs for r in _ApiParser.required), f"Must provide all required arguments: {_ApiParser.required}"
-    argparse_args = argparse.Namespace(**(_ApiParser.defaults|kwargs))
+    
+    # TODO once we require python >= 3.9, use PEP 584 dict merge operator:
+    # **(_ApiParser.defaults|kwargs)
+    args_dict = {}
+    args_dict.update(_ApiParser.defaults)
+    args_dict.update(kwargs)
+    argparse_args = argparse.Namespace(**args_dict)
     
     args_str = "\n".join(f"{k}={v!r}," for k, v in kwargs.items())
     for p, x in get_priv_paths():

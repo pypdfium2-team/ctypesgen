@@ -252,9 +252,17 @@ _libs[{opts.library!r}] = _get_library(
         names = set(n for n, *_ in struct.members)
         n = 1
         for mi, (mem_name, mem_type, *mem_other) in enumerate(struct.members):
-            if mem_name is not None: continue
-            while (name := f"unnamed_{n}") in names:
+            if mem_name is not None:
+                continue
+            # TODO once we can require python >= 3.8, consider this:
+            # while (name := f"unnamed_{n}") in names:
+            #     n += 1
+            # n += 1  # set proper candidate for next iteration
+            while True:
+                name = f"unnamed_{n}"
                 n += 1
+                if name not in names:
+                    break
             names.add(name)
             if isinstance(mem_type, CtypesStruct):
                 unnamed_fields.append(name)
