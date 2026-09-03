@@ -285,7 +285,7 @@ _libs[{opts.library!r}] = _get_library(
     
     
     def print_struct_fields(self, struct):
-        # Fields are defined indepedent of the actual class to handle forward declarations, including self-references and cyclic structs
+        # Fields are defined independent of the actual class to handle forward declarations, including self-references and cyclic structs
         # https://docs.python.org/3/library/ctypes.html#incomplete-types
         self.file.write(f"{struct.variety}_{struct.tag}._fields_ = (")
         pad = "\n    "

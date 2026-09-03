@@ -19,7 +19,7 @@ _**NOTE:** Unfortunately, keeping track of differences to the old upstream is di
   - More flags changed or renamed.
 * Rewrote library loader. Avoid implicit searches. Take full paths with formatting options, rather than directories. Use just standard `ctypes.util.find_library()` means to look for system libraries, rather than bloated custom code. Resolve `.` to the module directory, not the caller's CWD. Don't add compile libraries to runtime.
 * The bloated string wrappers have been removed. By default, no implicit string encoding/decoding is being done anymore, because `char*` is not necessarily a UTF-8 string or even NUL-terminated. However, the `--string-template` option allows to plug in your own string helpers (e.g. `c_char_p`, or any custom wrapper). However, we recommend that new code assume the raw `POINTER(c_char)` and cast/decode on the caller side as necessary.
-* We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
+* We declare `c_void_p` as restype directly, which ctypes auto-converts to int/None. Previously, ctypesgen would use `POINTER(c_ubyte)` and cast to `c_void_p` via errcheck to bypass the auto-conversion. However, a `c_void_p` programmatically is just that: an integer or null pointer, so the behavior of ctypes seems fine. Note that we can seamlessly `ctypes.cast()` an int to a pointer type. The API difference is that there is no `.value` property anymore. Instead, the object itself is the value, removing a layer of indirection.
 
 ### New features and improvements (selection)
 
@@ -73,8 +73,8 @@ stdcall/cdecl.
 
 - Simplify and unify library loader for various platforms. Improve library path
   searches on Linux (parsed ld.so.conf includes now).
-- First implementaion of #pragma pack
-- First implemenation of #undef
+- First implementation of #pragma pack
+- First implementation of #undef
 - Adds several command line options:
   `-D` `--define`
   `-U` `--undefine`
@@ -86,7 +86,7 @@ stdcall/cdecl.
 
 Fix handling of function prototypes
 
-Other minor improvments included.
+Other minor improvements included.
 
 ### v1.0.0
 
