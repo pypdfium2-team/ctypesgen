@@ -29,7 +29,6 @@ The test suite runs the accompanying `src/` and is independent of system integra
 
 [^setup]: **Please refrain from filing requests to add setup integration.** It really does not make (much) sense with this project, and we are committed to this alternative approach.
 
-
 ### System Dependencies
 
 ctypesgen depends on the presence of an external C pre-processor, by default `gcc` or `clang`, as available.
@@ -37,6 +36,15 @@ Alternatively, you may specify a custom pre-processor command using the `--cpp` 
 
 See also [`docs/pcpp.md`](docs/pcpp.md) for an experimental pure-python option.
 
+ctypesgen has been known for being incompatible with MSVC (`cl -E`). If you are able to fix this, please reach out.
+
+### Python compatibility
+
+We currently aim for Python 3.6 baseline compatibility.
+
+ctypesgen is self-contained in that it does not depend on any external Python packages.
+
+ctypesgen bundles the [PLY](https://github.com/dabeaz/ply) parser engine, courtesy of David Beazley. PLY also requires Python `>= 3.6`.
 
 ### Tips & Tricks
 
