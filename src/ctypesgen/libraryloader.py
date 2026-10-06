@@ -19,18 +19,22 @@ class _Loader:
     
     @classmethod
     def get_library(cls, name, dllclass, libpaths, search_sys):
-        
         for lpath in libpaths:
             if os.path.dirname(lpath):
                 lpath = pathlib.Path(lpath)
                 if not lpath.is_absolute():
                     lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
-                lpath = lpath.parent / lpath.name.format(prefix=cls._PREFIX, name=name, suffix=cls._SUFFIX)
+                
+                lpath = lpath.parent / lpath.name.format(
+                    prefix=cls._PREFIX, name=name, suffix=cls._SUFFIX,
+                )
+                
                 if cls._CONSIDER_LINK and not lpath.exists():
                     lpath_link = lpath.with_suffix(cls._CONSIDER_LINK)
                     if not lpath_link.exists():
                         continue
                     lpath = pathlib.Path(lpath_link.read_text().strip())
+                
                 if lpath.exists():
                     return dllclass(str(lpath))
             else:
