@@ -1,8 +1,8 @@
-import sys
 import ctypes
 import ctypes.util
+import sys
 import os.path
-import pathlib
+from pathlib import Path
 
 class _Loader:
     
@@ -18,24 +18,27 @@ class _Loader:
         _PREFIX, _SUFFIX = "lib", "so"
     
     @classmethod
+    def _resolve_lpath(cls, lpath, name):
+        if not lpath.is_absolute():
+            lpath = (Path(__file__).parent / lpath).resolve(strict=False)
+        lpath = lpath.parent / lpath.name.format(
+            prefix=cls._PREFIX, name=name, suffix=cls._SUFFIX,
+        )
+        if lpath.exists():
+            return lpath
+        if cls._CONSIDER_LINK:
+            lpath_link = lpath.with_suffix(cls._CONSIDER_LINK)
+            if lpath_link.exists():
+                lpath = Path(lpath_link.read_text().strip())
+                if lpath.exists():
+                    return lpath
+    
+    @classmethod
     def get_library(cls, name, dllclass, libpaths, search_sys):
         for lpath in libpaths:
             if os.path.dirname(lpath):
-                lpath = pathlib.Path(lpath)
-                if not lpath.is_absolute():
-                    lpath = (pathlib.Path(__file__).parent / lpath).resolve(strict=False)
-                
-                lpath = lpath.parent / lpath.name.format(
-                    prefix=cls._PREFIX, name=name, suffix=cls._SUFFIX,
-                )
-                
-                if cls._CONSIDER_LINK and not lpath.exists():
-                    lpath_link = lpath.with_suffix(cls._CONSIDER_LINK)
-                    if not lpath_link.exists():
-                        continue
-                    lpath = pathlib.Path(lpath_link.read_text().strip())
-                
-                if lpath.exists():
+                lpath = cls._resolve_lpath(Path(lpath), name)
+                if lpath:
                     return dllclass(str(lpath))
             else:
                 try:

@@ -176,7 +176,7 @@ _libs[{opts.library!r}] = _Loader.get_library(
 )\
 """
         if opts.embed_templates:
-            self.file.write("\n\n\n" + content + "\n\n" + "del _Loader")
+            self.file.write("\n\n\n" + content + "\n\n" + "del _Loader, Path")
         else:
             # we need to share libraries in a common file to build same-library headers separately while loading the library only once
             # FIXME reading EXT_LOADER and searching for a string pattern each time is dirty -- a dedicated json status file to track state might be cleaner
