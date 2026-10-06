@@ -168,7 +168,7 @@ class WrapperPrinter:
         content = f"""\
 # Load library {opts.library!r}
 
-_libs[{opts.library!r}] = _get_library(
+_libs[{opts.library!r}] = _Loader.get_library(
     {name_define},
     dllclass = ctypes.{opts.dllclass},
     libpaths = {tuple(opts.rt_libpaths)},
@@ -176,7 +176,7 @@ _libs[{opts.library!r}] = _get_library(
 )\
 """
         if opts.embed_templates:
-            self.file.write(f"\n\n\n{content}")
+            self.file.write("\n\n\n" + content + "\n\n" + "del _Loader, Path")
         else:
             # we need to share libraries in a common file to build same-library headers separately while loading the library only once
             # FIXME reading EXT_LOADER and searching for a string pattern each time is dirty -- a dedicated json status file to track state might be cleaner
