@@ -5,7 +5,6 @@ ctypesgen.processor.pipeline calls the operations module.
 """
 
 import re
-import sys
 import ctypes
 import keyword
 import traceback
@@ -175,7 +174,7 @@ def check_symbols(data, opts):
     
     try:
         libraryloader.__file__ = str(Path.cwd() / "spoofed_ll.py")
-        library = libraryloader._get_library(
+        library = libraryloader._Loader.get_library(
             name = opts.library,
             dllclass = getattr(ctypes, opts.dllclass),
             libpaths = opts.ct_libpaths,
