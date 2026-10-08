@@ -40,4 +40,5 @@ parser, processor, and printer modules use to pass information. They are:
 format.
 """
 
-__version__ = "pypdfium2-ctypesgen"
+# flavor-progname + version
+__version__ = "pypdfium2-ctypesgen rolling"
